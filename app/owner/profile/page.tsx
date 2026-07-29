@@ -3,12 +3,20 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { fetchOwnerShop, updateOwnerShop } from "@/lib/owner/api";
+import { fetchOwnerShop, updateOwnerShop, fetchShopDashboardStats } from "@/lib/owner/api";
+import { uploadShopImages } from "@/lib/owner/uploadImages";
 import { GENRE_OPTIONS, MAX_IMAGES } from "@/lib/owner/constants";
-import { parseCoverImages } from "@/lib/home/types";
+import { getShopCoverImages } from "@/lib/home/types";
 import { readFilesAsDataUrls } from "@/lib/files";
-import BackButton from "@/components/layout/BackButton";
+import OpenHoursInput from "@/components/owner/OpenHoursInput";
+import OwnerLayout from "@/components/layout/OwnerLayout";
+import LoadingScreen from "@/components/layout/LoadingScreen";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui/styles";
+import {
+  formatOpenHoursRange,
+  parseOpenHours,
+  validateOpenHoursRange,
+} from "@/lib/shop/openHours";
 import type { Shop } from "@/lib/home/types";
 
 export default function OwnerProfilePage() {
@@ -16,9 +24,11 @@ export default function OwnerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [shop, setShop] = useState<Shop | null>(null);
+  const [stats, setStats] = useState({ views: 0, interests: 0, checkins: 0 });
   const [shopName, setShopName] = useState("");
   const [address, setAddress] = useState("");
-  const [openHours, setOpenHours] = useState("");
+  const [openHoursStart, setOpenHoursStart] = useState("");
+  const [openHoursEnd, setOpenHoursEnd] = useState("");
   const [genres, setGenres] = useState<Set<string>>(new Set());
   const [coverImages, setCoverImages] = useState<string[]>([]);
   const [staffEmail, setStaffEmail] = useState("");
@@ -43,12 +53,21 @@ export default function OwnerProfilePage() {
         return;
       }
 
+      const dashboardStats = await fetchShopDashboardStats(ownerShop.id);
+
       setShop(ownerShop);
       setShopName(ownerShop.name);
       setAddress(ownerShop.address);
-      setOpenHours(ownerShop.open_hours ?? "");
+      const hours = parseOpenHours(ownerShop.open_hours);
+      setOpenHoursStart(hours.start);
+      setOpenHoursEnd(hours.end);
       setGenres(new Set(Array.isArray(ownerShop.genre) ? ownerShop.genre : []));
-      setCoverImages(parseCoverImages(ownerShop.cover_image));
+      setCoverImages(getShopCoverImages(ownerShop));
+      setStats({
+        views: dashboardStats.views,
+        interests: dashboardStats.interests,
+        checkins: dashboardStats.checkins,
+      });
       setStaffIds(
         (user.user_metadata?.staff_emails as string[] | undefined) ??
           ownerShop.staff_ids ??
@@ -94,12 +113,43 @@ export default function OwnerProfilePage() {
     setError(null);
     setSaved(false);
 
+    const hoursError = validateOpenHoursRange(openHoursStart, openHoursEnd);
+    if (hoursError) {
+      setSubmitting(false);
+      setError(hoursError);
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setSubmitting(false);
+      setError("ログインが必要です");
+      return;
+    }
+
+    let uploadedCoverImages = coverImages;
+    if (coverImages.some((image) => image.startsWith("data:"))) {
+      const { urls, error: uploadError } = await uploadShopImages(
+        user.id,
+        coverImages,
+      );
+      if (uploadError) {
+        setSubmitting(false);
+        setError(uploadError);
+        return;
+      }
+      uploadedCoverImages = urls;
+    }
+
     const { error: updateError } = await updateOwnerShop(shop.id, {
       name: shopName,
       address,
-      openHours: openHours || "—",
+      openHours: formatOpenHoursRange(openHoursStart, openHoursEnd),
       genres: Array.from(genres),
-      coverImages,
+      coverImages: uploadedCoverImages,
       staffIds: (shop.staff_ids ?? []).filter((id) =>
         /^[0-9a-f-]{36}$/i.test(id),
       ),
@@ -121,21 +171,11 @@ export default function OwnerProfilePage() {
     setSaved(true);
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-full items-center justify-center bg-[#080810]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#ff3d00] border-t-transparent" />
-      </div>
-    );
-  }
+  if (loading) return <LoadingScreen />;
 
   return (
-    <div className="min-h-full bg-[#080810] pb-10 text-[#eeeaf4]">
-      <div className="mx-auto max-w-[480px] px-4 pt-4">
-        <BackButton href="/owner/dashboard" label="ダッシュボード" />
-        <h1 className="mt-6 text-2xl font-black">お店のプロフィール</h1>
-
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+    <OwnerLayout shop={shop} stats={stats} title="お店のプロフィール">
+      <form onSubmit={handleSubmit} className="max-w-xl space-y-6">
           <div>
             <p className="text-sm font-medium">カバー画像</p>
             <label className="mt-2 block cursor-pointer overflow-hidden rounded-xl border border-dashed border-[#5a5668]">
@@ -186,17 +226,13 @@ export default function OwnerProfilePage() {
             />
           </div>
 
-          <div>
-            <label htmlFor="openHours" className="block text-sm font-medium">
-              営業時間
-            </label>
-            <input
-              id="openHours"
-              value={openHours}
-              onChange={(e) => setOpenHours(e.target.value)}
-              className={inputClassName}
-            />
-          </div>
+          <OpenHoursInput
+            start={openHoursStart}
+            end={openHoursEnd}
+            onStartChange={setOpenHoursStart}
+            onEndChange={setOpenHoursEnd}
+            idPrefix="profile-openHours"
+          />
 
           <div>
             <p className="text-sm font-medium">ジャンル</p>
@@ -281,8 +317,7 @@ export default function OwnerProfilePage() {
           >
             {submitting ? "保存中..." : "保存する"}
           </button>
-        </form>
-      </div>
-    </div>
+      </form>
+    </OwnerLayout>
   );
 }

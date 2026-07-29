@@ -2,17 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
   createOwnerShop,
   createVibePost,
   fetchOwnerShop,
 } from "@/lib/owner/api";
+import { uploadShopImages } from "@/lib/owner/uploadImages";
 import { GENRE_OPTIONS, MAX_IMAGES, MOOD_OPTIONS } from "@/lib/owner/constants";
 import { readFilesAsDataUrls } from "@/lib/files";
 import StepIndicator from "@/components/owner/StepIndicator";
 import OpenHoursInput from "@/components/owner/OpenHoursInput";
+import OwnerLayout from "@/components/layout/OwnerLayout";
+import LoadingScreen from "@/components/layout/LoadingScreen";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui/styles";
 import {
   formatOpenHoursRange,
@@ -95,13 +97,27 @@ export default function OwnerOnboardingPage() {
     setSubmitting(true);
     setError(null);
 
+    let uploadedCoverImages: string[] = [];
+    if (coverImages.length > 0) {
+      const { urls, error: uploadError } = await uploadShopImages(
+        user.id,
+        coverImages,
+      );
+      if (uploadError) {
+        setSubmitting(false);
+        setError(uploadError);
+        return;
+      }
+      uploadedCoverImages = urls;
+    }
+
     const { data: shop, error: shopError } = await createOwnerShop({
       ownerId: user.id,
       name: shopName,
       address,
       openHours: formatOpenHoursRange(openHoursStart, openHoursEnd),
       genres: Array.from(genres),
-      coverImages,
+      coverImages: uploadedCoverImages,
     });
 
     if (shopError) {
@@ -176,27 +192,12 @@ export default function OwnerOnboardingPage() {
     handleSubmit();
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-full items-center justify-center bg-[#080810]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#ff3d00] border-t-transparent" />
-      </div>
-    );
-  }
+  if (loading) return <LoadingScreen />;
 
   return (
-    <div className="min-h-full bg-[#080810] text-[#eeeaf4]">
-      <header className="border-b border-white/5 px-6 py-4">
-        <Link href="/" className="text-xl font-bold tracking-tight">
-          mazare
-        </Link>
-      </header>
-
-      <main className="mx-auto max-w-[480px] px-6 py-8">
-        <h1 className="text-2xl font-black">お店を登録しましょう</h1>
-        <div className="mt-6">
-          <StepIndicator step={step} total={4} />
-        </div>
+    <OwnerLayout isOnboarding title="お店を登録しましょう">
+      <div className="max-w-xl">
+        <StepIndicator step={step} total={4} />
 
         <form onSubmit={handleNext} className="mt-8 space-y-6">
           {step === 1 && (
@@ -370,7 +371,7 @@ export default function OwnerOnboardingPage() {
             </button>
           </div>
         </form>
-      </main>
-    </div>
+      </div>
+    </OwnerLayout>
   );
 }

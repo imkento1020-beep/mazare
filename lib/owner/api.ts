@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { serializeCoverImages, type Shop } from "@/lib/home/types";
+import type { Shop } from "@/lib/home/types";
 
 export async function fetchOwnerShop(ownerId: string): Promise<{
   data: Shop | null;
@@ -8,7 +8,7 @@ export async function fetchOwnerShop(ownerId: string): Promise<{
   const { data, error } = await supabase
     .from("shops")
     .select(
-      "id, name, address, genre, open_hours, cover_image, owner_id, staff_ids",
+      "id, name, address, genre, open_hours, cover_image, cover_images, owner_id, staff_ids",
     )
     .eq("owner_id", ownerId)
     .maybeSingle();
@@ -32,7 +32,7 @@ export async function createOwnerShop(input: {
       address: input.address,
       open_hours: input.openHours || "—",
       genre: input.genres,
-      cover_image: serializeCoverImages(input.coverImages),
+      cover_images: input.coverImages,
       owner_id: input.ownerId,
     })
     .select("id")
@@ -59,8 +59,10 @@ export async function updateOwnerShop(
       address: input.address,
       open_hours: input.openHours,
       genre: input.genres,
-      cover_image: serializeCoverImages(input.coverImages),
-      staff_ids: input.staffIds,
+      cover_images: input.coverImages,
+      staff_ids: input.staffIds.filter((id) =>
+        /^[0-9a-f-]{36}$/i.test(id),
+      ),
     })
     .eq("id", shopId);
 
@@ -103,8 +105,7 @@ export async function fetchShopDashboardStats(shopId: string) {
 
   const interestCount = interestsResult.count ?? 0;
 
-  const postIds =
-    postsResult.data?.map((post) => post.id) ?? [];
+  const postIds = postsResult.data?.map((post) => post.id) ?? [];
 
   let interestByPost: Record<string, number> = {};
   if (postIds.length > 0) {

@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { GUEST_SIDEBAR_NAV, isActivePath } from "@/lib/layout/nav";
 import {
   AREA_FILTERS,
   GENRE_FILTERS,
@@ -16,6 +19,7 @@ type FilterPanelProps = {
   onMoodsChange: (value: Set<string>) => void;
   onAreasChange: (value: Set<string>) => void;
   showMenu?: boolean;
+  menuOnly?: boolean;
 };
 
 function FilterChip({
@@ -74,7 +78,10 @@ export default function FilterPanel({
   onMoodsChange,
   onAreasChange,
   showMenu = true,
+  menuOnly = false,
 }: FilterPanelProps) {
+  const pathname = usePathname();
+
   return (
     <div>
       {showMenu && (
@@ -84,30 +91,31 @@ export default function FilterPanel({
               メニュー
             </p>
             <div className="flex flex-col gap-1">
-              {[
-                { icon: "🏠", label: "ホーム", active: true },
-                { icon: "🗺️", label: "地図で探す", active: false },
-                { icon: "❤️", label: "お気に入り", active: false },
-                { icon: "🕙", label: "履歴", active: false },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium ${
-                    item.active
-                      ? "bg-[#ff3d00]/10 text-[#ff3d00]"
-                      : "text-[#9994a8]"
-                  }`}
-                >
-                  <span className="w-[22px] text-center text-lg">{item.icon}</span>
-                  {item.label}
-                </div>
-              ))}
+              {GUEST_SIDEBAR_NAV.map((item) => {
+                const active = isActivePath(pathname, item.href);
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition ${
+                      active
+                        ? "bg-[#ff3d00]/10 text-[#ff3d00]"
+                        : "text-[#9994a8] hover:bg-[#18181f] hover:text-[#eeeaf4]"
+                    }`}
+                  >
+                    <span className="w-[22px] text-center text-lg">{item.icon}</span>
+                    {item.label}
+                  </Link>
+                );
+              })}
             </div>
           </div>
           <div className="mb-7 h-px bg-white/7" />
         </>
       )}
 
+      {!menuOnly && (
+        <>
       <FilterGroup title="ジャンル">
         {GENRE_FILTERS.map((item) => (
           <FilterChip
@@ -148,6 +156,8 @@ export default function FilterPanel({
           />
         ))}
       </FilterGroup>
+        </>
+      )}
     </div>
   );
 }

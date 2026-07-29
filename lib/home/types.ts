@@ -5,6 +5,7 @@ export type Shop = {
   genre: string | string[] | null;
   open_hours: string | null;
   cover_image?: string | null;
+  cover_images?: string[] | null;
   description?: string | null;
   owner_id?: string | null;
   staff_ids?: string[] | null;
@@ -60,6 +61,20 @@ export function formatPostedAt(iso: string | null | undefined) {
   });
 }
 
+export function getShopCoverImages(
+  shop: Pick<Shop, "cover_image" | "cover_images">,
+): string[] {
+  if (Array.isArray(shop.cover_images) && shop.cover_images.length > 0) {
+    return shop.cover_images.filter(Boolean);
+  }
+  if (typeof shop.cover_image === "string" && shop.cover_image.startsWith("http")) {
+    return [shop.cover_image];
+  }
+  return parseCoverImages(
+    typeof shop.cover_image === "string" ? shop.cover_image : null,
+  );
+}
+
 export function parseCoverImages(coverImage: string | null | undefined): string[] {
   if (!coverImage) return [];
   if (coverImage.startsWith("[")) {
@@ -71,8 +86,4 @@ export function parseCoverImages(coverImage: string | null | undefined): string[
     }
   }
   return [coverImage];
-}
-
-export function serializeCoverImages(images: string[]) {
-  return images.length <= 1 ? (images[0] ?? null) : JSON.stringify(images);
 }

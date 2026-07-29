@@ -9,8 +9,11 @@ import {
   fetchShopDashboardStats,
   fetchShopInterestsForFeed,
 } from "@/lib/owner/api";
-import { formatPostedAt, parseCoverImages, type Shop } from "@/lib/home/types";
+import { formatPostedAt, getShopCoverImages, type Shop } from "@/lib/home/types";
 import { primaryButtonClassName } from "@/lib/ui/styles";
+import OwnerLayout from "@/components/layout/OwnerLayout";
+import LoadingScreen from "@/components/layout/LoadingScreen";
+import ShopCoverHero from "@/components/owner/ShopCoverHero";
 
 type Visitor = {
   id: string;
@@ -71,50 +74,16 @@ export default function OwnerDashboardPage() {
     load();
   }, [router]);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-full items-center justify-center bg-[#080810]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#ff3d00] border-t-transparent" />
-      </div>
-    );
-  }
+  if (loading) return <LoadingScreen />;
 
-  const coverImages = parseCoverImages(shop?.cover_image);
+  const coverImages = getShopCoverImages(shop ?? {});
 
   return (
-    <div className="min-h-full bg-[#080810] pb-10 text-[#eeeaf4]">
-      <header className="border-b border-white/7 px-4 py-4">
-        <div className="mx-auto flex max-w-[480px] items-center justify-between">
-          <div>
-            <p className="text-xs text-[#5a5668]">オーナーダッシュボード</p>
-            <h1 className="text-xl font-black">{shop?.name}</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff3d00] opacity-60" />
-              <span className="relative h-2 w-2 rounded-full bg-[#ff3d00]" />
-            </span>
-            <span className="text-xs font-bold text-[#ff3d00]">発信中</span>
-          </div>
-        </div>
-        <div className="mx-auto mt-3 flex max-w-[480px] gap-2">
-          <Link
-            href="/owner/profile"
-            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-[#9994a8]"
-          >
-            プロフィール
-          </Link>
-          <Link
-            href="/owner/post"
-            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-[#9994a8]"
-          >
-            発信する
-          </Link>
-        </div>
-      </header>
+    <OwnerLayout shop={shop} stats={stats} title="ダッシュボード">
+      <div className="space-y-6">
+        {shop && <ShopCoverHero shop={shop} coverImages={coverImages} />}
 
-      <main className="mx-auto max-w-[480px] space-y-6 px-4 pt-6">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 md:hidden">
           {[
             { label: "閲覧数", value: stats.views, color: "text-[#ff3d00]" },
             { label: "行くかも", value: stats.interests, color: "text-[#00e87a]" },
@@ -213,18 +182,7 @@ export default function OwnerDashboardPage() {
             )}
           </div>
         </section>
-
-        {coverImages[0] && (
-          <div className="overflow-hidden rounded-[14px] border border-white/7">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={coverImages[0]}
-              alt=""
-              className="h-32 w-full object-cover opacity-80"
-            />
-          </div>
-        )}
-      </main>
-    </div>
+      </div>
+    </OwnerLayout>
   );
 }

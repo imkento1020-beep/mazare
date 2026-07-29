@@ -7,13 +7,8 @@ import { supabase } from "@/lib/supabase";
 import { fetchAllShops, fetchLiveShopIds } from "@/lib/home/api";
 import { addressToPin, type MapPin } from "@/lib/map/areas";
 import { formatGenre, type Shop } from "@/lib/home/types";
-
-const navItems = [
-  { label: "ホーム", href: "/home" },
-  { label: "地図", href: "/map", active: true },
-  { label: "探す", href: "/search" },
-  { label: "マイページ", href: "/mypage" },
-];
+import Header from "@/components/Header";
+import BottomNav from "@/components/BottomNav";
 
 export default function MapPage() {
   const router = useRouter();
@@ -62,15 +57,17 @@ export default function MapPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-full items-center justify-center bg-[#080810]">
+      <div className="flex min-h-dvh items-center justify-center bg-[#080810]">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#ff3d00] border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-full bg-[#080810] text-[#eeeaf4]">
-      <div className="absolute inset-0 bottom-[200px] overflow-hidden">
+    <div className="relative flex min-h-dvh flex-col bg-[#080810] text-[#eeeaf4]">
+      <Header />
+
+      <div className="relative min-h-0 flex-1 overflow-hidden">
         <div
           className="absolute inset-0"
           style={{
@@ -109,7 +106,7 @@ export default function MapPage() {
         ))}
 
         {selectedShop && (
-          <div className="absolute bottom-6 left-1/2 w-[280px] -translate-x-1/2 rounded-[14px] border border-white/7 bg-[#111118] p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+          <div className="absolute bottom-[220px] left-1/2 w-[280px] -translate-x-1/2 rounded-[14px] border border-white/7 bg-[#111118] p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)] md:bottom-6">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="font-bold">{selectedShop.name}</p>
@@ -135,7 +132,7 @@ export default function MapPage() {
 
         <button
           type="button"
-          className="absolute bottom-6 right-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[#111118] text-lg shadow-lg"
+          className="absolute bottom-[220px] right-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[#111118] text-lg shadow-lg md:bottom-6"
           aria-label="現在地"
           onClick={() => {
             if (navigator.geolocation) {
@@ -147,7 +144,7 @@ export default function MapPage() {
         </button>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 h-[200px] border-t border-white/7 bg-[#080810]">
+      <div className="h-[200px] shrink-0 border-t border-white/7 bg-[#080810] pb-[84px] md:pb-0">
         <p className="px-4 pt-3 text-xs font-bold uppercase tracking-[0.15em] text-[#5a5668]">
           今夜発信中
         </p>
@@ -165,7 +162,8 @@ export default function MapPage() {
             >
               <p className="line-clamp-1 text-sm font-bold">{shop.name}</p>
               <p className="mt-1 text-[10px] text-[#5a5668]">
-                {shop.address.split(/[都道府県市区]/).slice(0, 2).join("") || shop.address}
+                {shop.address.split(/[都道府県市区]/).slice(0, 2).join("") ||
+                  shop.address}
               </p>
               {liveIds.has(shop.id) && (
                 <span className="mt-2 inline-block rounded-full bg-[#ff3d00]/10 px-2 py-0.5 text-[9px] font-bold text-[#ff3d00]">
@@ -177,30 +175,7 @@ export default function MapPage() {
         </div>
       </div>
 
-      <nav className="fixed bottom-[200px] left-1/2 z-30 hidden w-full max-w-[480px] -translate-x-1/2 border-t border-white/7 bg-[#080810]/95 backdrop-blur-md lg:hidden">
-        <div className="grid grid-cols-4 px-2 py-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center gap-1 rounded-lg py-1.5 text-[10px] font-medium ${
-                item.active ? "text-[#ff3d00]" : "text-[#9994a8]"
-              }`}
-            >
-              <span className="text-base">
-                {item.label === "ホーム"
-                  ? "🏠"
-                  : item.label === "地図"
-                    ? "🗺️"
-                    : item.label === "探す"
-                      ? "🔍"
-                      : "👤"}
-              </span>
-              {item.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <BottomNav />
     </div>
   );
 }

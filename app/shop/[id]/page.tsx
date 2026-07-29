@@ -10,15 +10,18 @@ import {
   fetchShopPosts,
   fetchUserInterestForPost,
 } from "@/lib/shop/api";
+import { fetchVibePosts } from "@/lib/home/api";
 import {
   formatGenre,
   formatOpenHours,
-  formatPostedAt,
-  parseCoverImages,
+  getShopCoverImages,
   type Shop,
   type VibePost,
 } from "@/lib/home/types";
 import BackButton from "@/components/layout/BackButton";
+import GuestLayout from "@/components/layout/GuestLayout";
+import LoadingScreen from "@/components/layout/LoadingScreen";
+import ShopVibePostItem from "@/components/home/ShopVibePostItem";
 import type { User } from "@supabase/supabase-js";
 
 function genreEmoji(genre: string) {
@@ -29,7 +32,7 @@ function genreEmoji(genre: string) {
 
 function CoverGallery({ shop, posts }: { shop: Shop; posts: VibePost[] }) {
   const images = [
-    ...parseCoverImages(shop.cover_image),
+    ...getShopCoverImages(shop),
     ...posts.flatMap((post) => post.images ?? []),
   ].slice(0, 8);
 
@@ -59,44 +62,6 @@ function CoverGallery({ shop, posts }: { shop: Shop; posts: VibePost[] }) {
   );
 }
 
-function ShopVibePostItem({ post }: { post: VibePost }) {
-  const images = post.images ?? [];
-
-  return (
-    <article className="rounded-[14px] border border-white/7 border-l-2 border-l-[#ff3d00] bg-[#111118] p-4">
-      <p className="text-[11px] text-[#5a5668]">{formatPostedAt(post.posted_at)}</p>
-      {post.moods && post.moods.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {post.moods.map((mood) => (
-            <span
-              key={mood}
-              className="rounded-[20px] bg-[#ff3d00]/10 px-2.5 py-1 text-[11px] font-medium text-[#ff3d00]"
-            >
-              {mood}
-            </span>
-          ))}
-        </div>
-      )}
-      <p className="mt-3 text-sm leading-relaxed text-[#9994a8]">{post.comment}</p>
-      {images.length > 0 && (
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-          {images.map((src, index) => (
-            <div
-              key={`${src}-${index}`}
-              className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[#18181f]"
-            >
-              {src.startsWith("data:") || src.startsWith("http") ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={src} alt="" className="h-full w-full object-cover" />
-              ) : null}
-            </div>
-          ))}
-        </div>
-      )}
-    </article>
-  );
-}
-
 export default function ShopDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -105,6 +70,7 @@ export default function ShopDetailPage() {
   const [user, setUser] = useState<User | null>(null);
   const [shop, setShop] = useState<Shop | null>(null);
   const [posts, setPosts] = useState<VibePost[]>([]);
+  const [sidebarPosts, setSidebarPosts] = useState<VibePost[]>([]);
   const [interestCount, setInterestCount] = useState(0);
   const [interested, setInterested] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -126,10 +92,11 @@ export default function ShopDetailPage() {
 
       setUser(session.user);
 
-      const [shopResult, postsResult, count] = await Promise.all([
+      const [shopResult, postsResult, count, allPostsResult] = await Promise.all([
         fetchShopById(shopId),
         fetchShopPosts(shopId),
         fetchShopInterestCount(shopId),
+        fetchVibePosts(),
       ]);
 
       if (shopResult.error || !shopResult.data) {
@@ -140,6 +107,7 @@ export default function ShopDetailPage() {
 
       setShop(shopResult.data);
       setPosts(postsResult.data ?? []);
+      setSidebarPosts(allPostsResult.data ?? []);
       setInterestCount(count);
 
       const firstPost = postsResult.data?.[0];
@@ -186,17 +154,11 @@ export default function ShopDetailPage() {
     setInterestCount((prev) => Math.max(0, prev + (interested ? -1 : 1)));
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-full items-center justify-center bg-[#080810]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#ff3d00] border-t-transparent" />
-      </div>
-    );
-  }
+  if (loading) return <LoadingScreen />;
 
   if (!shop) {
     return (
-      <div className="flex min-h-full flex-col items-center justify-center bg-[#080810] px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-[#080810] px-6 text-center">
         <p className="text-[#9994a8]">{error ?? "店舗が見つかりません"}</p>
         <Link href="/home" className="mt-4 text-sm text-[#ff3d00]">
           ホームへ戻る
@@ -208,14 +170,22 @@ export default function ShopDetailPage() {
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.address)}`;
 
   return (
-    <div className="min-h-full bg-[#080810] pb-10 text-[#eeeaf4]">
-      <div className="sticky top-0 z-20 border-b border-white/7 bg-[#080810]/90 px-4 py-3 backdrop-blur-md">
+    <GuestLayout
+      mobileTitle={shop.name}
+      menuOnly
+      showFilters={false}
+      showRightSidebar
+      showMobileSearch={false}
+      posts={sidebarPosts}
+      filteredCount={sidebarPosts.length}
+    >
+      <div className="mb-4 md:hidden">
         <BackButton href="/home" />
       </div>
 
       <CoverGallery shop={shop} posts={posts} />
 
-      <div className="mx-auto max-w-lg px-4 pt-5">
+      <div className="mx-auto max-w-none pt-5 md:max-w-2xl">
         <h1 className="text-2xl font-black">{shop.name}</h1>
         <p className="mt-1 text-sm text-[#ff3d00]">{formatGenre(shop.genre)}</p>
         <p className="mt-2 text-sm text-[#9994a8]">📍 {shop.address}</p>
@@ -282,6 +252,6 @@ export default function ShopDetailPage() {
           </a>
         </section>
       </div>
-    </div>
+    </GuestLayout>
   );
 }

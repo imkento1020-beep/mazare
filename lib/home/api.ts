@@ -14,7 +14,7 @@ export async function fetchVibePosts(): Promise<{
       .from("vibe_posts")
       .select("id, shop_id, comment, moods, images, posted_at"),
     supabase.from("shops").select(
-      "id, name, address, genre, open_hours, cover_image, owner_id, staff_ids",
+      "id, name, address, genre, open_hours, cover_image, cover_images, owner_id, staff_ids",
     ),
   ]);
 
@@ -58,7 +58,7 @@ export async function fetchAllShops(): Promise<{
   const { data, error } = await supabase
     .from("shops")
     .select(
-      "id, name, address, genre, open_hours, cover_image, owner_id, staff_ids",
+      "id, name, address, genre, open_hours, cover_image, cover_images, owner_id, staff_ids",
     );
 
   if (error) return { data: null, error: error.message };

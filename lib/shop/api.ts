@@ -12,7 +12,7 @@ export async function fetchShopById(id: string): Promise<{
   const { data, error } = await supabase
     .from("shops")
     .select(
-      "id, name, address, genre, open_hours, cover_image, owner_id, staff_ids",
+      "id, name, address, genre, open_hours, cover_image, cover_images, owner_id, staff_ids",
     )
     .eq("id", id)
     .maybeSingle();

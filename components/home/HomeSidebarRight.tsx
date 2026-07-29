@@ -21,7 +21,7 @@ export default function HomeSidebarRight({
   const moodTrends = countByMood(posts);
 
   return (
-    <aside className="hidden shrink-0 border-l border-white/7 px-5 py-6 xl:block xl:w-[320px]">
+    <aside className="hidden h-[calc(100vh-4rem)] w-[300px] shrink-0 overflow-y-auto border-l border-white/7 px-5 py-6 md:sticky md:top-16 md:block">
       <SectionLabel>地図</SectionLabel>
       <div className="mb-4 overflow-hidden rounded-2xl border border-white/7 bg-[#111118]">
         <div className="relative flex h-[180px] items-center justify-center bg-[radial-gradient(circle_at_40%_50%,rgba(255,61,0,0.2),transparent_40%),radial-gradient(circle_at_70%_30%,rgba(255,170,0,0.15),transparent_35%),#111118]">
