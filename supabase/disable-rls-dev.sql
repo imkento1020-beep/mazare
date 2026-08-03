@@ -8,8 +8,10 @@ ALTER TABLE public.interests DISABLE ROW LEVEL SECURITY;
 
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT SELECT ON public.shops TO anon, authenticated;
+GRANT INSERT, UPDATE ON public.shops TO authenticated;
 GRANT SELECT ON public.vibe_posts TO anon, authenticated;
-GRANT SELECT, INSERT ON public.interests TO anon, authenticated;
+GRANT INSERT ON public.vibe_posts TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.interests TO anon, authenticated;
 
 -- 確認（ここで 3 件表示されればデータは存在します）
 SELECT 'shops' AS table_name, COUNT(*) AS count FROM public.shops

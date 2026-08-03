@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { filterPostsPostedTonight } from "@/lib/home/dates";
 import {
   normalizeMoods,
   type Shop,
@@ -29,21 +30,24 @@ export async function fetchShopPosts(shopId: string): Promise<{
     .from("vibe_posts")
     .select("id, shop_id, comment, moods, images, posted_at")
     .eq("shop_id", shopId)
+    .lte("posted_at", new Date().toISOString())
     .order("posted_at", { ascending: false });
 
   if (error) return { data: null, error: error.message };
 
-  const posts = (data ?? []).map((post) => ({
-    id: post.id,
-    shop_id: post.shop_id,
-    comment: post.comment,
-    moods: normalizeMoods(post.moods),
-    images: Array.isArray(post.images) ? post.images.map(String) : [],
-    posted_at: post.posted_at ?? null,
-    shops: null,
-  }));
+  const posts = filterPostsPostedTonight(
+    (data ?? []).map((post) => ({
+      id: post.id,
+      shop_id: post.shop_id,
+      comment: post.comment,
+      moods: normalizeMoods(post.moods),
+      images: Array.isArray(post.images) ? post.images.map(String) : [],
+      posted_at: post.posted_at ?? null,
+      shops: null,
+    })),
+  );
 
-  return { data: posts, error: null };
+  return { data: posts as VibePost[], error: null };
 }
 
 export async function fetchShopInterestCount(shopId: string): Promise<number> {

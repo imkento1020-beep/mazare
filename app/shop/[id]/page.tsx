@@ -12,13 +12,28 @@ import {
 } from "@/lib/shop/api";
 import { fetchVibePosts } from "@/lib/home/api";
 import {
+  addFavoriteShop,
+  isShopFavorited,
+  removeFavoriteShop,
+} from "@/lib/favorites/api";
+import { notifyPostInterestCreated } from "@/lib/notifications/api";
+import {
   formatGenre,
   formatOpenHours,
   getShopCoverImages,
   type Shop,
   type VibePost,
 } from "@/lib/home/types";
+import {
+  createShopCheckin,
+  hasCheckedInTonight,
+} from "@/lib/checkins/api";
+import {
+  getDisplayName,
+  syncGuestDisplayName,
+} from "@/lib/mypage/api";
 import BackButton from "@/components/layout/BackButton";
+import FavoriteButton from "@/components/favorites/FavoriteButton";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import ShopVibePostItem from "@/components/home/ShopVibePostItem";
@@ -73,6 +88,10 @@ export default function ShopDetailPage() {
   const [sidebarPosts, setSidebarPosts] = useState<VibePost[]>([]);
   const [interestCount, setInterestCount] = useState(0);
   const [interested, setInterested] = useState(false);
+  const [favorited, setFavorited] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [checkinLoading, setCheckinLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,6 +138,18 @@ export default function ShopDetailPage() {
         setInterested(hasInterest);
       }
 
+      const { favorited: isFav } = await isShopFavorited(
+        session.user.id,
+        shopId,
+      );
+      setFavorited(isFav);
+
+      const alreadyCheckedIn = await hasCheckedInTonight(
+        session.user.id,
+        shopId,
+      );
+      setCheckedIn(alreadyCheckedIn);
+
       setLoading(false);
     }
 
@@ -137,11 +168,23 @@ export default function ShopDetailPage() {
           .delete()
           .eq("user_id", user.id)
           .eq("vibe_post_id", latestPost.id)
-      : await supabase.from("interests").insert({
-          user_id: user.id,
-          shop_id: shopId,
-          vibe_post_id: latestPost.id,
-        });
+      : await (async () => {
+          const result = await supabase
+            .from("interests")
+            .insert({
+              user_id: user.id,
+              shop_id: shopId,
+              vibe_post_id: latestPost.id,
+            })
+            .select("id")
+            .single();
+
+          if (!result.error && result.data?.id) {
+            await notifyPostInterestCreated(result.data.id);
+          }
+
+          return result;
+        })();
 
     setSubmitting(false);
 
@@ -152,6 +195,50 @@ export default function ShopDetailPage() {
 
     setInterested(!interested);
     setInterestCount((prev) => Math.max(0, prev + (interested ? -1 : 1)));
+  }
+
+  async function handleCheckin() {
+    if (!user || checkedIn || checkinLoading) return;
+
+    setCheckinLoading(true);
+    setError(null);
+
+    await syncGuestDisplayName(user.id, getDisplayName(user));
+
+    const { error: checkinError } = await createShopCheckin({
+      userId: user.id,
+      shopId,
+      vibePostId: latestPost?.id ?? null,
+    });
+
+    setCheckinLoading(false);
+
+    if (checkinError) {
+      setError(checkinError);
+      return;
+    }
+
+    setCheckedIn(true);
+  }
+
+  async function handleFavoriteToggle() {
+    if (!user || favoriteLoading) return;
+
+    setFavoriteLoading(true);
+    setError(null);
+
+    const { error: mutationError } = favorited
+      ? await removeFavoriteShop(user.id, shopId)
+      : await addFavoriteShop(user.id, shopId);
+
+    setFavoriteLoading(false);
+
+    if (mutationError) {
+      setError(mutationError);
+      return;
+    }
+
+    setFavorited(!favorited);
   }
 
   if (loading) return <LoadingScreen />;
@@ -186,8 +273,18 @@ export default function ShopDetailPage() {
       <CoverGallery shop={shop} posts={posts} />
 
       <div className="mx-auto max-w-none pt-5 md:max-w-2xl">
-        <h1 className="text-2xl font-black">{shop.name}</h1>
-        <p className="mt-1 text-sm text-[#ff3d00]">{formatGenre(shop.genre)}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-black">{shop.name}</h1>
+            <p className="mt-1 text-sm text-[#ff3d00]">{formatGenre(shop.genre)}</p>
+          </div>
+          <FavoriteButton
+            favorited={favorited}
+            loading={favoriteLoading}
+            onToggle={handleFavoriteToggle}
+            compact
+          />
+        </div>
         <p className="mt-2 text-sm text-[#9994a8]">📍 {shop.address}</p>
         <p className="mt-1 text-sm text-[#9994a8]">
           🕙 {formatOpenHours(shop.open_hours)}
@@ -212,6 +309,28 @@ export default function ShopDetailPage() {
           </button>
           <p className="mt-2 text-center text-sm text-[#9994a8]">
             {interestCount}人が行くかも
+          </p>
+        </div>
+
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={handleCheckin}
+            disabled={checkedIn || checkinLoading}
+            className={`w-full rounded-[13px] border py-3.5 text-sm font-bold transition disabled:opacity-60 ${
+              checkedIn
+                ? "border-[#ffaa00]/40 bg-[#ffaa00]/12 text-[#ffaa00]"
+                : "border-white/12 bg-[#111118] text-[#eeeaf4] hover:border-[#ffaa00]/30"
+            }`}
+          >
+            {checkinLoading
+              ? "チェックイン中..."
+              : checkedIn
+                ? "✓ 今夜チェックイン済み"
+                : "📍 お店にチェックイン"}
+          </button>
+          <p className="mt-2 text-center text-xs text-[#5a5668]">
+            今夜1回だけチェックインできます
           </p>
         </div>
 

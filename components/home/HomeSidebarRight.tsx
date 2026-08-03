@@ -1,14 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { countByArea, countByMood } from "@/lib/home/filters";
 import type { VibePost } from "@/lib/home/types";
+import HomeMapPreview from "./HomeMapPreview";
 
 type HomeSidebarRightProps = {
   posts: VibePost[];
   filteredCount: number;
   areas: Set<string>;
   onAreasChange: (areas: Set<string>) => void;
+  googleMapsApiKey?: string;
 };
 
 export default function HomeSidebarRight({
@@ -16,6 +17,7 @@ export default function HomeSidebarRight({
   filteredCount,
   areas,
   onAreasChange,
+  googleMapsApiKey = "",
 }: HomeSidebarRightProps) {
   const areaCounts = countByArea(posts);
   const moodTrends = countByMood(posts);
@@ -23,18 +25,12 @@ export default function HomeSidebarRight({
   return (
     <aside className="hidden h-[calc(100vh-4rem)] w-[300px] shrink-0 overflow-y-auto border-l border-white/7 px-5 py-6 md:sticky md:top-16 md:block">
       <SectionLabel>地図</SectionLabel>
-      <div className="mb-4 overflow-hidden rounded-2xl border border-white/7 bg-[#111118]">
-        <div className="relative flex h-[180px] items-center justify-center bg-[radial-gradient(circle_at_40%_50%,rgba(255,61,0,0.2),transparent_40%),radial-gradient(circle_at_70%_30%,rgba(255,170,0,0.15),transparent_35%),#111118]">
-          <span className="absolute left-[38%] top-[42%] text-xl">📍</span>
-          <span className="absolute left-[58%] top-[35%] text-xl">📍</span>
-          <span className="absolute left-[48%] top-[58%] text-xl">🔴</span>
-        </div>
-        <div className="flex items-center justify-between px-3.5 py-2.5">
-          <span className="text-xs text-[#9994a8]">{filteredCount}件表示中</span>
-          <Link href="/map" className="text-[11px] font-bold text-[#ff3d00]">
-            地図で開く →
-          </Link>
-        </div>
+      <div className="mb-4">
+        <HomeMapPreview
+          posts={posts}
+          filteredCount={filteredCount}
+          googleMapsApiKey={googleMapsApiKey}
+        />
       </div>
 
       <SectionLabel>人気エリア</SectionLabel>

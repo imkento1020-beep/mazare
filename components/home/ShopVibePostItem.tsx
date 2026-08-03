@@ -2,6 +2,7 @@
 
 import { formatPostedAt, type VibePost } from "@/lib/home/types";
 import { moodEmoji, moodTagClass } from "@/lib/home/moods";
+import { usePostViewTracking } from "@/lib/home/usePostViewTracking";
 import PostImageCarousel from "./PostImageCarousel";
 
 type ShopVibePostItemProps = {
@@ -13,10 +14,14 @@ export default function ShopVibePostItem({
   post,
   compact = false,
 }: ShopVibePostItemProps) {
+  const viewRef = usePostViewTracking(post.id);
   const images = post.images?.filter(Boolean) ?? [];
 
   return (
-    <article className="overflow-hidden rounded-[14px] border border-white/7 bg-[#111118]">
+    <article
+      ref={viewRef}
+      className="overflow-hidden rounded-[14px] border border-white/7 bg-[#111118]"
+    >
       <PostImageCarousel
         images={images}
         aspectClassName={compact ? "h-[160px]" : "h-[200px]"}

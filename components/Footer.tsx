@@ -1,11 +1,12 @@
 import Link from "next/link";
 
 const FOOTER_LINKS = [
-  { label: "サービスについて", href: "#" },
-  { label: "お店の方へ", href: "/signup" },
-  { label: "よくある質問", href: "#" },
-  { label: "利用規約", href: "#" },
-  { label: "プライバシーポリシー", href: "#" },
+  { label: "サービスについて", href: "/about" },
+  { label: "お店の方へ", href: "/signup?type=owner" },
+  { label: "よくある質問", href: "/faq" },
+  { label: "お問い合わせ", href: "/contact" },
+  { label: "利用規約", href: "/terms" },
+  { label: "プライバシーポリシー", href: "/privacy" },
 ] as const;
 
 export default function Footer() {

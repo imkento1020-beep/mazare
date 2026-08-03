@@ -1,3 +1,4 @@
+import Link from "next/link";
 import AuthSampleCards from "./AuthSampleCards";
 
 const VISUAL_BG =
@@ -8,7 +9,7 @@ const GRID_BG =
 
 function AuthVisualPanel() {
   return (
-    <div className="relative flex min-h-[280px] shrink-0 flex-col overflow-hidden px-8 py-10 lg:sticky lg:top-0 lg:min-h-screen lg:w-[55%] lg:px-14 lg:py-16">
+    <div className="relative hidden min-h-[280px] shrink-0 flex-col overflow-hidden px-8 py-10 md:sticky md:top-0 md:flex md:min-h-screen md:w-[55%] md:items-center md:py-16 md:pl-24 md:pr-16 lg:pl-32 lg:pr-20">
       <div
         className="absolute inset-0 bg-[#080810]"
         style={{ background: VISUAL_BG }}
@@ -18,16 +19,16 @@ function AuthVisualPanel() {
         style={{ backgroundImage: GRID_BG }}
       />
 
-      <div className="relative z-10 flex flex-1 flex-col">
+      <div className="relative z-10 flex w-full max-w-xl flex-1 flex-col md:flex-none">
         <span className="text-2xl font-bold tracking-tight text-[#eeeaf4]">
           mazare
         </span>
 
-        <div className="mt-8 lg:mt-10">
-          <p className="max-w-md text-sm leading-relaxed text-[#9994a8] lg:text-base">
+        <div className="mt-8 md:mt-10">
+          <p className="max-w-md text-sm leading-relaxed text-[#9994a8] md:text-base">
             今夜、知らない人と混ざれる場所を探せるプラットフォーム
           </p>
-          <h1 className="mt-4 max-w-lg text-2xl font-semibold leading-snug tracking-tight text-[#eeeaf4] lg:text-4xl lg:leading-tight">
+          <h1 className="mt-4 max-w-lg text-2xl font-semibold leading-snug tracking-tight text-[#eeeaf4] md:text-4xl md:leading-tight">
             今夜、混ざれる。
             <br />
             <span className="text-[#ff3d00]">知らない人と肩を組める夜</span>
@@ -38,7 +39,7 @@ function AuthVisualPanel() {
         </div>
       </div>
 
-      <div className="relative z-10 mt-8 hidden lg:block">
+      <div className="relative z-10 mt-8 hidden w-full max-w-xl md:block">
         <div className="flex gap-3">
           {[...Array(3)].map((_, i) => (
             <div
@@ -58,18 +59,18 @@ function AuthVisualPanel() {
 
 function AuthFooter() {
   return (
-    <footer className="shrink-0 border-t border-white/10 bg-[#080810] px-6 py-6 lg:px-14">
-      <div className="mx-auto w-full max-w-md lg:max-w-none">
+    <footer className="shrink-0 border-t border-white/10 bg-[#080810] px-6 py-6 md:px-14">
+      <div className="mx-auto w-full max-w-md md:max-w-none">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-[#9994a8]">
-          <a href="#" className="transition hover:text-[#eeeaf4]">
+          <Link href="/terms" className="transition hover:text-[#eeeaf4]">
             利用規約
-          </a>
-          <a href="#" className="transition hover:text-[#eeeaf4]">
+          </Link>
+          <Link href="/privacy" className="transition hover:text-[#eeeaf4]">
             プライバシーポリシー
-          </a>
-          <a href="#" className="transition hover:text-[#eeeaf4]">
+          </Link>
+          <Link href="/contact" className="transition hover:text-[#eeeaf4]">
             お問い合わせ
-          </a>
+          </Link>
         </div>
         <p className="mt-3 text-center text-xs text-[#9994a8]/70">
           © {new Date().getFullYear()} mazare. All rights reserved.
@@ -85,10 +86,10 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#080810] lg:flex">
+    <div className="min-h-screen bg-[#080810] md:flex">
       <AuthVisualPanel />
-      <div className="flex min-h-screen flex-1 flex-col bg-[#080810] lg:w-[45%]">
-        <div className="flex flex-1 flex-col justify-center px-6 py-10 lg:px-14 lg:py-16">
+      <div className="flex min-h-screen flex-1 flex-col bg-[#080810] md:w-[45%]">
+        <div className="flex flex-1 flex-col justify-center px-6 py-10 md:px-14 md:py-16">
           <div className="mx-auto w-full max-w-md">{children}</div>
         </div>
         <AuthFooter />

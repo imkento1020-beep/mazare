@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
+import { resolvePostAuthPath } from "@/lib/auth/routing";
 
 function getEmailRedirectTo() {
   return `${window.location.origin}/auth/callback`;
@@ -68,6 +69,15 @@ export default function LoginPage() {
         return;
       }
       setError(signInError.message);
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      router.replace(await resolvePostAuthPath(user));
       return;
     }
 
@@ -205,6 +215,13 @@ export default function LoginPage() {
           className="font-medium text-[#ff3d00] transition hover:text-[#e63600]"
         >
           サインアップ
+        </Link>
+      </p>
+
+      <p className="mt-4 text-center text-xs text-[#5a5668]">
+        お困りの場合は{" "}
+        <Link href="/contact?type=guest" className="text-[#9994a8] hover:text-[#eeeaf4]">
+          お問い合わせ
         </Link>
       </p>
     </AuthLayout>

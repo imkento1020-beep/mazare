@@ -1,0 +1,15 @@
+<!-- 本番用: Supabase Dashboard → Authentication → Emails → Confirm signup -->
+<!-- 無料プランではカスタム SMTP 設定後にのみ編集可能 -->
+<!-- 開発中は Authentication → Sign In / Providers → Email → Confirm email を OFF にするとメール確認不要 -->
+
+<h2>メールアドレスを確認してください</h2>
+
+<p>mazare へようこそ。下のリンクをクリックしてアカウントを有効化してください。</p>
+
+<p>
+  <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup">
+    メールアドレスを確認する
+  </a>
+</p>
+
+<p>このリンクは一度だけ有効です。</p>

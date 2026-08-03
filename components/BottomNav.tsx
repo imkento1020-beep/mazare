@@ -2,34 +2,65 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { useAppMode } from "@/hooks/useAppMode";
 import {
   GUEST_BOTTOM_NAV,
   OWNER_BOTTOM_NAV,
   isActivePath,
 } from "@/lib/layout/nav";
 
-function isOwnerPath(pathname: string) {
-  return pathname.startsWith("/owner");
-}
-
 function isGuestAppPath(pathname: string) {
   return (
     pathname.startsWith("/home") ||
     pathname.startsWith("/map") ||
     pathname.startsWith("/search") ||
+    pathname.startsWith("/favorites") ||
     pathname.startsWith("/mypage") ||
+    pathname.startsWith("/notifications") ||
     pathname.startsWith("/shop")
   );
 }
 
+function isOwnerAppPath(pathname: string) {
+  return pathname.startsWith("/owner");
+}
+
 export default function BottomNav() {
   const pathname = usePathname();
+  const { mode, roles, setMode, ready } = useAppMode();
 
-  const items = isOwnerPath(pathname)
-    ? OWNER_BOTTOM_NAV
-    : isGuestAppPath(pathname)
-      ? GUEST_BOTTOM_NAV
-      : null;
+  useEffect(() => {
+    if (pathname.startsWith("/owner")) setMode("owner");
+    else if (
+      pathname.startsWith("/home") ||
+      pathname.startsWith("/map") ||
+      pathname.startsWith("/search") ||
+      pathname.startsWith("/favorites") ||
+      pathname.startsWith("/mypage") ||
+      pathname.startsWith("/shop")
+    ) {
+      setMode("guest");
+    }
+  }, [pathname, setMode]);
+
+  if (!ready || roles.length === 0) return null;
+
+  const onOwnerSection = isOwnerAppPath(pathname);
+  const onGuestSection = isGuestAppPath(pathname) && !onOwnerSection;
+  const onNotifications = pathname.startsWith("/notifications");
+
+  let items = null;
+  if (onOwnerSection && roles.includes("owner")) {
+    items = OWNER_BOTTOM_NAV;
+  } else if (onNotifications) {
+    items =
+      mode === "owner" && roles.includes("owner")
+        ? OWNER_BOTTOM_NAV
+        : GUEST_BOTTOM_NAV;
+  } else if (onGuestSection && roles.includes("guest")) {
+    items = GUEST_BOTTOM_NAV;
+  }
 
   if (!items) return null;
 

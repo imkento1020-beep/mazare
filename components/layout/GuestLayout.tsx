@@ -24,6 +24,7 @@ type GuestLayoutProps = {
   showRightSidebar?: boolean;
   showMobileSearch?: boolean;
   menuOnly?: boolean;
+  googleMapsApiKey?: string;
 };
 
 export default function GuestLayout({
@@ -42,6 +43,7 @@ export default function GuestLayout({
   showRightSidebar = true,
   showMobileSearch = true,
   menuOnly = false,
+  googleMapsApiKey = "",
 }: GuestLayoutProps) {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -115,6 +117,7 @@ export default function GuestLayout({
               filteredCount={filteredCount}
               areas={areas}
               onAreasChange={onAreasChange ?? (() => {})}
+              googleMapsApiKey={googleMapsApiKey}
             />
           )}
         </div>

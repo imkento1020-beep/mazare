@@ -9,6 +9,7 @@ import {
   type VibePost,
 } from "@/lib/home/types";
 import { heatLevel, moodEmoji, moodTagClass } from "@/lib/home/moods";
+import { usePostViewTracking } from "@/lib/home/usePostViewTracking";
 import PostImageCarousel from "./PostImageCarousel";
 
 function genreEmoji(genre: string) {
@@ -34,6 +35,7 @@ export default function VibePostCard({
   isSubmitting,
   onInterest,
 }: VibePostCardProps) {
+  const viewRef = usePostViewTracking(post.id);
   const shop = post.shops;
   const genre = formatGenre(shop?.genre);
   const heat = heatLevel(post.moods);
@@ -45,7 +47,10 @@ export default function VibePostCard({
     postImages.length > 0 ? postImages : coverImages.slice(0, 3);
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-white/7 bg-[#111118] transition hover:-translate-y-0.5 hover:border-[#ff3d00]/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+    <article
+      ref={viewRef}
+      className="overflow-hidden rounded-2xl border border-white/7 bg-[#111118] transition hover:-translate-y-0.5 hover:border-[#ff3d00]/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+    >
       <PostImageCarousel
         images={carouselImages}
         fallbackEmoji={genreEmoji(genre)}

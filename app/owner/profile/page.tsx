@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { fetchOwnerShop, updateOwnerShop, fetchShopDashboardStats } from "@/lib/owner/api";
+import { fetchManagedShop, updateOwnerShop, fetchShopDashboardStats } from "@/lib/owner/api";
+import StaffManagementSection from "@/components/owner/StaffManagementSection";
 import { uploadShopImages } from "@/lib/owner/uploadImages";
 import { GENRE_OPTIONS, MAX_IMAGES } from "@/lib/owner/constants";
 import { getShopCoverImages } from "@/lib/home/types";
 import { readFilesAsDataUrls } from "@/lib/files";
 import OpenHoursInput from "@/components/owner/OpenHoursInput";
+import OwnerLogoutButton from "@/components/owner/OwnerLogoutButton";
 import OwnerLayout from "@/components/layout/OwnerLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui/styles";
@@ -18,12 +20,15 @@ import {
   validateOpenHoursRange,
 } from "@/lib/shop/openHours";
 import type { Shop } from "@/lib/home/types";
+import type { User } from "@supabase/supabase-js";
 
 export default function OwnerProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [shop, setShop] = useState<Shop | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
   const [stats, setStats] = useState({ views: 0, interests: 0, checkins: 0 });
   const [shopName, setShopName] = useState("");
   const [address, setAddress] = useState("");
@@ -31,8 +36,6 @@ export default function OwnerProfilePage() {
   const [openHoursEnd, setOpenHoursEnd] = useState("");
   const [genres, setGenres] = useState<Set<string>>(new Set());
   const [coverImages, setCoverImages] = useState<string[]>([]);
-  const [staffEmail, setStaffEmail] = useState("");
-  const [staffIds, setStaffIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -47,32 +50,29 @@ export default function OwnerProfilePage() {
         return;
       }
 
-      const { data: ownerShop } = await fetchOwnerShop(user.id);
-      if (!ownerShop) {
+      const { data: managedShop, isOwner: shopOwner } = await fetchManagedShop(user.id);
+      if (!managedShop) {
         router.replace("/owner/onboarding");
         return;
       }
 
-      const dashboardStats = await fetchShopDashboardStats(ownerShop.id);
+      const dashboardStats = await fetchShopDashboardStats(managedShop.id);
 
-      setShop(ownerShop);
-      setShopName(ownerShop.name);
-      setAddress(ownerShop.address);
-      const hours = parseOpenHours(ownerShop.open_hours);
+      setUser(user);
+      setIsOwner(shopOwner);
+      setShop(managedShop);
+      setShopName(managedShop.name);
+      setAddress(managedShop.address);
+      const hours = parseOpenHours(managedShop.open_hours);
       setOpenHoursStart(hours.start);
       setOpenHoursEnd(hours.end);
-      setGenres(new Set(Array.isArray(ownerShop.genre) ? ownerShop.genre : []));
-      setCoverImages(getShopCoverImages(ownerShop));
+      setGenres(new Set(Array.isArray(managedShop.genre) ? managedShop.genre : []));
+      setCoverImages(getShopCoverImages(managedShop));
       setStats({
         views: dashboardStats.views,
         interests: dashboardStats.interests,
         checkins: dashboardStats.checkins,
       });
-      setStaffIds(
-        (user.user_metadata?.staff_emails as string[] | undefined) ??
-          ownerShop.staff_ids ??
-          [],
-      );
       setLoading(false);
     }
 
@@ -98,16 +98,14 @@ export default function OwnerProfilePage() {
     e.target.value = "";
   }
 
-  function handleAddStaff() {
-    const email = staffEmail.trim();
-    if (!email) return;
-    setStaffIds((prev) => [...prev, email]);
-    setStaffEmail("");
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!shop || submitting) return;
+
+    if (!isOwner) {
+      setError("店舗情報の編集はオーナーのみ可能です");
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
@@ -154,12 +152,6 @@ export default function OwnerProfilePage() {
         /^[0-9a-f-]{36}$/i.test(id),
       ),
     });
-
-    if (!updateError && staffIds.some((id) => id.includes("@"))) {
-      await supabase.auth.updateUser({
-        data: { staff_emails: staffIds.filter((id) => id.includes("@")) },
-      });
-    }
 
     setSubmitting(false);
 
@@ -257,46 +249,16 @@ export default function OwnerProfilePage() {
             </div>
           </div>
 
-          <div>
-            <p className="text-sm font-medium">スタッフ管理</p>
-            <div className="mt-2 flex gap-2">
-              <input
-                type="email"
-                value={staffEmail}
-                onChange={(e) => setStaffEmail(e.target.value)}
-                placeholder="メールアドレスで追加"
-                className={`${inputClassName} mt-0 flex-1`}
-              />
-              <button
-                type="button"
-                onClick={handleAddStaff}
-                className="shrink-0 rounded-xl border border-white/12 bg-[#111118] px-4 py-3 text-sm font-bold text-[#9994a8]"
-              >
-                追加
-              </button>
-            </div>
-            {staffIds.length > 0 && (
-              <ul className="mt-2 space-y-1">
-                {staffIds.map((id, index) => (
-                  <li
-                    key={`${id}-${index}`}
-                    className="flex items-center justify-between rounded-lg bg-[#111118] px-3 py-2 text-sm text-[#9994a8]"
-                  >
-                    {id}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setStaffIds((prev) => prev.filter((_, i) => i !== index))
-                      }
-                      className="text-[#ff3d00]"
-                    >
-                      削除
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          {shop && user && (
+          <StaffManagementSection
+            shop={shop}
+            user={user}
+            isOwner={isOwner}
+            onStaffIdsChange={(staffIds) =>
+              setShop((prev) => (prev ? { ...prev, staff_ids: staffIds } : prev))
+            }
+          />
+          )}
 
           {error && (
             <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
@@ -312,12 +274,16 @@ export default function OwnerProfilePage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !isOwner}
             className={primaryButtonClassName}
           >
-            {submitting ? "保存中..." : "保存する"}
+            {submitting ? "保存中..." : isOwner ? "保存する" : "オーナーのみ編集可能"}
           </button>
       </form>
+
+      <div className="mt-8 max-w-xl md:hidden">
+        <OwnerLogoutButton />
+      </div>
     </OwnerLayout>
   );
 }

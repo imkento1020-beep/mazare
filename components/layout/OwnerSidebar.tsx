@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OWNER_NAV, isActivePath } from "@/lib/layout/nav";
+import OwnerLogoutButton from "@/components/owner/OwnerLogoutButton";
 import type { Shop } from "@/lib/home/types";
 
 type OwnerSidebarProps = {
@@ -90,6 +91,10 @@ export default function OwnerSidebar({
             </p>
           </div>
         )}
+
+        <div className="mt-8 border-t border-white/[0.07] pt-6">
+          <OwnerLogoutButton />
+        </div>
       </div>
     </aside>
   );

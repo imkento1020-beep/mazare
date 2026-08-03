@@ -148,7 +148,7 @@ export default function LandingPage() {
                 </p>
               </div>
               <Link
-                href="/signup"
+                href="/signup?type=owner"
                 className="shrink-0 rounded-[13px] border border-[#ff3d00]/40 bg-[#ff3d00]/10 px-6 py-2.5 text-sm font-bold text-[#ff3d00] transition hover:bg-[#ff3d00]/20"
               >
                 オーナーとして登録

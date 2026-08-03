@@ -6,13 +6,14 @@ import { supabase } from "@/lib/supabase";
 import {
   createOwnerShop,
   createVibePost,
-  fetchOwnerShop,
+  fetchManagedShop,
 } from "@/lib/owner/api";
 import { uploadShopImages } from "@/lib/owner/uploadImages";
 import { GENRE_OPTIONS, MAX_IMAGES, MOOD_OPTIONS } from "@/lib/owner/constants";
 import { readFilesAsDataUrls } from "@/lib/files";
 import StepIndicator from "@/components/owner/StepIndicator";
 import OpenHoursInput from "@/components/owner/OpenHoursInput";
+import OwnerLogoutButton from "@/components/owner/OwnerLogoutButton";
 import OwnerLayout from "@/components/layout/OwnerLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui/styles";
@@ -20,6 +21,7 @@ import {
   formatOpenHoursRange,
   validateOpenHoursRange,
 } from "@/lib/shop/openHours";
+import { rolesToMetadata } from "@/lib/auth/roles";
 import type { User } from "@supabase/supabase-js";
 
 export default function OwnerOnboardingPage() {
@@ -49,7 +51,7 @@ export default function OwnerOnboardingPage() {
         return;
       }
 
-      const { data: existingShop } = await fetchOwnerShop(currentUser.id);
+      const { data: existingShop } = await fetchManagedShop(currentUser.id);
       if (existingShop || currentUser.user_metadata?.onboarding_completed) {
         router.replace("/owner/dashboard");
         return;
@@ -145,7 +147,7 @@ export default function OwnerOnboardingPage() {
       data: {
         onboarding_completed: true,
         shop_id: shop?.id,
-        user_type: "owner",
+        ...rolesToMetadata(["guest", "owner"]),
       },
     });
 
@@ -371,6 +373,10 @@ export default function OwnerOnboardingPage() {
             </button>
           </div>
         </form>
+
+        <div className="mt-8 md:hidden">
+          <OwnerLogoutButton />
+        </div>
       </div>
     </OwnerLayout>
   );

@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
+import { resolvePostAuthPath } from "@/lib/auth/routing";
+import { setStoredAppMode } from "@/lib/auth/mode";
+import {
+  getUserRoles,
+  mergeRoles,
+  rolesForSignup,
+  rolesToMetadata,
+} from "@/lib/auth/roles";
 
 type UserType = "guest" | "owner";
 
@@ -27,6 +35,7 @@ const userTypeOptions: {
 
 export default function SignUpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,6 +45,12 @@ export default function SignUpPage() {
   const [emailSent, setEmailSent] = useState(false);
   const [showResend, setShowResend] = useState(false);
   const [resending, setResending] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("type") === "owner") {
+      setUserType("owner");
+    }
+  }, [searchParams]);
 
   function getEmailRedirectTo() {
     return `${window.location.origin}/auth/callback`;
@@ -73,15 +88,15 @@ export default function SignUpPage() {
     setEmailSent(false);
     setShowResend(false);
 
+    const signupRoles = rolesForSignup(userType);
+
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
       {
         email,
         password,
         options: {
           emailRedirectTo: getEmailRedirectTo(),
-          data: {
-            user_type: userType,
-          },
+          data: rolesToMetadata(signupRoles),
         },
       },
     );
@@ -93,22 +108,68 @@ export default function SignUpPage() {
       return;
     }
 
-    if (signUpData.session) {
-      router.replace("/home");
+    if (signUpData.session && signUpData.user) {
+      setStoredAppMode(userType);
+      router.replace(await resolvePostAuthPath(signUpData.user, userType));
       return;
     }
 
     if (signUpData.user?.identities?.length === 0) {
-      setError(
-        "このメールアドレスは既に登録されています。確認メールが届いていない場合は、下の「確認メールを再送」ボタンをお試しください。",
-      );
-      setShowResend(true);
+      const { data: signInData, error: signInError } =
+        await supabase.auth.signInWithPassword({ email, password });
+
+      if (signInError) {
+        setError(
+          "このメールアドレスは既に登録されています。ログインするか、パスワードを確認してください。",
+        );
+        return;
+      }
+
+      if (signInData.user) {
+        const currentRoles = getUserRoles(signInData.user);
+        const mergedRoles = mergeRoles(currentRoles, signupRoles);
+
+        if (mergedRoles.length > currentRoles.length) {
+          await supabase.auth.updateUser({
+            data: rolesToMetadata(mergedRoles),
+          });
+
+          const {
+            data: { user: updatedUser },
+          } = await supabase.auth.getUser();
+
+          setStoredAppMode(userType);
+          router.replace(
+            await resolvePostAuthPath(updatedUser ?? signInData.user, userType),
+          );
+          return;
+        }
+
+        setStoredAppMode(userType);
+        router.replace(await resolvePostAuthPath(signInData.user, userType));
+        return;
+      }
+
+      setError("このメールアドレスは既に登録されています。ログインしてください。");
       return;
     }
 
     if (signUpData.user) {
-      setEmailSent(true);
-      setShowResend(true);
+      const { data: signInData, error: signInError } =
+        await supabase.auth.signInWithPassword({ email, password });
+
+      if (signInData.user) {
+        router.replace(await resolvePostAuthPath(signInData.user));
+        return;
+      }
+
+      if (signInError?.message.toLowerCase().includes("email not confirmed")) {
+        setEmailSent(true);
+        setShowResend(true);
+        return;
+      }
+
+      setError(signInError?.message ?? "ログインに失敗しました。");
       return;
     }
 
@@ -212,7 +273,7 @@ export default function SignUpPage() {
               <legend className="block text-sm font-medium text-[#eeeaf4]">
                 あなたは？
               </legend>
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                 {userTypeOptions.map((option) => {
                   const selected = userType === option.value;
                   return (
@@ -245,7 +306,11 @@ export default function SignUpPage() {
             {emailSent && (
               <div className="space-y-2 rounded-lg border border-[#00e87a]/30 bg-[#00e87a]/10 px-4 py-3 text-sm text-[#00e87a]">
                 <p>
-                  確認メールを送信しました。メール内のリンクをクリックすると、自動的にログインしてホーム画面へ移動します。
+                  確認メールを送信しました。メール内のリンクをクリックすると、自動的にログインして
+                  {userType === "owner"
+                    ? "お店の登録画面"
+                    : "ホーム画面"}
+                  へ移動します。
                 </p>
                 <p className="text-xs text-[#00e87a]/80">
                   届かない場合は迷惑メールフォルダもご確認ください。Supabase
@@ -287,6 +352,16 @@ export default function SignUpPage() {
           className="font-medium text-[#ff3d00] transition hover:text-[#e63600]"
         >
           ログイン
+        </Link>
+      </p>
+
+      <p className="mt-4 text-center text-xs text-[#5a5668]">
+        お困りの場合は{" "}
+        <Link
+          href={`/contact?type=${userType}`}
+          className="text-[#9994a8] hover:text-[#eeeaf4]"
+        >
+          お問い合わせ
         </Link>
       </p>
     </AuthLayout>

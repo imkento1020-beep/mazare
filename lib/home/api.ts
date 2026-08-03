@@ -1,5 +1,10 @@
 import { supabase } from "@/lib/supabase";
 import {
+  filterPostsPostedTonight,
+  filterPublishedPosts,
+  isPostedTonightJST,
+} from "@/lib/home/dates";
+import {
   normalizeMoods,
   type Shop,
   type VibePost,
@@ -9,10 +14,14 @@ export async function fetchVibePosts(): Promise<{
   data: VibePost[] | null;
   error: string | null;
 }> {
+  const nowIso = new Date().toISOString();
+
   const [postsResult, shopsResult] = await Promise.all([
     supabase
       .from("vibe_posts")
-      .select("id, shop_id, comment, moods, images, posted_at"),
+      .select("id, shop_id, comment, moods, images, posted_at")
+      .lte("posted_at", nowIso)
+      .order("posted_at", { ascending: false }),
     supabase.from("shops").select(
       "id, name, address, genre, open_hours, cover_image, cover_images, owner_id, staff_ids",
     ),
@@ -51,6 +60,14 @@ export function countByShopId(rows: { shop_id: string }[]) {
   return counts;
 }
 
+export function countByPostId(rows: { vibe_post_id: string }[]) {
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    counts[row.vibe_post_id] = (counts[row.vibe_post_id] ?? 0) + 1;
+  }
+  return counts;
+}
+
 export async function fetchAllShops(): Promise<{
   data: Shop[] | null;
   error: string | null;
@@ -66,6 +83,50 @@ export async function fetchAllShops(): Promise<{
 }
 
 export async function fetchLiveShopIds(): Promise<Set<string>> {
-  const { data } = await supabase.from("vibe_posts").select("shop_id");
-  return new Set((data ?? []).map((row) => row.shop_id));
+  const { data } = await supabase
+    .from("vibe_posts")
+    .select("shop_id, posted_at")
+    .lte("posted_at", new Date().toISOString());
+
+  return new Set(
+    (data ?? [])
+      .filter((row) => isPostedTonightJST(row.posted_at))
+      .map((row) => row.shop_id),
+  );
 }
+
+export type LatestVibePost = Pick<
+  VibePost,
+  "id" | "shop_id" | "comment" | "moods" | "images" | "posted_at"
+>;
+
+export async function fetchLatestVibePostsByShop(): Promise<
+  Map<string, LatestVibePost>
+> {
+  const { data, error } = await supabase
+    .from("vibe_posts")
+    .select("id, shop_id, comment, moods, images, posted_at")
+    .lte("posted_at", new Date().toISOString())
+    .order("posted_at", { ascending: false });
+
+  if (error || !data) return new Map();
+
+  const publishedTonight = filterPostsPostedTonight(data);
+
+  const byShop = new Map<string, LatestVibePost>();
+  for (const post of publishedTonight) {
+    if (!byShop.has(post.shop_id)) {
+      byShop.set(post.shop_id, {
+        id: post.id,
+        shop_id: post.shop_id,
+        comment: post.comment,
+        moods: normalizeMoods(post.moods),
+        images: Array.isArray(post.images) ? post.images.map(String) : [],
+        posted_at: post.posted_at ?? null,
+      });
+    }
+  }
+  return byShop;
+}
+
+export { filterPublishedPosts, filterPostsPostedTonight };

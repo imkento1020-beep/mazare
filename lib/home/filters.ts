@@ -1,4 +1,4 @@
-import { formatGenre, type VibePost } from "./types";
+import { formatGenre, type Shop, type VibePost } from "./types";
 
 export const GENRE_FILTERS = [
   { id: "すべて", label: "すべて" },
@@ -86,6 +86,49 @@ export function filterPosts(
 
     if (moods.size > 0) {
       if (!post.moods?.some((mood) => moods.has(mood))) return false;
+    }
+
+    return true;
+  });
+}
+
+export function filterShops(
+  shops: Shop[],
+  latestPostsByShop: Map<string, Pick<VibePost, "comment" | "moods">>,
+  genres: Set<string>,
+  moods: Set<string>,
+  areas: Set<string>,
+  search: string,
+) {
+  const query = search.trim().toLowerCase();
+
+  return shops.filter((shop) => {
+    if (query) {
+      const latest = latestPostsByShop.get(shop.id);
+      const haystack = [
+        shop.name,
+        shop.address,
+        formatGenre(shop.genre),
+        latest?.comment ?? "",
+        ...(latest?.moods ?? []),
+      ]
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
+
+    if (!genres.has("すべて")) {
+      const genre = formatGenre(shop.genre);
+      if (!genres.has(genre)) return false;
+    }
+
+    if (!areas.has("すべて")) {
+      if (![...areas].some((area) => shop.address.includes(area))) return false;
+    }
+
+    if (moods.size > 0) {
+      const latest = latestPostsByShop.get(shop.id);
+      if (!latest?.moods?.some((mood) => moods.has(mood))) return false;
     }
 
     return true;
