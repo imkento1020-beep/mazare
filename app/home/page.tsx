@@ -1,8 +1,12 @@
 import HomePageClient from "./HomePageClient";
+import {
+  getServerGoogleMapsApiKey,
+} from "@/lib/map/server-env";
+
+export const dynamic = "force-dynamic";
 
 export default function HomePage() {
-  const googleMapsApiKey =
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ?? "";
-
-  return <HomePageClient googleMapsApiKey={googleMapsApiKey} />;
+  return (
+    <HomePageClient googleMapsApiKey={getServerGoogleMapsApiKey()} />
+  );
 }

@@ -10,6 +10,10 @@ import {
 } from "@/lib/home/types";
 import { heatLevel, moodEmoji, moodTagClass } from "@/lib/home/moods";
 import { usePostViewTracking } from "@/lib/home/usePostViewTracking";
+import { extractAreaFromAddress } from "@/lib/geo/area";
+import { getDistanceLabel, type GeoPoint } from "@/lib/geo/haversine";
+import type { CheckinUser } from "@/lib/checkins/api";
+import CheckinAvatarStack from "@/components/checkins/CheckinAvatarStack";
 import PostImageCarousel from "./PostImageCarousel";
 
 function genreEmoji(genre: string) {
@@ -26,6 +30,8 @@ type VibePostCardProps = {
   interested: boolean;
   isSubmitting: boolean;
   onInterest: () => void;
+  userLocation?: GeoPoint | null;
+  checkinUsers?: CheckinUser[];
 };
 
 export default function VibePostCard({
@@ -34,6 +40,8 @@ export default function VibePostCard({
   interested,
   isSubmitting,
   onInterest,
+  userLocation = null,
+  checkinUsers = [],
 }: VibePostCardProps) {
   const viewRef = usePostViewTracking(post.id);
   const shop = post.shops;
@@ -116,11 +124,20 @@ export default function VibePostCard({
           <div className="rounded-xl border border-white/[0.07] bg-[#18181f]/60 p-3">
             {shopHref ? (
               <Link href={shopHref} className="group block">
-                <ShopMeta shop={shop} genre={genre} />
+                <ShopMeta
+                  shop={shop}
+                  genre={genre}
+                  userLocation={userLocation}
+                />
               </Link>
             ) : (
-              <ShopMeta shop={shop} genre={genre} />
+              <ShopMeta
+                shop={shop}
+                genre={genre}
+                userLocation={userLocation}
+              />
             )}
+            <CheckinAvatarStack users={checkinUsers} className="mt-3" />
           </div>
         )}
 
@@ -158,10 +175,15 @@ export default function VibePostCard({
 function ShopMeta({
   shop,
   genre,
+  userLocation,
 }: {
   shop: NonNullable<VibePost["shops"]>;
   genre: string;
+  userLocation?: GeoPoint | null;
 }) {
+  const area = extractAreaFromAddress(shop.address);
+  const distance = getDistanceLabel(userLocation, shop);
+
   return (
     <>
       <div className="flex items-start justify-between gap-2">
@@ -173,7 +195,10 @@ function ShopMeta({
         </span>
       </div>
       <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[#9994a8]">
-        <span>📍 {shop.address}</span>
+        <span>
+          📍 {area}
+          {distance ? ` · ${distance}` : ""}
+        </span>
         <span>🕙 {formatOpenHours(shop.open_hours)}</span>
       </p>
       <p className="mt-2 text-[11px] font-semibold text-[#ff3d00]/80 group-hover:text-[#ff3d00]">

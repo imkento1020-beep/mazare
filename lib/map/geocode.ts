@@ -7,17 +7,38 @@ export type ShopLocation = {
   lng: number;
 };
 
-export async function geocodeShopAddresses(
-  geocoder: google.maps.Geocoder,
-  shops: Array<{
-    id: string;
-    name: string;
-    address: string;
-    live: boolean;
-  }>,
+type ShopInput = {
+  id: string;
+  name: string;
+  address: string;
+  live: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+};
+
+function hasStoredCoordinates(shop: ShopInput) {
+  return shop.latitude != null && shop.longitude != null;
+}
+
+export async function resolveShopLocations(
+  geocoder: google.maps.Geocoder | null,
+  shops: ShopInput[],
 ): Promise<ShopLocation[]> {
   const results = await Promise.all(
     shops.map(async (shop) => {
+      if (hasStoredCoordinates(shop)) {
+        return {
+          shopId: shop.id,
+          name: shop.name,
+          address: shop.address,
+          live: shop.live,
+          lat: Number(shop.latitude),
+          lng: Number(shop.longitude),
+        };
+      }
+
+      if (!geocoder || !shop.address.trim()) return null;
+
       try {
         const response = await geocoder.geocode({
           address: shop.address,
@@ -42,6 +63,14 @@ export async function geocodeShopAddresses(
   );
 
   return results.filter((item): item is ShopLocation => item !== null);
+}
+
+/** @deprecated resolveShopLocations を使用 */
+export async function geocodeShopAddresses(
+  geocoder: google.maps.Geocoder,
+  shops: ShopInput[],
+): Promise<ShopLocation[]> {
+  return resolveShopLocations(geocoder, shops);
 }
 
 export function fitMapToLocations(

@@ -95,6 +95,12 @@ export function getTonightWindowJST(now = new Date()): {
   };
 }
 
+/** 当日0時（JST） */
+export function getTodayStartJST(now = new Date()): Date {
+  const parts = getJSTParts(now);
+  return jstDateTimeToUtc(parts.year, parts.month, parts.day, 0);
+}
+
 export function isPostPublished(
   iso: string | null | undefined,
   now = new Date(),

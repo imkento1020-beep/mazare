@@ -4,11 +4,14 @@ export type Shop = {
   address: string;
   genre: string | string[] | null;
   open_hours: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   cover_image?: string | null;
   cover_images?: string[] | null;
   description?: string | null;
   owner_id?: string | null;
   staff_ids?: string[] | null;
+  created_at?: string | null;
 };
 
 export type VibePost = {
@@ -30,9 +33,11 @@ export type InterestRow = {
   vibe_posts?: {
     comment: string;
     posted_at: string;
-    shops?: { name: string } | null;
+    shops?: { name: string; address?: string; open_hours?: string | null } | null;
   } | null;
 };
+
+export type TodayInterestRow = InterestRow;
 
 export function formatGenre(genre: string | string[] | null | undefined) {
   if (!genre) return "—";

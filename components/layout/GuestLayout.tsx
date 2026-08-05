@@ -17,6 +17,8 @@ type GuestLayoutProps = {
   onGenresChange?: (value: Set<string>) => void;
   onMoodsChange?: (value: Set<string>) => void;
   onAreasChange?: (value: Set<string>) => void;
+  newShopsOnly?: boolean;
+  onNewShopsOnlyChange?: (value: boolean) => void;
   posts?: VibePost[];
   filteredCount?: number;
   mobileTitle?: string;
@@ -25,6 +27,7 @@ type GuestLayoutProps = {
   showMobileSearch?: boolean;
   menuOnly?: boolean;
   googleMapsApiKey?: string;
+  hideMobileFilterButton?: boolean;
 };
 
 export default function GuestLayout({
@@ -37,6 +40,8 @@ export default function GuestLayout({
   onGenresChange,
   onMoodsChange,
   onAreasChange,
+  newShopsOnly = false,
+  onNewShopsOnlyChange,
   posts = [],
   filteredCount = 0,
   showFilters = true,
@@ -44,13 +49,15 @@ export default function GuestLayout({
   showMobileSearch = true,
   menuOnly = false,
   googleMapsApiKey = "",
+  hideMobileFilterButton = false,
 }: GuestLayoutProps) {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const activeFilterCount =
     (genres.has("すべて") ? 0 : genres.size) +
     moods.size +
-    (areas.has("すべて") ? 0 : areas.size);
+    (areas.has("すべて") ? 0 : areas.size) +
+    (newShopsOnly ? 1 : 0);
 
   const hasFilters = Boolean(
     showFilters && onGenresChange && onMoodsChange && onAreasChange,
@@ -72,13 +79,15 @@ export default function GuestLayout({
                 onGenresChange={onGenresChange ?? (() => {})}
                 onMoodsChange={onMoodsChange ?? (() => {})}
                 onAreasChange={onAreasChange ?? (() => {})}
+                newShopsOnly={newShopsOnly}
+                onNewShopsOnlyChange={onNewShopsOnlyChange}
                 menuOnly={menuOnly || !hasFilters}
               />
             </aside>
           )}
 
           <main className="min-w-0 flex-1 px-4 py-4 md:px-7 md:py-6">
-            {hasFilters && (
+            {hasFilters && !hideMobileFilterButton && (
               <div className="mb-3 flex items-center justify-end md:hidden">
                 <button
                   type="button"
@@ -155,6 +164,8 @@ export default function GuestLayout({
                 onGenresChange={onGenresChange}
                 onMoodsChange={onMoodsChange}
                 onAreasChange={onAreasChange}
+                newShopsOnly={newShopsOnly}
+                onNewShopsOnlyChange={onNewShopsOnlyChange}
                 showMenu={false}
               />
               <button

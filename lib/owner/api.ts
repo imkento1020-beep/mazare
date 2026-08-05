@@ -1,27 +1,19 @@
 import { supabase } from "@/lib/supabase";
 import { notifyShopPostCreated } from "@/lib/notifications/api";
 import { isPostScheduled } from "@/lib/home/dates";
-import {
-  countShopCheckinsTonight,
-  fetchShopTonightCheckins,
-} from "@/lib/checkins/api";
+import { countActiveCheckins, fetchShopTonightCheckins } from "@/lib/checkins/api";
 import type { Shop } from "@/lib/home/types";
 
-const shopSelect =
-  "id, name, address, genre, open_hours, cover_image, cover_images, owner_id, staff_ids";
+import {
+  fetchManagedShopFromDb,
+  fetchOwnerShopFromDb,
+} from "@/lib/home/shops";
 
 export async function fetchOwnerShop(ownerId: string): Promise<{
   data: Shop | null;
   error: string | null;
 }> {
-  const { data, error } = await supabase
-    .from("shops")
-    .select(shopSelect)
-    .eq("owner_id", ownerId)
-    .maybeSingle();
-
-  if (error) return { data: null, error: error.message };
-  return { data: (data as Shop) ?? null, error: null };
+  return fetchOwnerShopFromDb(ownerId);
 }
 
 export async function fetchManagedShop(userId: string): Promise<{
@@ -37,14 +29,9 @@ export async function fetchManagedShop(userId: string): Promise<{
     return { data: null, error: owned.error, isOwner: false };
   }
 
-  const { data, error } = await supabase
-    .from("shops")
-    .select(shopSelect)
-    .contains("staff_ids", [userId])
-    .maybeSingle();
-
-  if (error) return { data: null, error: error.message, isOwner: false };
-  return { data: (data as Shop) ?? null, error: null, isOwner: false };
+  const staffed = await fetchManagedShopFromDb(userId);
+  if (staffed.error) return { data: null, error: staffed.error, isOwner: false };
+  return { data: staffed.data, error: null, isOwner: false };
 }
 
 export async function createOwnerShop(input: {
@@ -222,7 +209,7 @@ export async function fetchShopDashboardStats(shopId: string) {
       .order("posted_at", { ascending: false })
       .limit(15),
     supabase.from("vibe_posts").select("view_count").eq("shop_id", shopId),
-    countShopCheckinsTonight(shopId),
+    countActiveCheckins(shopId),
   ]);
 
   const interestCount = interestsResult.count ?? 0;

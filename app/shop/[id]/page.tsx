@@ -25,13 +25,19 @@ import {
   type VibePost,
 } from "@/lib/home/types";
 import {
-  createShopCheckin,
-  hasCheckedInTonight,
+  createCheckin,
+  checkout,
+  fetchActiveCheckinUsersForShop,
+  hasActiveCheckin,
 } from "@/lib/checkins/api";
+import type { CheckinUser } from "@/lib/checkins/api";
 import {
   getDisplayName,
   syncGuestDisplayName,
 } from "@/lib/mypage/api";
+import { getDistanceLabel } from "@/lib/geo/haversine";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import CheckinAvatarStack from "@/components/checkins/CheckinAvatarStack";
 import BackButton from "@/components/layout/BackButton";
 import FavoriteButton from "@/components/favorites/FavoriteButton";
 import GuestLayout from "@/components/layout/GuestLayout";
@@ -81,6 +87,7 @@ export default function ShopDetailPage() {
   const params = useParams();
   const router = useRouter();
   const shopId = params.id as string;
+  const { location: userLocation } = useUserLocation();
 
   const [user, setUser] = useState<User | null>(null);
   const [shop, setShop] = useState<Shop | null>(null);
@@ -92,6 +99,7 @@ export default function ShopDetailPage() {
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [checkedIn, setCheckedIn] = useState(false);
   const [checkinLoading, setCheckinLoading] = useState(false);
+  const [checkinUsers, setCheckinUsers] = useState<CheckinUser[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -144,11 +152,14 @@ export default function ShopDetailPage() {
       );
       setFavorited(isFav);
 
-      const alreadyCheckedIn = await hasCheckedInTonight(
+      const alreadyCheckedIn = await hasActiveCheckin(
         session.user.id,
         shopId,
       );
       setCheckedIn(alreadyCheckedIn);
+
+      const checkinsResult = await fetchActiveCheckinUsersForShop(shopId);
+      setCheckinUsers(checkinsResult.data);
 
       setLoading(false);
     }
@@ -197,18 +208,36 @@ export default function ShopDetailPage() {
     setInterestCount((prev) => Math.max(0, prev + (interested ? -1 : 1)));
   }
 
-  async function handleCheckin() {
-    if (!user || checkedIn || checkinLoading) return;
+  async function handleCheckinToggle() {
+    if (!user || checkinLoading) return;
 
     setCheckinLoading(true);
     setError(null);
 
+    if (checkedIn) {
+      const { error: checkoutError } = await checkout({
+        userId: user.id,
+        shopId,
+      });
+
+      setCheckinLoading(false);
+
+      if (checkoutError) {
+        setError(checkoutError);
+        return;
+      }
+
+      setCheckedIn(false);
+      const checkinsResult = await fetchActiveCheckinUsersForShop(shopId);
+      setCheckinUsers(checkinsResult.data);
+      return;
+    }
+
     await syncGuestDisplayName(user.id, getDisplayName(user));
 
-    const { error: checkinError } = await createShopCheckin({
+    const { error: checkinError } = await createCheckin({
       userId: user.id,
       shopId,
-      vibePostId: latestPost?.id ?? null,
     });
 
     setCheckinLoading(false);
@@ -219,6 +248,8 @@ export default function ShopDetailPage() {
     }
 
     setCheckedIn(true);
+    const checkinsResult = await fetchActiveCheckinUsersForShop(shopId);
+    setCheckinUsers(checkinsResult.data);
   }
 
   async function handleFavoriteToggle() {
@@ -255,6 +286,7 @@ export default function ShopDetailPage() {
   }
 
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.address)}`;
+  const distance = getDistanceLabel(userLocation, shop);
 
   return (
     <GuestLayout
@@ -285,10 +317,15 @@ export default function ShopDetailPage() {
             compact
           />
         </div>
-        <p className="mt-2 text-sm text-[#9994a8]">📍 {shop.address}</p>
+        <p className="mt-2 text-sm text-[#9994a8]">
+          📍 {shop.address}
+          {distance ? ` · ${distance}` : ""}
+        </p>
         <p className="mt-1 text-sm text-[#9994a8]">
           🕙 {formatOpenHours(shop.open_hours)}
         </p>
+
+        <CheckinAvatarStack users={checkinUsers} className="mt-4" />
 
         <div className="mt-5">
           <button
@@ -315,23 +352,20 @@ export default function ShopDetailPage() {
         <div className="mt-3">
           <button
             type="button"
-            onClick={handleCheckin}
-            disabled={checkedIn || checkinLoading}
-            className={`w-full rounded-[13px] border py-3.5 text-sm font-bold transition disabled:opacity-60 ${
+            onClick={handleCheckinToggle}
+            disabled={checkinLoading}
+            className={`w-full rounded-lg border py-3 text-sm font-bold transition disabled:opacity-60 ${
               checkedIn
-                ? "border-[#ffaa00]/40 bg-[#ffaa00]/12 text-[#ffaa00]"
-                : "border-white/12 bg-[#111118] text-[#eeeaf4] hover:border-[#ffaa00]/30"
+                ? "border-[rgba(0,232,122,0.4)] bg-[rgba(0,232,122,0.12)] text-[#00e87a]"
+                : "border-white/[0.12] bg-[#18181f] text-[#eeeaf4] hover:border-white/20"
             }`}
           >
             {checkinLoading
-              ? "チェックイン中..."
+              ? "処理中..."
               : checkedIn
-                ? "✓ 今夜チェックイン済み"
-                : "📍 お店にチェックイン"}
+                ? "✓ チェックイン中"
+                : "📍 チェックイン"}
           </button>
-          <p className="mt-2 text-center text-xs text-[#5a5668]">
-            今夜1回だけチェックインできます
-          </p>
         </div>
 
         {error && (

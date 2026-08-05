@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
-import type { InterestRow } from "@/lib/home/types";
+import { getTodayStartJST } from "@/lib/home/dates";
+import type { InterestRow, TodayInterestRow } from "@/lib/home/types";
 import type { GuestProfile } from "./types";
 import type { User } from "@supabase/supabase-js";
 import { countUserVisitedShops } from "@/lib/checkins/api";
@@ -144,6 +145,81 @@ export async function fetchUserInterests(userId: string): Promise<{
   });
 
   return { data: rows, error: null };
+}
+
+export async function fetchTodayInterests(userId: string): Promise<{
+  data: TodayInterestRow[];
+  error: string | null;
+}> {
+  const start = getTodayStartJST().toISOString();
+
+  const { data, error } = await supabase
+    .from("interests")
+    .select(
+      `
+      id,
+      user_id,
+      shop_id,
+      vibe_post_id,
+      created_at,
+      vibe_posts (
+        comment,
+        posted_at,
+        shops ( name, address, open_hours )
+      )
+    `,
+    )
+    .eq("user_id", userId)
+    .gte("created_at", start)
+    .order("created_at", { ascending: false });
+
+  if (error) return { data: [], error: error.message };
+
+  const rows: TodayInterestRow[] = (data ?? []).map((row) => {
+    const vibePost = Array.isArray(row.vibe_posts)
+      ? row.vibe_posts[0]
+      : row.vibe_posts;
+    const shop = Array.isArray(vibePost?.shops)
+      ? vibePost.shops[0]
+      : vibePost?.shops;
+
+    return {
+      id: row.id,
+      user_id: row.user_id,
+      shop_id: row.shop_id,
+      vibe_post_id: row.vibe_post_id,
+      created_at: row.created_at,
+      vibe_posts: vibePost
+        ? {
+            comment: vibePost.comment,
+            posted_at: vibePost.posted_at,
+            shops: shop
+              ? {
+                  name: shop.name,
+                  address: shop.address,
+                  open_hours: shop.open_hours,
+                }
+              : null,
+          }
+        : null,
+    };
+  });
+
+  return { data: rows, error: null };
+}
+
+export async function cancelInterest(
+  interestId: string,
+  userId: string,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from("interests")
+    .delete()
+    .eq("id", interestId)
+    .eq("user_id", userId);
+
+  if (error) return { error: error.message };
+  return { error: null };
 }
 
 export async function syncGuestDisplayName(userId: string, displayName: string) {

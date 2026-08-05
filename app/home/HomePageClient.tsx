@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { countByPostId, countByShopId, fetchAllShops, fetchVibePosts } from "@/lib/home/api";
 import { filterPostsPostedTonight, filterPublishedPosts } from "@/lib/home/dates";
 import { filterPosts, filterShops } from "@/lib/home/filters";
+import { isNewShop } from "@/lib/home/newShops";
 import { sortPostsByPopularity } from "@/lib/home/sorting";
 import {
   fetchActivePromotionBoosts,
@@ -13,10 +14,16 @@ import {
 } from "@/lib/promotions";
 import { notifyPostInterestCreated } from "@/lib/notifications/api";
 import { formatSupabaseError } from "@/lib/supabase/errors";
+import { fetchActiveCheckinUsersByShopIds } from "@/lib/checkins/api";
+import type { CheckinUser } from "@/lib/checkins/api";
+import { fetchTodayInterests } from "@/lib/mypage/api";
+import { useUserLocation } from "@/hooks/useUserLocation";
 import type { Shop, VibePost } from "@/lib/home/types";
 import VibePostCard from "@/components/home/VibePostCard";
 import HomeFeedToggle from "@/components/home/HomeFeedToggle";
 import ShopBrowseCard from "@/components/home/ShopBrowseCard";
+import MobileFilterBar from "@/components/home/MobileFilterBar";
+import TodayInterestsBanner from "@/components/home/TodayInterestsBanner";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import type { User } from "@supabase/supabase-js";
@@ -31,6 +38,7 @@ export default function HomePageClient({
   googleMapsApiKey,
 }: HomePageClientProps) {
   const router = useRouter();
+  const { location: userLocation } = useUserLocation();
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<VibePost[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
@@ -47,6 +55,11 @@ export default function HomePageClient({
   const [genres, setGenres] = useState<Set<string>>(new Set(["すべて"]));
   const [moods, setMoods] = useState<Set<string>>(new Set());
   const [areas, setAreas] = useState<Set<string>>(new Set(["すべて"]));
+  const [newShopsOnly, setNewShopsOnly] = useState(false);
+  const [todayInterestCount, setTodayInterestCount] = useState(0);
+  const [checkinUsersByShop, setCheckinUsersByShop] = useState<
+    Map<string, CheckinUser[]>
+  >(new Map());
 
   useEffect(() => {
     async function fetchData() {
@@ -62,7 +75,7 @@ export default function HomePageClient({
 
       setUser(session.user);
 
-      const [postsResult, shopsResult, allInterestsResult, myInterestsResult] =
+      const [postsResult, shopsResult, allInterestsResult, myInterestsResult, todayInterestsResult] =
         await Promise.all([
           fetchVibePosts(),
           fetchAllShops(),
@@ -71,6 +84,7 @@ export default function HomePageClient({
             .from("interests")
             .select("vibe_post_id")
             .eq("user_id", session.user.id),
+          fetchTodayInterests(session.user.id),
         ]);
 
       const errors: string[] = [];
@@ -98,6 +112,16 @@ export default function HomePageClient({
           ),
         ),
       );
+      setTodayInterestCount(todayInterestsResult.data.length);
+
+      const shopIds = [
+        ...new Set([
+          ...(shopsResult.data ?? []).map((shop) => shop.id),
+          ...(postsResult.data ?? []).map((post) => post.shop_id),
+        ]),
+      ];
+      const checkinsMap = await fetchActiveCheckinUsersByShopIds(shopIds);
+      setCheckinUsersByShop(checkinsMap);
       setLoading(false);
     }
 
@@ -157,9 +181,14 @@ export default function HomePageClient({
       moods,
       areas,
       search,
+      newShopsOnly,
     );
 
     return [...rows].sort((a, b) => {
+      const aNew = isNewShop(a) ? 1 : 0;
+      const bNew = isNewShop(b) ? 1 : 0;
+      if (bNew !== aNew) return bNew - aNew;
+
       const interestDiff =
         (interestCounts[b.id] ?? 0) - (interestCounts[a.id] ?? 0);
       if (interestDiff !== 0) return interestDiff;
@@ -177,6 +206,7 @@ export default function HomePageClient({
     moods,
     areas,
     search,
+    newShopsOnly,
     interestCounts,
     liveTonightShopIds,
   ]);
@@ -184,7 +214,8 @@ export default function HomePageClient({
   const activeFilterCount =
     (genres.has("すべて") ? 0 : genres.size) +
     moods.size +
-    (areas.has("すべて") ? 0 : areas.size);
+    (areas.has("すべて") ? 0 : areas.size) +
+    (newShopsOnly ? 1 : 0);
 
   async function handleInterest(post: VibePost) {
     if (!user || submittingId) return;
@@ -239,6 +270,9 @@ export default function HomePageClient({
       ...prev,
       [post.id]: Math.max(0, (prev[post.id] ?? 0) + (isInterested ? -1 : 1)),
     }));
+    setTodayInterestCount((prev) =>
+      Math.max(0, prev + (isInterested ? -1 : 1)),
+    );
   }
 
   if (loading) return <LoadingScreen />;
@@ -253,10 +287,15 @@ export default function HomePageClient({
       onGenresChange={setGenres}
       onMoodsChange={setMoods}
       onAreasChange={setAreas}
+      newShopsOnly={newShopsOnly}
+      onNewShopsOnlyChange={setNewShopsOnly}
       posts={posts}
       filteredCount={filteredPosts.length}
       googleMapsApiKey={googleMapsApiKey}
+      hideMobileFilterButton
     >
+      <TodayInterestsBanner count={todayInterestCount} />
+
       <div className="mb-6 flex items-center justify-between rounded-[14px] border border-[#ff3d00]/20 bg-gradient-to-br from-[#ff3d00]/10 to-[#ffaa00]/6 px-4 py-3.5">
         <div className="flex items-center gap-2.5">
           <span className="relative flex h-2 w-2">
@@ -305,6 +344,17 @@ export default function HomePageClient({
         shopsCount={filteredShops.length}
       />
 
+      <MobileFilterBar
+        genres={genres}
+        moods={moods}
+        areas={areas}
+        onGenresChange={setGenres}
+        onMoodsChange={setMoods}
+        onAreasChange={setAreas}
+        newShopsOnly={newShopsOnly}
+        onNewShopsOnlyChange={setNewShopsOnly}
+      />
+
       <div className="mb-4 flex items-center justify-between">
         <p className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">
           {viewMode === "hot"
@@ -320,6 +370,7 @@ export default function HomePageClient({
               setGenres(new Set(["すべて"]));
               setMoods(new Set());
               setAreas(new Set(["すべて"]));
+              setNewShopsOnly(false);
               setSearch("");
             }}
             className="text-xs font-semibold text-[#ff3d00]"
@@ -356,6 +407,8 @@ export default function HomePageClient({
                 interested={interestedPostIds.has(post.id)}
                 isSubmitting={submittingId === post.id}
                 onInterest={() => handleInterest(post)}
+                userLocation={userLocation}
+                checkinUsers={checkinUsersByShop.get(post.shop_id) ?? []}
               />
             ))}
           </div>
@@ -387,6 +440,8 @@ export default function HomePageClient({
                 interested={interestedPostIds.has(post.id)}
                 isSubmitting={submittingId === post.id}
                 onInterest={() => handleInterest(post)}
+                userLocation={userLocation}
+                checkinUsers={checkinUsersByShop.get(post.shop_id) ?? []}
               />
             ))}
           </div>
@@ -410,9 +465,12 @@ export default function HomePageClient({
                 key={shop.id}
                 shop={shop}
                 live={live}
+                isNew={isNewShop(shop)}
                 latestComment={live ? latest?.comment : null}
                 latestPostedAt={latest?.posted_at}
                 interestCount={interestCounts[shop.id] ?? 0}
+                userLocation={userLocation}
+                checkinUsers={checkinUsersByShop.get(shop.id) ?? []}
               />
             );
           })}

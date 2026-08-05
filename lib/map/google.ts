@@ -1,14 +1,33 @@
+import { setOptions } from "@googlemaps/js-api-loader";
+
 /** 渋谷駅付近 — 東京エリアのデフォルト中心 */
 export const DEFAULT_MAP_CENTER = { lat: 35.6595, lng: 139.7005 };
 
 export const DEFAULT_MAP_ZOOM = 14;
 
-export function getGoogleMapsApiKey() {
-  return process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ?? "";
+export function getGoogleMapsApiKey(fallback = "") {
+  return (
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ||
+    fallback ||
+    ""
+  );
 }
 
 export function isGoogleMapsConfigured() {
   return getGoogleMapsApiKey().length > 0;
+}
+
+let loaderConfigured = false;
+
+export function configureGoogleMapsLoader(apiKey: string) {
+  if (loaderConfigured || !apiKey) return;
+  setOptions({
+    key: apiKey,
+    v: "weekly",
+    language: "ja",
+    region: "JP",
+  });
+  loaderConfigured = true;
 }
 
 /** mazare のダークテーマに合わせた地図スタイル */

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { resolvePostAuthPath } from "@/lib/auth/routing";
+import { getAuthErrorMessage, isEmailNotConfirmed } from "@/lib/auth/errors";
 
 function getEmailRedirectTo() {
   return `${window.location.origin}/auth/callback`;
@@ -40,7 +41,7 @@ export default function LoginPage() {
     setResending(false);
 
     if (resendError) {
-      setError(resendError.message);
+      setError(getAuthErrorMessage(resendError, "resend"));
       return;
     }
 
@@ -61,14 +62,12 @@ export default function LoginPage() {
     setLoading(false);
 
     if (signInError) {
-      if (signInError.message.toLowerCase().includes("email not confirmed")) {
-        setError(
-          "メールアドレスが確認されていません。確認メール内のリンクをクリックするか、下のボタンから再送してください。",
-        );
+      if (isEmailNotConfirmed(signInError)) {
+        setError(getAuthErrorMessage(signInError, "login"));
         setShowResend(true);
         return;
       }
-      setError(signInError.message);
+      setError(getAuthErrorMessage(signInError, "login"));
       return;
     }
 

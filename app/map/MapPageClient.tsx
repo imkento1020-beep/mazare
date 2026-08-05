@@ -18,9 +18,13 @@ import MapShopPopup from "@/components/map/MapShopPopup";
 
 type MapPageClientProps = {
   googleMapsApiKey: string;
+  setupHint: string;
 };
 
-export default function MapPageClient({ googleMapsApiKey }: MapPageClientProps) {
+export default function MapPageClient({
+  googleMapsApiKey,
+  setupHint,
+}: MapPageClientProps) {
   const router = useRouter();
   const [shops, setShops] = useState<Shop[]>([]);
   const [liveIds, setLiveIds] = useState<Set<string>>(new Set());
@@ -75,6 +79,8 @@ export default function MapPageClient({ googleMapsApiKey }: MapPageClientProps) 
         name: shop.name,
         address: shop.address,
         live: liveIds.has(shop.id),
+        latitude: shop.latitude,
+        longitude: shop.longitude,
       })),
     [shops, liveIds],
   );
@@ -130,9 +136,8 @@ export default function MapPageClient({ googleMapsApiKey }: MapPageClientProps) 
 
         {!hasGoogleMapsKey && (
           <div className="pointer-events-none absolute inset-x-4 top-4 z-10 rounded-xl border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
-            Google Maps API キーが読み込まれていません。`.env.local` に{" "}
-            <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code>{" "}
-            を設定後、dev サーバーを再起動してください。
+            Google Maps API キーが読み込まれていません。
+            {setupHint}
           </div>
         )}
 

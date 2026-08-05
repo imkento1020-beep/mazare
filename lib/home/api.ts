@@ -9,6 +9,8 @@ import {
   type Shop,
   type VibePost,
 } from "@/lib/home/types";
+import { fetchShopsFromDb } from "@/lib/home/shops";
+import { excludeShopRegistrationPosts, isShopRegistrationPost } from "@/lib/home/shopRegistration";
 
 export async function fetchVibePosts(): Promise<{
   data: VibePost[] | null;
@@ -22,9 +24,7 @@ export async function fetchVibePosts(): Promise<{
       .select("id, shop_id, comment, moods, images, posted_at")
       .lte("posted_at", nowIso)
       .order("posted_at", { ascending: false }),
-    supabase.from("shops").select(
-      "id, name, address, genre, open_hours, cover_image, cover_images, owner_id, staff_ids",
-    ),
+    fetchShopsFromDb(),
   ]);
 
   if (postsResult.error) {
@@ -32,22 +32,24 @@ export async function fetchVibePosts(): Promise<{
   }
 
   if (shopsResult.error) {
-    return { data: null, error: `shops: ${shopsResult.error.message}` };
+    return { data: null, error: `shops: ${shopsResult.error}` };
   }
 
   const shopsMap = new Map(
     (shopsResult.data ?? []).map((shop) => [shop.id, shop as Shop]),
   );
 
-  const merged = (postsResult.data ?? []).map((post) => ({
-    id: post.id,
-    shop_id: post.shop_id,
-    comment: post.comment,
-    moods: normalizeMoods(post.moods),
-    images: Array.isArray(post.images) ? post.images.map(String) : [],
-    posted_at: post.posted_at ?? null,
-    shops: shopsMap.get(post.shop_id) ?? null,
-  }));
+  const merged = excludeShopRegistrationPosts(
+    (postsResult.data ?? []).map((post) => ({
+      id: post.id,
+      shop_id: post.shop_id,
+      comment: post.comment,
+      moods: normalizeMoods(post.moods),
+      images: Array.isArray(post.images) ? post.images.map(String) : [],
+      posted_at: post.posted_at ?? null,
+      shops: shopsMap.get(post.shop_id) ?? null,
+    })),
+  );
 
   return { data: merged, error: null };
 }
@@ -72,25 +74,22 @@ export async function fetchAllShops(): Promise<{
   data: Shop[] | null;
   error: string | null;
 }> {
-  const { data, error } = await supabase
-    .from("shops")
-    .select(
-      "id, name, address, genre, open_hours, cover_image, cover_images, owner_id, staff_ids",
-    );
-
-  if (error) return { data: null, error: error.message };
-  return { data: (data ?? []) as Shop[], error: null };
+  return fetchShopsFromDb();
 }
 
 export async function fetchLiveShopIds(): Promise<Set<string>> {
   const { data } = await supabase
     .from("vibe_posts")
-    .select("shop_id, posted_at")
+    .select("shop_id, comment, posted_at")
     .lte("posted_at", new Date().toISOString());
 
   return new Set(
     (data ?? [])
-      .filter((row) => isPostedTonightJST(row.posted_at))
+      .filter(
+        (row) =>
+          isPostedTonightJST(row.posted_at) &&
+          !isShopRegistrationPost({ comment: row.comment }),
+      )
       .map((row) => row.shop_id),
   );
 }
@@ -111,7 +110,9 @@ export async function fetchLatestVibePostsByShop(): Promise<
 
   if (error || !data) return new Map();
 
-  const publishedTonight = filterPostsPostedTonight(data);
+  const publishedTonight = filterPostsPostedTonight(
+    excludeShopRegistrationPosts(data),
+  );
 
   const byShop = new Map<string, LatestVibePost>();
   for (const post of publishedTonight) {

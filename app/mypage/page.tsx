@@ -6,7 +6,9 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { clearStoredAppMode } from "@/lib/auth/mode";
 import {
+  cancelInterest,
   fetchGuestProfile,
+  fetchTodayInterests,
   fetchUserInterestStats,
   fetchUserInterests,
 } from "@/lib/mypage/api";
@@ -15,11 +17,18 @@ import {
   fetchPendingInvitesForEmail,
   type StaffInvite,
 } from "@/lib/staff/api";
-import { fetchVibePosts } from "@/lib/home/api";
-import { formatPostedAt } from "@/lib/home/types";
-import type { InterestRow, VibePost } from "@/lib/home/types";
+import {
+  fetchUserFavorites,
+  removeFavoriteShop,
+  type FavoriteShop,
+} from "@/lib/favorites/api";
+import { fetchLiveShopIds, fetchVibePosts } from "@/lib/home/api";
+import { formatOpenHours, formatPostedAt } from "@/lib/home/types";
+import type { InterestRow, TodayInterestRow, VibePost } from "@/lib/home/types";
+import { extractAreaFromAddress } from "@/lib/geo/area";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
+import FavoriteShopCard from "@/components/favorites/FavoriteShopCard";
 import type { GuestProfile } from "@/lib/mypage/types";
 import type { User } from "@supabase/supabase-js";
 
@@ -28,11 +37,17 @@ export default function MyPage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<GuestProfile | null>(null);
   const [interests, setInterests] = useState<InterestRow[]>([]);
+  const [todayInterests, setTodayInterests] = useState<TodayInterestRow[]>([]);
+  const [favorites, setFavorites] = useState<FavoriteShop[]>([]);
+  const [liveShopIds, setLiveShopIds] = useState<Set<string>>(new Set());
   const [sidebarPosts, setSidebarPosts] = useState<VibePost[]>([]);
   const [stats, setStats] = useState({ totalInterests: 0, visitedShops: 0 });
   const [staffInvites, setStaffInvites] = useState<StaffInvite[]>([]);
   const [acceptingInviteId, setAcceptingInviteId] = useState<string | null>(null);
+  const [cancelingInterestId, setCancelingInterestId] = useState<string | null>(null);
+  const [removingFavoriteId, setRemovingFavoriteId] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -49,22 +64,29 @@ export default function MyPage() {
 
       setUser(session.user);
 
-      const [profileResult, interestsResult, interestStats, postsResult, invitesResult] =
+      const [profileResult, interestsResult, todayInterestsResult, interestStats, postsResult, invitesResult, favoritesResult, liveIds] =
         await Promise.all([
           fetchGuestProfile(session.user),
           fetchUserInterests(session.user.id),
+          fetchTodayInterests(session.user.id),
           fetchUserInterestStats(session.user.id),
           fetchVibePosts(),
           session.user.email
             ? fetchPendingInvitesForEmail(session.user.email)
             : Promise.resolve({ data: [], error: null }),
+          fetchUserFavorites(session.user.id),
+          fetchLiveShopIds(),
         ]);
 
       setProfile(profileResult.data);
       setInterests(interestsResult.data);
+      setTodayInterests(todayInterestsResult.data);
       setStats(interestStats);
       setSidebarPosts(postsResult.data ?? []);
       setStaffInvites(invitesResult.data);
+      if (favoritesResult.error) setFavoriteError(favoritesResult.error);
+      setFavorites(favoritesResult.data);
+      setLiveShopIds(liveIds);
       setLoading(false);
     }
 
@@ -87,6 +109,43 @@ export default function MyPage() {
     }
 
     setStaffInvites((prev) => prev.filter((invite) => invite.id !== inviteId));
+  }
+
+  async function handleCancelTodayInterest(interestId: string) {
+    if (!user || cancelingInterestId) return;
+
+    setCancelingInterestId(interestId);
+
+    const { error } = await cancelInterest(interestId, user.id);
+
+    setCancelingInterestId(null);
+
+    if (error) return;
+
+    setTodayInterests((prev) => prev.filter((item) => item.id !== interestId));
+    setInterests((prev) => prev.filter((item) => item.id !== interestId));
+    setStats((prev) => ({
+      ...prev,
+      totalInterests: Math.max(0, prev.totalInterests - 1),
+    }));
+  }
+
+  async function handleRemoveFavorite(shopId: string) {
+    if (!user || removingFavoriteId) return;
+
+    setRemovingFavoriteId(shopId);
+    setFavoriteError(null);
+
+    const { error } = await removeFavoriteShop(user.id, shopId);
+
+    setRemovingFavoriteId(null);
+
+    if (error) {
+      setFavoriteError(error);
+      return;
+    }
+
+    setFavorites((prev) => prev.filter((item) => item.shop_id !== shopId));
   }
 
   async function handleLogout() {
@@ -148,6 +207,58 @@ export default function MyPage() {
         </div>
       </section>
 
+      <section id="favorite-shops" className="mt-8 md:max-w-3xl">
+        <div className="flex items-end justify-between gap-3">
+          <h2 className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">
+            お気に入りのお店
+          </h2>
+          {favorites.length > 0 && (
+            <Link
+              href="/favorites"
+              className="text-xs font-semibold text-[#ff3d00] hover:underline"
+            >
+              すべて見る
+            </Link>
+          )}
+        </div>
+
+        {favoriteError && (
+          <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            {favoriteError}
+          </p>
+        )}
+
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          {favorites.length === 0 ? (
+            <div className="col-span-full rounded-[14px] border border-white/[0.07] bg-[#111118] p-6 text-center">
+              <p className="text-3xl">❤️</p>
+              <p className="mt-3 text-sm font-bold text-[#eeeaf4]">
+                お気に入りのお店はまだありません
+              </p>
+              <p className="mt-2 text-sm text-[#9994a8]">
+                お店ページのハートボタンから保存できます
+              </p>
+              <Link
+                href="/home"
+                className="mt-4 inline-block text-sm font-semibold text-[#ff3d00] hover:underline"
+              >
+                お店を探す →
+              </Link>
+            </div>
+          ) : (
+            favorites.map((item) => (
+              <FavoriteShopCard
+                key={item.id}
+                shop={item.shop}
+                live={liveShopIds.has(item.shop_id)}
+                onRemove={() => handleRemoveFavorite(item.shop_id)}
+                removing={removingFavoriteId === item.shop_id}
+              />
+            ))
+          )}
+        </div>
+      </section>
+
       {staffInvites.length > 0 && (
         <section className="mt-4 md:max-w-xl">
           <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-[#5a5668]">
@@ -183,6 +294,58 @@ export default function MyPage() {
           )}
         </section>
       )}
+
+      <section id="today-interests" className="mt-8 scroll-mt-24 md:max-w-2xl">
+        <h2 className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">
+          今日の行くかもリスト
+        </h2>
+        <div className="mt-3 space-y-2">
+          {todayInterests.length === 0 ? (
+            <p className="rounded-[14px] border border-white/[0.07] bg-[#111118] p-4 text-sm text-[#9994a8]">
+              今日はまだ行くかもしたお店がありません
+            </p>
+          ) : (
+            todayInterests.map((item) => {
+              const shop = item.vibe_posts?.shops;
+              const area = extractAreaFromAddress(shop?.address);
+              return (
+                <div
+                  key={item.id}
+                  className="rounded-[14px] border border-white/[0.07] bg-[#111118] p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <Link
+                        href={`/shop/${item.shop_id}`}
+                        className="font-bold text-[#eeeaf4] hover:text-[#ff3d00]"
+                      >
+                        {shop?.name ?? "お店"}
+                      </Link>
+                      <p className="mt-1 text-xs text-[#9994a8]">
+                        📍 {area}
+                        {shop?.open_hours
+                          ? ` · 🕙 ${formatOpenHours(shop.open_hours)}`
+                          : ""}
+                      </p>
+                      <p className="mt-2 line-clamp-2 text-sm text-[#9994a8]">
+                        {item.vibe_posts?.comment ?? "—"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCancelTodayInterest(item.id)}
+                      disabled={cancelingInterestId === item.id}
+                      className="shrink-0 bg-transparent text-sm font-semibold text-[#ff3d00] disabled:opacity-60"
+                    >
+                      {cancelingInterestId === item.id ? "取消中..." : "取り消す"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </section>
 
       <section className="mt-8 md:max-w-2xl">
         <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-[#5a5668]">

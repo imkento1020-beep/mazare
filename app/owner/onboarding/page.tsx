@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
   createOwnerShop,
-  createVibePost,
   fetchManagedShop,
 } from "@/lib/owner/api";
 import { uploadShopImages } from "@/lib/owner/uploadImages";
-import { GENRE_OPTIONS, MAX_IMAGES, MOOD_OPTIONS } from "@/lib/owner/constants";
+import { GENRE_OPTIONS, MAX_IMAGES } from "@/lib/owner/constants";
 import { readFilesAsDataUrls } from "@/lib/files";
 import StepIndicator from "@/components/owner/StepIndicator";
 import OpenHoursInput from "@/components/owner/OpenHoursInput";
@@ -38,7 +37,6 @@ export default function OwnerOnboardingPage() {
   const [openHoursEnd, setOpenHoursEnd] = useState("");
   const [genres, setGenres] = useState<Set<string>>(new Set());
   const [coverImages, setCoverImages] = useState<string[]>([]);
-  const [moods, setMoods] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     async function init() {
@@ -69,15 +67,6 @@ export default function OwnerOnboardingPage() {
       const next = new Set(prev);
       if (next.has(genre)) next.delete(genre);
       else next.add(genre);
-      return next;
-    });
-  }
-
-  function toggleMood(mood: string) {
-    setMoods((prev) => {
-      const next = new Set(prev);
-      if (next.has(mood)) next.delete(mood);
-      else next.add(mood);
       return next;
     });
   }
@@ -128,21 +117,6 @@ export default function OwnerOnboardingPage() {
       return;
     }
 
-    if (shop?.id && moods.size > 0) {
-      const { error: postError } = await createVibePost({
-        shopId: shop.id,
-        moods: Array.from(moods),
-        comment: "お店を登録しました",
-        images: [],
-      });
-
-      if (postError) {
-        setSubmitting(false);
-        setError(postError.message);
-        return;
-      }
-    }
-
     await supabase.auth.updateUser({
       data: {
         onboarding_completed: true,
@@ -182,16 +156,9 @@ export default function OwnerOnboardingPage() {
     }
 
     if (step === 3) {
-      setStep(4);
+      handleSubmit();
       return;
     }
-
-    if (moods.size === 0) {
-      setError("雰囲気を1つ以上選択してください");
-      return;
-    }
-
-    handleSubmit();
   }
 
   if (loading) return <LoadingScreen />;
@@ -199,7 +166,7 @@ export default function OwnerOnboardingPage() {
   return (
     <OwnerLayout isOnboarding title="お店を登録しましょう">
       <div className="max-w-xl">
-        <StepIndicator step={step} total={4} />
+        <StepIndicator step={step} total={3} />
 
         <form onSubmit={handleNext} className="mt-8 space-y-6">
           {step === 1 && (
@@ -270,6 +237,9 @@ export default function OwnerOnboardingPage() {
               <p className="text-sm font-medium">
                 カバー画像（最大{MAX_IMAGES}枚・任意）
               </p>
+              <p className="mt-1 text-xs text-[#9994a8]">
+                登録後、ダッシュボードから今夜の雰囲気を発信できます
+              </p>
               <label className="mt-3 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#5a5668] bg-[#111118]/50 px-4 py-10 text-center transition hover:border-[#ff3d00]/40">
                 <span className="text-2xl">📷</span>
                 <span className="mt-2 text-sm text-[#9994a8]">
@@ -312,38 +282,6 @@ export default function OwnerOnboardingPage() {
             </div>
           )}
 
-          {step === 4 && (
-            <div>
-              <p className="text-sm font-medium">
-                店舗の雰囲気（複数選択可）{" "}
-                <span className="text-[#ff3d00]">*</span>
-              </p>
-              <p className="mt-1 text-xs text-[#9994a8]">
-                お店の特徴や雰囲気を選んでください
-              </p>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {MOOD_OPTIONS.map((mood) => {
-                  const selected = moods.has(mood.id);
-                  return (
-                    <button
-                      key={mood.id}
-                      type="button"
-                      onClick={() => toggleMood(mood.id)}
-                      className={`rounded-xl border px-2 py-3 text-center text-xs font-medium transition ${
-                        selected
-                          ? "border-[#ff3d00]/40 bg-[#ff3d00]/12 text-[#ff3d00]"
-                          : "border-white/7 bg-[#111118] text-[#9994a8]"
-                      }`}
-                    >
-                      <span className="block text-lg">{mood.emoji}</span>
-                      {mood.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {error && (
             <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
               {error}
@@ -367,7 +305,7 @@ export default function OwnerOnboardingPage() {
             >
               {submitting
                 ? "登録中..."
-                : step === 4
+                : step === 3
                   ? "登録する"
                   : "次へ"}
             </button>

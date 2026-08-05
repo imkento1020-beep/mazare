@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
+import { importLibrary } from "@googlemaps/js-api-loader";
 import {
+  configureGoogleMapsLoader,
   DARK_MAP_STYLES,
   DEFAULT_MAP_CENTER,
   DEFAULT_MAP_ZOOM,
@@ -11,7 +12,7 @@ import {
 import {
   fitMapToLocations,
   focusMapOnShop,
-  geocodeShopAddresses,
+  resolveShopLocations,
   type ShopLocation,
 } from "@/lib/map/geocode";
 
@@ -25,6 +26,8 @@ type GoogleMapViewProps = {
     name: string;
     address: string;
     live: boolean;
+    latitude?: number | null;
+    longitude?: number | null;
   }>;
   selectedId?: string | null;
   focusLocation?: { lat: number; lng: number } | null;
@@ -64,11 +67,18 @@ export default function GoogleMapView({
 }: GoogleMapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
+  const geocoderRef = useRef<google.maps.Geocoder | null>(null);
   const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
   const userMarkerRef = useRef<google.maps.Marker | null>(null);
   const locationsRef = useRef<ShopLocation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const onSelectShopRef = useRef(onSelectShop);
+  const onLoadErrorRef = useRef(onLoadError);
+  const [mapReady, setMapReady] = useState(false);
+  const [markersReady, setMarkersReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  onSelectShopRef.current = onSelectShop;
+  onLoadErrorRef.current = onLoadError;
 
   useEffect(() => {
     let cancelled = false;
@@ -76,8 +86,7 @@ export default function GoogleMapView({
 
     if (!apiKey) {
       setError("Google Maps API キーが未設定です");
-      setLoading(false);
-      onLoadError?.();
+      onLoadErrorRef.current?.();
       return;
     }
 
@@ -88,20 +97,14 @@ export default function GoogleMapView({
       setError(
         "APIキーの認証に失敗しました。HTTPリファラー制限・API有効化・請求設定を確認してください。",
       );
-      setLoading(false);
-      onLoadError?.();
+      onLoadErrorRef.current?.();
     }
 
     window.gm_authFailure = handleAuthFailure;
 
     async function initMap() {
       try {
-        setOptions({
-          key: apiKey,
-          v: "weekly",
-          language: "ja",
-          region: "JP",
-        });
+        configureGoogleMapsLoader(apiKey);
 
         const { Map } = await importLibrary("maps");
         const { Geocoder } = await importLibrary("geocoding");
@@ -123,8 +126,8 @@ export default function GoogleMapView({
         });
 
         mapRef.current = map;
+        geocoderRef.current = new Geocoder();
 
-        // レイアウト確定後に地図サイズを再計算
         requestAnimationFrame(() => {
           if (!cancelled && mapRef.current) {
             google.maps.event.trigger(mapRef.current, "resize");
@@ -132,42 +135,7 @@ export default function GoogleMapView({
           }
         });
 
-        const geocoder = new Geocoder();
-        let locations: ShopLocation[] = [];
-        try {
-          locations =
-            shops.length > 0
-              ? await geocodeShopAddresses(geocoder, shops)
-              : [];
-        } catch {
-          // Geocoding が失敗しても地図自体は表示する
-        }
-
-        if (cancelled) return;
-
-        locationsRef.current = locations;
-        markersRef.current.clear();
-        for (const location of locations) {
-          const live = shops.find((shop) => shop.id === location.shopId)?.live ?? false;
-          const marker = new google.maps.Marker({
-            map,
-            position: { lat: location.lat, lng: location.lng },
-            title: location.name,
-            icon: createMarkerIcon({
-              live,
-              selected: false,
-              preview,
-            }),
-          });
-
-          if (!preview && onSelectShop) {
-            marker.addListener("click", () => onSelectShop(location.shopId));
-          }
-          markersRef.current.set(location.shopId, marker);
-        }
-
-        fitMapToLocations(map, locations);
-        setLoading(false);
+        if (!cancelled) setMapReady(true);
       } catch (err) {
         if (cancelled) return;
         setError(
@@ -175,8 +143,7 @@ export default function GoogleMapView({
             ? err.message
             : "Google Maps の読み込みに失敗しました",
         );
-        setLoading(false);
-        onLoadError?.();
+        onLoadErrorRef.current?.();
       }
     }
 
@@ -190,13 +157,82 @@ export default function GoogleMapView({
       }
       markersRef.current.clear();
       mapRef.current = null;
+      geocoderRef.current = null;
       userMarkerRef.current?.setMap(null);
       userMarkerRef.current = null;
+      locationsRef.current = [];
+      setMapReady(false);
+      setMarkersReady(false);
     };
-  }, [apiKeyProp, preview, shops, onSelectShop, onLoadError]);
+  }, [apiKeyProp, preview]);
 
   useEffect(() => {
-    if (preview || loading || !selectedId || !mapRef.current) return;
+    if (!mapReady || !mapRef.current) return;
+
+    let cancelled = false;
+
+    async function syncMarkers() {
+      const map = mapRef.current;
+      const geocoder = geocoderRef.current;
+      if (!map) return;
+
+      setMarkersReady(false);
+
+      let locations: ShopLocation[] = [];
+      try {
+        locations =
+          shops.length > 0
+            ? await resolveShopLocations(geocoder, shops)
+            : [];
+      } catch {
+        locations = [];
+      }
+
+      if (cancelled) return;
+
+      for (const marker of markersRef.current.values()) {
+        marker.setMap(null);
+      }
+      markersRef.current.clear();
+
+      locationsRef.current = locations;
+
+      for (const location of locations) {
+        const live = shops.find((shop) => shop.id === location.shopId)?.live ?? false;
+        const marker = new google.maps.Marker({
+          map,
+          position: { lat: location.lat, lng: location.lng },
+          title: location.name,
+          icon: createMarkerIcon({
+            live,
+            selected: false,
+            preview,
+          }),
+          zIndex: live ? 1 : 0,
+        });
+
+        if (!preview) {
+          marker.addListener("click", () => {
+            onSelectShopRef.current?.(location.shopId);
+          });
+        }
+
+        markersRef.current.set(location.shopId, marker);
+      }
+
+      fitMapToLocations(map, locations);
+      setMarkersReady(true);
+    }
+
+    syncMarkers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mapReady, shops, preview]);
+
+  useEffect(() => {
+    if (preview || !markersReady || !selectedId || !mapRef.current) return;
 
     const location = locationsRef.current.find(
       (item) => item.shopId === selectedId,
@@ -204,10 +240,10 @@ export default function GoogleMapView({
     if (!location) return;
 
     focusMapOnShop(mapRef.current, location);
-  }, [selectedId, loading, preview]);
+  }, [selectedId, markersReady, preview]);
 
   useEffect(() => {
-    if (preview || loading || !focusLocation || !mapRef.current) return;
+    if (preview || !markersReady || !focusLocation || !mapRef.current) return;
 
     focusMapOnShop(mapRef.current, focusLocation);
 
@@ -231,7 +267,7 @@ export default function GoogleMapView({
 
     userMarkerRef.current.setPosition(focusLocation);
     userMarkerRef.current.setMap(mapRef.current);
-  }, [focusLocation, loading, preview]);
+  }, [focusLocation, markersReady, preview]);
 
   useEffect(() => {
     if (preview) return;
@@ -245,7 +281,7 @@ export default function GoogleMapView({
     observer.observe(container);
 
     return () => observer.disconnect();
-  }, [loading, error]);
+  }, [mapReady, error, preview]);
 
   useEffect(() => {
     for (const [shopId, marker] of markersRef.current.entries()) {
@@ -285,6 +321,8 @@ export default function GoogleMapView({
       </div>
     );
   }
+
+  const loading = !mapReady || !markersReady;
 
   return (
     <div

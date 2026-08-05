@@ -13,6 +13,7 @@ import {
   rolesForSignup,
   rolesToMetadata,
 } from "@/lib/auth/roles";
+import { getAuthErrorMessage, isEmailNotConfirmed, isInvalidCredentials } from "@/lib/auth/errors";
 
 type UserType = "guest" | "owner";
 
@@ -73,7 +74,7 @@ export default function SignupPageClient() {
     setResending(false);
 
     if (resendError) {
-      setError(resendError.message);
+      setError(getAuthErrorMessage(resendError, "resend"));
       return;
     }
 
@@ -104,7 +105,7 @@ export default function SignupPageClient() {
     setLoading(false);
 
     if (signUpError) {
-      setError(signUpError.message);
+      setError(getAuthErrorMessage(signUpError, "signup"));
       return;
     }
 
@@ -120,7 +121,9 @@ export default function SignupPageClient() {
 
       if (signInError) {
         setError(
-          "このメールアドレスは既に登録されています。ログインするか、パスワードを確認してください。",
+          isInvalidCredentials(signInError)
+            ? "このメールアドレスは既に登録されています。パスワードをご確認のうえ、ログインしてください。"
+            : getAuthErrorMessage(signInError, "login"),
         );
         return;
       }
@@ -163,13 +166,13 @@ export default function SignupPageClient() {
         return;
       }
 
-      if (signInError?.message.toLowerCase().includes("email not confirmed")) {
+      if (signInError && isEmailNotConfirmed(signInError)) {
         setEmailSent(true);
         setShowResend(true);
         return;
       }
 
-      setError(signInError?.message ?? "ログインに失敗しました。");
+      setError(getAuthErrorMessage(signInError ?? null, "login"));
       return;
     }
 

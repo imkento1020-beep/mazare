@@ -18,6 +18,8 @@ type FilterPanelProps = {
   onGenresChange: (value: Set<string>) => void;
   onMoodsChange: (value: Set<string>) => void;
   onAreasChange: (value: Set<string>) => void;
+  newShopsOnly?: boolean;
+  onNewShopsOnlyChange?: (value: boolean) => void;
   showMenu?: boolean;
   menuOnly?: boolean;
 };
@@ -77,6 +79,8 @@ export default function FilterPanel({
   onGenresChange,
   onMoodsChange,
   onAreasChange,
+  newShopsOnly = false,
+  onNewShopsOnlyChange,
   showMenu = true,
   menuOnly = false,
 }: FilterPanelProps) {
@@ -116,6 +120,19 @@ export default function FilterPanel({
 
       {!menuOnly && (
         <>
+      {onNewShopsOnlyChange && (
+        <>
+          <FilterGroup title="新着">
+            <FilterChip
+              label="✨ 新しく追加されたお店"
+              active={newShopsOnly}
+              onClick={() => onNewShopsOnlyChange(!newShopsOnly)}
+            />
+          </FilterGroup>
+          <div className="mb-7 h-px bg-white/7" />
+        </>
+      )}
+
       <FilterGroup title="ジャンル">
         {GENRE_FILTERS.map((item) => (
           <FilterChip
