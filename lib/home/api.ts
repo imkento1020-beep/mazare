@@ -10,7 +10,11 @@ import {
   type VibePost,
 } from "@/lib/home/types";
 import { fetchShopsFromDb } from "@/lib/home/shops";
-import { excludeShopRegistrationPosts, isShopRegistrationPost } from "@/lib/home/shopRegistration";
+import {
+  excludeShopRegistrationPosts,
+  isShopRegistrationPost,
+  SHOP_REGISTRATION_COMMENT,
+} from "@/lib/home/shopRegistration";
 
 export async function fetchVibePosts(): Promise<{
   data: VibePost[] | null;
@@ -23,6 +27,7 @@ export async function fetchVibePosts(): Promise<{
       .from("vibe_posts")
       .select("id, shop_id, comment, moods, images, posted_at")
       .lte("posted_at", nowIso)
+      .not("comment", "ilike", `${SHOP_REGISTRATION_COMMENT}%`)
       .order("posted_at", { ascending: false }),
     fetchShopsFromDb(),
   ]);

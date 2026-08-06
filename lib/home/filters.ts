@@ -1,5 +1,6 @@
 import { formatGenre, type Shop, type VibePost } from "./types";
 import { isNewShop } from "./newShops";
+import { excludeShopRegistrationPosts } from "./shopRegistration";
 
 export const GENRE_FILTERS = [
   { id: "すべて", label: "すべて" },
@@ -105,7 +106,7 @@ export function filterPosts(
 ) {
   const query = search.trim().toLowerCase();
 
-  return posts.filter((post) => {
+  return excludeShopRegistrationPosts(posts).filter((post) => {
     const shop = post.shops;
     if (!shop) return false;
 
