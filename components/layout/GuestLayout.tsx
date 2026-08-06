@@ -87,36 +87,43 @@ export default function GuestLayout({
           )}
 
           <main className="min-w-0 flex-1 px-4 py-4 md:px-7 md:py-6">
-            {hasFilters && !hideMobileFilterButton && (
-              <div className="mb-3 flex items-center justify-end md:hidden">
-                <button
-                  type="button"
-                  onClick={() => setMobileFiltersOpen(true)}
-                  className="relative rounded-lg px-3 py-1.5 text-xs font-medium text-[#9994a8] transition hover:bg-[#111118] hover:text-[#eeeaf4]"
-                >
-                  フィルター
-                  {activeFilterCount > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff3d00] text-[10px] font-bold text-white">
-                      {activeFilterCount}
+            {(showMobileSearch && onSearchChange) ||
+            (hasFilters && !hideMobileFilterButton) ? (
+              <div className="mb-3 flex items-center gap-2 md:hidden">
+                {showMobileSearch && onSearchChange && (
+                  <div className="relative min-w-0 flex-1">
+                    <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-[#5a5668]">
+                      🔍
                     </span>
-                  )}
-                </button>
+                    <input
+                      type="search"
+                      value={search}
+                      onChange={(e) => onSearchChange(e.target.value)}
+                      placeholder="探す..."
+                      className="w-full rounded-[10px] border border-white/12 bg-[#111118] py-2 pl-8 pr-3 text-sm text-[#eeeaf4] outline-none placeholder:text-[#5a5668]"
+                    />
+                  </div>
+                )}
+                {hasFilters && !hideMobileFilterButton && (
+                  <button
+                    type="button"
+                    onClick={() => setMobileFiltersOpen(true)}
+                    className={`relative shrink-0 rounded-[10px] border px-3 py-2 text-xs font-bold transition ${
+                      activeFilterCount > 0
+                        ? "border-[#ff3d00] bg-[#ff3d00]/10 text-[#ff3d00]"
+                        : "border-white/[0.12] bg-[#111118] text-[#9994a8]"
+                    }`}
+                  >
+                    フィルター
+                    {activeFilterCount > 0 && (
+                      <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff3d00] px-1 text-[10px] font-bold text-white">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+                )}
               </div>
-            )}
-            {showMobileSearch && onSearchChange && (
-              <div className="relative mb-4 md:hidden">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#5a5668]">
-                  🔍
-                </span>
-                <input
-                  type="search"
-                  value={search}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  placeholder="エリア、ジャンル、雰囲気で探す..."
-                  className="w-full rounded-[12px] border border-white/12 bg-[#111118] py-2.5 pl-10 pr-4 text-sm text-[#eeeaf4] outline-none placeholder:text-[#5a5668]"
-                />
-              </div>
-            )}
+            ) : null}
             {children}
           </main>
 

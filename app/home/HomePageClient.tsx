@@ -23,7 +23,6 @@ import type { Shop, VibePost } from "@/lib/home/types";
 import VibePostCard from "@/components/home/VibePostCard";
 import HomeFeedToggle from "@/components/home/HomeFeedToggle";
 import ShopBrowseCard from "@/components/home/ShopBrowseCard";
-import MobileFilterBar from "@/components/home/MobileFilterBar";
 import TodayInterestsBanner from "@/components/home/TodayInterestsBanner";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
@@ -311,7 +310,6 @@ export default function HomePageClient({
       posts={posts}
       filteredCount={filteredPosts.length}
       googleMapsApiKey={googleMapsApiKey}
-      hideMobileFilterButton
     >
       <TodayInterestsBanner count={todayInterestCount} />
 
@@ -361,17 +359,6 @@ export default function HomePageClient({
         hotCount={hotPosts.length}
         popularCount={popularPosts.length}
         shopsCount={filteredShops.length}
-      />
-
-      <MobileFilterBar
-        genres={genres}
-        moods={moods}
-        areas={areas}
-        onGenresChange={setGenres}
-        onMoodsChange={setMoods}
-        onAreasChange={setAreas}
-        newShopsOnly={newShopsOnly}
-        onNewShopsOnlyChange={setNewShopsOnly}
       />
 
       <div className="mb-4 flex items-center justify-between">
