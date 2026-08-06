@@ -54,7 +54,7 @@ export default function LoginPage() {
     setError(null);
     setShowResend(false);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -71,9 +71,9 @@ export default function LoginPage() {
       return;
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    await supabase.auth.refreshSession();
+
+    const user = data.user ?? (await supabase.auth.getUser()).data.user;
 
     if (user) {
       router.replace(await resolvePostAuthPath(user));

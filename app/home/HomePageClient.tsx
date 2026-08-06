@@ -13,7 +13,8 @@ import {
   sortPostsWithPromotions,
 } from "@/lib/promotions";
 import { notifyPostInterestCreated } from "@/lib/notifications/api";
-import { formatSupabaseError } from "@/lib/supabase/errors";
+import { formatSupabaseError, isJwtAuthError } from "@/lib/supabase/errors";
+import { ensureFreshSession, signOutAndRedirectToLogin } from "@/lib/auth/session";
 import { fetchActiveCheckinUsersByShopIds } from "@/lib/checkins/api";
 import type { CheckinUser } from "@/lib/checkins/api";
 import { fetchTodayInterests } from "@/lib/mypage/api";
@@ -73,7 +74,19 @@ export default function HomePageClient({
         return;
       }
 
-      setUser(session.user);
+      await ensureFreshSession();
+
+      const {
+        data: { session: activeSession },
+      } = await supabase.auth.getSession();
+
+      if (!activeSession?.user) {
+        setLoading(false);
+        router.replace("/login");
+        return;
+      }
+
+      setUser(activeSession.user);
 
       const [postsResult, shopsResult, allInterestsResult, myInterestsResult, todayInterestsResult] =
         await Promise.all([
@@ -83,20 +96,26 @@ export default function HomePageClient({
           supabase
             .from("interests")
             .select("vibe_post_id")
-            .eq("user_id", session.user.id),
-          fetchTodayInterests(session.user.id),
+            .eq("user_id", activeSession.user.id),
+          fetchTodayInterests(activeSession.user.id),
         ]);
 
-      const errors: string[] = [];
-      if (postsResult.error) errors.push(formatSupabaseError(postsResult.error));
-      if (shopsResult.error) errors.push(formatSupabaseError(shopsResult.error));
+      const rawErrors: string[] = [];
+      if (postsResult.error) rawErrors.push(postsResult.error);
+      if (shopsResult.error) rawErrors.push(shopsResult.error);
       if (allInterestsResult.error) {
-        errors.push(formatSupabaseError(allInterestsResult.error.message));
+        rawErrors.push(allInterestsResult.error.message);
       }
       if (myInterestsResult.error) {
-        errors.push(formatSupabaseError(myInterestsResult.error.message));
+        rawErrors.push(myInterestsResult.error.message);
       }
-      if (errors.length > 0) setError(errors.join(" / "));
+      if (rawErrors.some(isJwtAuthError)) {
+        await signOutAndRedirectToLogin();
+        return;
+      }
+      if (rawErrors.length > 0) {
+        setError(rawErrors.map(formatSupabaseError).join(" / "));
+      }
 
       const boosts = await fetchActivePromotionBoosts("home_feed");
       setPosts(
