@@ -6,10 +6,11 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { resolvePostAuthPath } from "@/lib/auth/routing";
+import { getAuthCallbackUrl } from "@/lib/auth/redirect";
 import { getAuthErrorMessage, isEmailNotConfirmed } from "@/lib/auth/errors";
 
 function getEmailRedirectTo() {
-  return `${window.location.origin}/auth/callback`;
+  return getAuthCallbackUrl();
 }
 
 export default function LoginPage() {
@@ -111,12 +112,20 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-[#eeeaf4]"
-              >
-                パスワード
-              </label>
+              <div className="flex items-center justify-between gap-3">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-[#eeeaf4]"
+                >
+                  パスワード
+                </label>
+                <Link
+                  href="/login/forgot-password"
+                  className="text-xs font-medium text-[#9994a8] transition hover:text-[#ff3d00]"
+                >
+                  パスワードをお忘れですか？
+                </Link>
+              </div>
               <div className="relative mt-2">
                 <input
                   id="password"

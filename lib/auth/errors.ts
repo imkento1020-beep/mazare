@@ -64,7 +64,7 @@ function isNetworkError(error: AuthErrorLike) {
 
 export function getAuthErrorMessage(
   error: AuthErrorLike | null,
-  context: "login" | "signup" | "resend" = "login",
+  context: "login" | "signup" | "resend" | "reset" = "login",
 ): string {
   if (!error) {
     return "エラーが発生しました。もう一度お試しください。";
@@ -103,6 +103,10 @@ export function getAuthErrorMessage(
 
   if (context === "signup") {
     return "アカウントの作成に失敗しました。もう一度お試しください。";
+  }
+
+  if (context === "reset") {
+    return "パスワードの再設定に失敗しました。もう一度お試しください。";
   }
 
   return "エラーが発生しました。もう一度お試しください。";
