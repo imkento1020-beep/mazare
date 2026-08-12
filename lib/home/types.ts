@@ -30,6 +30,7 @@ export type InterestRow = {
   shop_id: string;
   vibe_post_id: string;
   created_at: string;
+  note?: string | null;
   vibe_posts?: {
     comment: string;
     posted_at: string;

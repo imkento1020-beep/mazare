@@ -1,24 +1,54 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { extractAreaFromAddress } from "@/lib/geo/area";
 import { formatOpenHours, type TodayInterestRow } from "@/lib/home/types";
 
 type TonightInterestCardProps = {
   item: TodayInterestRow;
   onCancel?: (interestId: string) => void;
+  onNoteSave?: (interestId: string, note: string | null) => Promise<string | null>;
   canceling?: boolean;
   compact?: boolean;
+  showMemo?: boolean;
 };
 
 export default function TonightInterestCard({
   item,
   onCancel,
+  onNoteSave,
   canceling = false,
   compact = false,
+  showMemo = false,
 }: TonightInterestCardProps) {
   const shop = item.vibe_posts?.shops;
   const area = extractAreaFromAddress(shop?.address);
+  const [memoOpen, setMemoOpen] = useState(false);
+  const [draftNote, setDraftNote] = useState(item.note ?? "");
+  const [savingNote, setSavingNote] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDraftNote(item.note ?? "");
+  }, [item.note]);
+
+  async function handleSaveNote() {
+    if (!onNoteSave || savingNote) return;
+
+    setSavingNote(true);
+    setNoteError(null);
+
+    const error = await onNoteSave(item.id, draftNote);
+    setSavingNote(false);
+
+    if (error) {
+      setNoteError(error);
+      return;
+    }
+
+    setMemoOpen(false);
+  }
 
   return (
     <div
@@ -59,6 +89,60 @@ export default function TonightInterestCard({
           </button>
         )}
       </div>
+
+      {showMemo && !compact && (
+        <div className="mt-3 border-t border-white/[0.06] pt-3">
+          {item.note && !memoOpen && (
+            <p className="mb-2 rounded-lg bg-[#18181f] px-3 py-2 text-sm text-[#eeeaf4]">
+              📝 {item.note}
+            </p>
+          )}
+
+          {!memoOpen ? (
+            <button
+              type="button"
+              onClick={() => setMemoOpen(true)}
+              className="text-sm font-semibold text-[#9994a8] transition hover:text-[#eeeaf4]"
+            >
+              📝 {item.note ? "メモを編集" : "メモを追加"}
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <textarea
+                value={draftNote}
+                onChange={(event) => setDraftNote(event.target.value)}
+                placeholder="例：友達と21時ごろに行く"
+                rows={2}
+                className="w-full resize-none rounded-xl border border-white/10 bg-[#18181f] px-3 py-2.5 text-sm text-[#eeeaf4] placeholder:text-[#5a5668] focus:border-[#ff3d00]/40 focus:outline-none"
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveNote}
+                  disabled={savingNote}
+                  className="rounded-lg bg-[#ff3d00] px-3 py-1.5 text-sm font-bold text-white disabled:opacity-60"
+                >
+                  {savingNote ? "保存中..." : "保存"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraftNote(item.note ?? "");
+                    setMemoOpen(false);
+                    setNoteError(null);
+                  }}
+                  className="rounded-lg px-3 py-1.5 text-sm font-medium text-[#9994a8] hover:text-[#eeeaf4]"
+                >
+                  キャンセル
+                </button>
+              </div>
+              {noteError && (
+                <p className="text-xs text-red-400">{noteError}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

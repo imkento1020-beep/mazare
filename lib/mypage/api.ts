@@ -162,6 +162,7 @@ export async function fetchTonightInterests(userId: string): Promise<{
       shop_id,
       vibe_post_id,
       created_at,
+      note,
       vibe_posts (
         comment,
         posted_at,
@@ -190,6 +191,7 @@ export async function fetchTonightInterests(userId: string): Promise<{
       shop_id: row.shop_id,
       vibe_post_id: row.vibe_post_id,
       created_at: row.created_at,
+      note: row.note ?? null,
       vibe_posts: vibePost
         ? {
             comment: vibePost.comment,
@@ -224,6 +226,23 @@ export async function cancelInterest(
   const { error } = await supabase
     .from("interests")
     .delete()
+    .eq("id", interestId)
+    .eq("user_id", userId);
+
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
+export async function updateInterestNote(
+  interestId: string,
+  userId: string,
+  note: string | null,
+): Promise<{ error: string | null }> {
+  const trimmed = note?.trim() ?? "";
+
+  const { error } = await supabase
+    .from("interests")
+    .update({ note: trimmed || null })
     .eq("id", interestId)
     .eq("user_id", userId);
 

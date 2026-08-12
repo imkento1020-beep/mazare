@@ -9,11 +9,13 @@ import type { VibePost } from "@/lib/home/types";
 import {
   cancelInterest,
   fetchTonightInterests,
+  updateInterestNote,
 } from "@/lib/mypage/api";
 import type { TodayInterestRow } from "@/lib/home/types";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import TonightInterestCard from "@/components/interests/TonightInterestCard";
+import TonightInterestsShareButton from "@/components/interests/TonightInterestsShareButton";
 import { isCurrentlyInTonightInterestHours } from "@/lib/home/dates";
 
 export default function TonightPage() {
@@ -23,6 +25,7 @@ export default function TonightPage() {
   const [loading, setLoading] = useState(true);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const inTonightHours = isCurrentlyInTonightInterestHours();
 
   useEffect(() => {
@@ -35,6 +38,8 @@ export default function TonightPage() {
         router.replace("/login");
         return;
       }
+
+      setUserId(session.user.id);
 
       const [interestsResult, postsResult] = await Promise.all([
         fetchTonightInterests(session.user.id),
@@ -76,6 +81,28 @@ export default function TonightPage() {
     setItems((prev) => prev.filter((item) => item.id !== interestId));
   }
 
+  async function handleNoteSave(interestId: string, note: string | null) {
+    if (!userId) return "ログインが必要です";
+
+    const { error: saveError } = await updateInterestNote(
+      interestId,
+      userId,
+      note,
+    );
+
+    if (saveError) return saveError;
+
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === interestId
+          ? { ...item, note: note?.trim() || null }
+          : item,
+      ),
+    );
+
+    return null;
+  }
+
   if (loading) return <LoadingScreen />;
 
   return (
@@ -89,10 +116,15 @@ export default function TonightPage() {
       filteredCount={sidebarPosts.length}
     >
       <div className="md:max-w-3xl">
-        <h1 className="text-xl font-black">今夜の行くかも</h1>
-        <p className="mt-1 text-sm text-[#9994a8]">
-          17:00〜翌5:00に「行くかも」したお店のリスト
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-black">今夜の行くかも</h1>
+            <p className="mt-1 text-sm text-[#9994a8]">
+              17:00〜翌5:00に「行くかも」したお店のリスト
+            </p>
+          </div>
+          {items.length > 0 && <TonightInterestsShareButton items={items} />}
+        </div>
 
         {!inTonightHours && (
           <p className="mt-3 rounded-xl border border-[#ffaa00]/20 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
@@ -129,7 +161,9 @@ export default function TonightPage() {
                 key={item.id}
                 item={item}
                 onCancel={handleCancel}
+                onNoteSave={handleNoteSave}
                 canceling={cancelingId === item.id}
+                showMemo
               />
             ))
           )}
