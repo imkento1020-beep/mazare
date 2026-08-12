@@ -8,7 +8,7 @@ import { clearStoredAppMode } from "@/lib/auth/mode";
 import {
   cancelInterest,
   fetchGuestProfile,
-  fetchTodayInterests,
+  fetchTonightInterests,
   fetchUserInterestStats,
   fetchUserInterests,
 } from "@/lib/mypage/api";
@@ -23,12 +23,12 @@ import {
   type FavoriteShop,
 } from "@/lib/favorites/api";
 import { fetchLiveShopIds, fetchVibePosts } from "@/lib/home/api";
-import { formatOpenHours, formatPostedAt } from "@/lib/home/types";
+import { formatPostedAt } from "@/lib/home/types";
 import type { InterestRow, TodayInterestRow, VibePost } from "@/lib/home/types";
-import { extractAreaFromAddress } from "@/lib/geo/area";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import FavoriteShopCard from "@/components/favorites/FavoriteShopCard";
+import TonightInterestCard from "@/components/interests/TonightInterestCard";
 import type { GuestProfile } from "@/lib/mypage/types";
 import type { User } from "@supabase/supabase-js";
 
@@ -68,7 +68,7 @@ export default function MyPage() {
         await Promise.all([
           fetchGuestProfile(session.user),
           fetchUserInterests(session.user.id),
-          fetchTodayInterests(session.user.id),
+          fetchTonightInterests(session.user.id),
           fetchUserInterestStats(session.user.id),
           fetchVibePosts(),
           session.user.email
@@ -296,53 +296,32 @@ export default function MyPage() {
       )}
 
       <section id="today-interests" className="mt-8 scroll-mt-24 md:max-w-2xl">
-        <h2 className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">
-          今日の行くかもリスト
-        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">
+            今夜の行くかもリスト
+          </h2>
+          <Link
+            href="/tonight"
+            className="text-xs font-semibold text-[#00e87a] hover:underline"
+          >
+            一覧を見る →
+          </Link>
+        </div>
+        <p className="mt-1 text-xs text-[#5a5668]">17:00〜翌5:00に追加したお店</p>
         <div className="mt-3 space-y-2">
           {todayInterests.length === 0 ? (
             <p className="rounded-[14px] border border-white/[0.07] bg-[#111118] p-4 text-sm text-[#9994a8]">
-              今日はまだ行くかもしたお店がありません
+              今夜の行くかもはまだありません
             </p>
           ) : (
-            todayInterests.map((item) => {
-              const shop = item.vibe_posts?.shops;
-              const area = extractAreaFromAddress(shop?.address);
-              return (
-                <div
-                  key={item.id}
-                  className="rounded-[14px] border border-white/[0.07] bg-[#111118] p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <Link
-                        href={`/shop/${item.shop_id}`}
-                        className="font-bold text-[#eeeaf4] hover:text-[#ff3d00]"
-                      >
-                        {shop?.name ?? "お店"}
-                      </Link>
-                      <p className="mt-1 text-xs text-[#9994a8]">
-                        📍 {area}
-                        {shop?.open_hours
-                          ? ` · 🕙 ${formatOpenHours(shop.open_hours)}`
-                          : ""}
-                      </p>
-                      <p className="mt-2 line-clamp-2 text-sm text-[#9994a8]">
-                        {item.vibe_posts?.comment ?? "—"}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCancelTodayInterest(item.id)}
-                      disabled={cancelingInterestId === item.id}
-                      className="shrink-0 bg-transparent text-sm font-semibold text-[#ff3d00] disabled:opacity-60"
-                    >
-                      {cancelingInterestId === item.id ? "取消中..." : "取り消す"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })
+            todayInterests.map((item) => (
+              <TonightInterestCard
+                key={item.id}
+                item={item}
+                onCancel={handleCancelTodayInterest}
+                canceling={cancelingInterestId === item.id}
+              />
+            ))
           )}
         </div>
       </section>

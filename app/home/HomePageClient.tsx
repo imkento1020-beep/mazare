@@ -17,15 +17,16 @@ import { formatSupabaseError, isJwtAuthError } from "@/lib/supabase/errors";
 import { ensureFreshSession, signOutAndRedirectToLogin } from "@/lib/auth/session";
 import { fetchActiveCheckinUsersByShopIds } from "@/lib/checkins/api";
 import type { CheckinUser } from "@/lib/checkins/api";
-import { fetchTodayInterests } from "@/lib/mypage/api";
+import { fetchTonightInterests, cancelInterest } from "@/lib/mypage/api";
 import { useUserLocation } from "@/hooks/useUserLocation";
-import type { Shop, VibePost } from "@/lib/home/types";
+import type { Shop, TodayInterestRow, VibePost } from "@/lib/home/types";
 import VibePostCard from "@/components/home/VibePostCard";
 import HomeFeedToggle from "@/components/home/HomeFeedToggle";
 import ShopBrowseCard from "@/components/home/ShopBrowseCard";
-import TodayInterestsBanner from "@/components/home/TodayInterestsBanner";
+import TonightInterestsSection from "@/components/home/TonightInterestsSection";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
+import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 import type { User } from "@supabase/supabase-js";
 
 type HomeViewMode = "hot" | "popular" | "shops";
@@ -38,6 +39,7 @@ export default function HomePageClient({
   googleMapsApiKey,
 }: HomePageClientProps) {
   const router = useRouter();
+  const { apiKey: resolvedMapsApiKey } = useGoogleMapsApiKey(googleMapsApiKey);
   const { location: userLocation } = useUserLocation();
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<VibePost[]>([]);
@@ -56,7 +58,8 @@ export default function HomePageClient({
   const [moods, setMoods] = useState<Set<string>>(new Set());
   const [areas, setAreas] = useState<Set<string>>(new Set(["すべて"]));
   const [newShopsOnly, setNewShopsOnly] = useState(false);
-  const [todayInterestCount, setTodayInterestCount] = useState(0);
+  const [tonightInterests, setTonightInterests] = useState<TodayInterestRow[]>([]);
+  const [cancelingTonightId, setCancelingTonightId] = useState<string | null>(null);
   const [checkinUsersByShop, setCheckinUsersByShop] = useState<
     Map<string, CheckinUser[]>
   >(new Map());
@@ -96,7 +99,7 @@ export default function HomePageClient({
             .from("interests")
             .select("vibe_post_id")
             .eq("user_id", activeSession.user.id),
-          fetchTodayInterests(activeSession.user.id),
+          fetchTonightInterests(activeSession.user.id),
         ]);
 
       const rawErrors: string[] = [];
@@ -130,7 +133,7 @@ export default function HomePageClient({
           ),
         ),
       );
-      setTodayInterestCount(todayInterestsResult.data.length);
+      setTonightInterests(todayInterestsResult.data);
 
       const shopIds = [
         ...new Set([
@@ -173,13 +176,19 @@ export default function HomePageClient({
   const latestPostsByShop = useMemo(() => {
     const map = new Map<
       string,
-      { comment: string; moods: string[] | null; posted_at: string | null }
+      {
+        comment: string;
+        moods: string[] | null;
+        images: string[] | null;
+        posted_at: string | null;
+      }
     >();
     for (const post of posts) {
       if (!map.has(post.shop_id)) {
         map.set(post.shop_id, {
           comment: post.comment,
           moods: post.moods,
+          images: post.images ?? null,
           posted_at: post.posted_at ?? null,
         });
       }
@@ -288,9 +297,49 @@ export default function HomePageClient({
       ...prev,
       [post.id]: Math.max(0, (prev[post.id] ?? 0) + (isInterested ? -1 : 1)),
     }));
-    setTodayInterestCount((prev) =>
-      Math.max(0, prev + (isInterested ? -1 : 1)),
-    );
+
+    if (user) {
+      const tonightResult = await fetchTonightInterests(user.id);
+      setTonightInterests(tonightResult.data);
+    }
+  }
+
+  async function handleCancelTonightInterest(interestId: string) {
+    if (!user || cancelingTonightId) return;
+
+    setCancelingTonightId(interestId);
+    setError(null);
+
+    const { error: cancelError } = await cancelInterest(interestId, user.id);
+
+    setCancelingTonightId(null);
+
+    if (cancelError) {
+      setError(cancelError);
+      return;
+    }
+
+    setTonightInterests((prev) => prev.filter((item) => item.id !== interestId));
+
+    const canceled = tonightInterests.find((item) => item.id === interestId);
+    if (canceled) {
+      setInterestedPostIds((prev) => {
+        const next = new Set(prev);
+        next.delete(canceled.vibe_post_id);
+        return next;
+      });
+      setPostInterestCounts((prev) => ({
+        ...prev,
+        [canceled.vibe_post_id]: Math.max(
+          0,
+          (prev[canceled.vibe_post_id] ?? 0) - 1,
+        ),
+      }));
+      setInterestCounts((prev) => ({
+        ...prev,
+        [canceled.shop_id]: Math.max(0, (prev[canceled.shop_id] ?? 0) - 1),
+      }));
+    }
   }
 
   if (loading) return <LoadingScreen />;
@@ -309,9 +358,13 @@ export default function HomePageClient({
       onNewShopsOnlyChange={setNewShopsOnly}
       posts={posts}
       filteredCount={filteredPosts.length}
-      googleMapsApiKey={googleMapsApiKey}
+      googleMapsApiKey={resolvedMapsApiKey}
     >
-      <TodayInterestsBanner count={todayInterestCount} />
+      <TonightInterestsSection
+        items={tonightInterests}
+        onCancel={handleCancelTonightInterest}
+        cancelingId={cancelingTonightId}
+      />
 
       <div className="mb-6 flex items-center justify-between rounded-[14px] border border-[#ff3d00]/20 bg-gradient-to-br from-[#ff3d00]/10 to-[#ffaa00]/6 px-4 py-3.5">
         <div className="flex items-center gap-2.5">
@@ -472,6 +525,8 @@ export default function HomePageClient({
                 shop={shop}
                 live={live}
                 isNew={isNewShop(shop)}
+                moods={live ? latest?.moods : null}
+                postImages={live ? latest?.images : null}
                 latestComment={live ? latest?.comment : null}
                 latestPostedAt={latest?.posted_at}
                 interestCount={interestCounts[shop.id] ?? 0}

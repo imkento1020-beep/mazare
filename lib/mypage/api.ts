@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { getTodayStartJST } from "@/lib/home/dates";
+import { getTonightInterestWindowJST } from "@/lib/home/dates";
 import type { InterestRow, TodayInterestRow } from "@/lib/home/types";
 import type { GuestProfile } from "./types";
 import type { User } from "@supabase/supabase-js";
@@ -147,11 +147,11 @@ export async function fetchUserInterests(userId: string): Promise<{
   return { data: rows, error: null };
 }
 
-export async function fetchTodayInterests(userId: string): Promise<{
+export async function fetchTonightInterests(userId: string): Promise<{
   data: TodayInterestRow[];
   error: string | null;
 }> {
-  const start = getTodayStartJST().toISOString();
+  const { start, end } = getTonightInterestWindowJST();
 
   const { data, error } = await supabase
     .from("interests")
@@ -170,7 +170,8 @@ export async function fetchTodayInterests(userId: string): Promise<{
     `,
     )
     .eq("user_id", userId)
-    .gte("created_at", start)
+    .gte("created_at", start.toISOString())
+    .lt("created_at", end.toISOString())
     .order("created_at", { ascending: false });
 
   if (error) return { data: [], error: error.message };
@@ -206,6 +207,14 @@ export async function fetchTodayInterests(userId: string): Promise<{
   });
 
   return { data: rows, error: null };
+}
+
+/** @deprecated fetchTonightInterests を使用 */
+export async function fetchTodayInterests(userId: string): Promise<{
+  data: TodayInterestRow[];
+  error: string | null;
+}> {
+  return fetchTonightInterests(userId);
 }
 
 export async function cancelInterest(

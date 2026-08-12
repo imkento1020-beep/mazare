@@ -23,7 +23,7 @@ export default function HomeSidebarRight({
   const moodTrends = countByMood(posts);
 
   return (
-    <aside className="hidden h-[calc(100vh-4rem)] w-[300px] shrink-0 overflow-y-auto border-l border-white/7 px-5 py-6 md:sticky md:top-16 md:block">
+    <aside className="hidden h-[calc(100vh-4rem)] w-[300px] shrink-0 overflow-y-auto border-l border-white/7 px-5 py-6 lg:sticky lg:top-16 lg:block">
       <SectionLabel>地図</SectionLabel>
       <div className="mb-4">
         <HomeMapPreview

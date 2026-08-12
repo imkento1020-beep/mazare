@@ -14,6 +14,7 @@ function isGuestAppPath(pathname: string) {
   return (
     pathname.startsWith("/home") ||
     pathname.startsWith("/map") ||
+    pathname.startsWith("/tonight") ||
     pathname.startsWith("/search") ||
     pathname.startsWith("/favorites") ||
     pathname.startsWith("/mypage") ||
@@ -35,6 +36,7 @@ export default function BottomNav() {
     else if (
       pathname.startsWith("/home") ||
       pathname.startsWith("/map") ||
+      pathname.startsWith("/tonight") ||
       pathname.startsWith("/search") ||
       pathname.startsWith("/favorites") ||
       pathname.startsWith("/mypage") ||
@@ -65,15 +67,15 @@ export default function BottomNav() {
   if (!items) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[100] border-t border-white/[0.07] bg-[rgba(8,8,16,0.92)] pb-5 backdrop-blur-[20px] md:hidden">
-      <div className="mx-auto grid h-16 max-w-[480px] grid-cols-4 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-[100] border-t border-white/[0.07] bg-[rgba(8,8,16,0.92)] pb-5 backdrop-blur-[20px] lg:hidden">
+      <div className="mx-auto grid h-16 max-w-[480px] grid-cols-5 px-1">
         {items.map((item) => {
           const active = isActivePath(pathname, item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition ${
+              className={`flex flex-col items-center justify-center gap-0.5 text-[9px] font-medium transition ${
                 active ? "text-[#ff3d00]" : "text-[#9994a8]"
               }`}
             >

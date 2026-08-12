@@ -12,7 +12,7 @@ type PostImageCarouselProps = {
 export default function PostImageCarousel({
   images,
   fallbackEmoji = "🍻",
-  aspectClassName = "h-[200px] md:h-[220px]",
+  aspectClassName = "aspect-[4/5] w-full min-h-[280px] max-h-[420px]",
   overlay,
 }: PostImageCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -77,7 +77,7 @@ export default function PostImageCarousel({
               />
             ))}
           </div>
-          <div className="pointer-events-none absolute right-3 top-3 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+          <div className="pointer-events-none absolute right-3 top-3 rounded-full bg-black/50 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-sm">
             {activeIndex + 1}/{validImages.length}
           </div>
         </>

@@ -95,6 +95,50 @@ export function getTonightWindowJST(now = new Date()): {
   };
 }
 
+/**
+ * 「今夜の行くかも」用（JST 17:00 〜 翌 5:00）
+ * - 17:00〜23:59 → 当日17:00〜翌5:00
+ * - 0:00〜4:59 → 前日17:00〜当日5:00
+ * - 5:00〜16:59 → 前日17:00〜当日5:00（前夜のリストを日中も確認できる）
+ */
+export function getTonightInterestWindowJST(now = new Date()): {
+  start: Date;
+  end: Date;
+} {
+  const parts = getJSTParts(now);
+
+  if (parts.hour >= 17) {
+    const tomorrow = addDaysJST(parts, 1);
+    return {
+      start: jstDateTimeToUtc(parts.year, parts.month, parts.day, 17),
+      end: jstDateTimeToUtc(tomorrow.year, tomorrow.month, tomorrow.day, 5),
+    };
+  }
+
+  const yesterday = addDaysJST(parts, -1);
+  return {
+    start: jstDateTimeToUtc(yesterday.year, yesterday.month, yesterday.day, 17),
+    end: jstDateTimeToUtc(parts.year, parts.month, parts.day, 5),
+  };
+}
+
+/** いまが今夜の行くかも時間帯（17:00〜翌5:00）か */
+export function isCurrentlyInTonightInterestHours(now = new Date()) {
+  const parts = getJSTParts(now);
+  return parts.hour >= 17 || parts.hour < 5;
+}
+
+export function isInterestCreatedTonight(
+  iso: string | null | undefined,
+  now = new Date(),
+) {
+  if (!iso) return false;
+  const created = new Date(iso);
+  const { start, end } = getTonightInterestWindowJST(now);
+  const time = created.getTime();
+  return time >= start.getTime() && time < end.getTime();
+}
+
 /** 当日0時（JST） */
 export function getTodayStartJST(now = new Date()): Date {
   const parts = getJSTParts(now);

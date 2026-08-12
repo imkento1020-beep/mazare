@@ -32,6 +32,50 @@ export function formatDistanceLabel(distanceKm: number): string {
   return `${Math.round(distanceKm)}km`;
 }
 
+export type AccessLabel = {
+  distanceKm: number;
+  walkMinutes: number;
+  shortLabel: string;
+  fullLabel: string;
+};
+
+export function getAccessLabel(
+  user: GeoPoint | null | undefined,
+  shop: { latitude?: number | null; longitude?: number | null },
+): AccessLabel | null {
+  if (!user || shop.latitude == null || shop.longitude == null) return null;
+
+  const distanceKm = haversineDistanceKm(user, {
+    latitude: Number(shop.latitude),
+    longitude: Number(shop.longitude),
+  });
+
+  if (!Number.isFinite(distanceKm)) return null;
+
+  const walkMinutes = Math.max(1, Math.round((distanceKm * 1000) / 80));
+  const shortLabel = `徒歩${walkMinutes}分`;
+
+  if (distanceKm < 1) {
+    const meters = Math.max(50, Math.round(distanceKm * 1000));
+    return {
+      distanceKm,
+      walkMinutes,
+      shortLabel,
+      fullLabel: `${meters}m · ${shortLabel}`,
+    };
+  }
+
+  const distanceText =
+    distanceKm < 10 ? `${distanceKm.toFixed(1)}km` : `${Math.round(distanceKm)}km`;
+
+  return {
+    distanceKm,
+    walkMinutes,
+    shortLabel,
+    fullLabel: `${distanceText} · ${shortLabel}`,
+  };
+}
+
 export function getDistanceLabel(
   user: GeoPoint | null | undefined,
   shop: { latitude?: number | null; longitude?: number | null },

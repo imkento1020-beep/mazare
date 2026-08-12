@@ -71,7 +71,7 @@ export default function GuestLayout({
       <div className="flex flex-1 flex-col">
         <div className="mx-auto flex w-full max-w-[480px] md:max-w-[1200px]">
           {showLeftSidebar && (
-            <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-[260px] shrink-0 overflow-y-auto border-r border-white/7 px-5 py-7 md:block">
+            <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-[260px] shrink-0 overflow-y-auto border-r border-white/7 px-5 py-7 lg:block">
               <FilterPanel
                 genres={genres}
                 moods={moods}
@@ -89,7 +89,7 @@ export default function GuestLayout({
           <main className="min-w-0 flex-1 px-4 py-4 md:px-7 md:py-6">
             {(showMobileSearch && onSearchChange) ||
             (hasFilters && !hideMobileFilterButton) ? (
-              <div className="mb-3 flex items-center gap-2 md:hidden">
+              <div className="mb-3 flex items-center gap-2 lg:hidden">
                 {showMobileSearch && onSearchChange && (
                   <div className="relative min-w-0 flex-1">
                     <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-[#5a5668]">
@@ -146,7 +146,7 @@ export default function GuestLayout({
         onGenresChange &&
         onMoodsChange &&
         onAreasChange && (
-          <div className="fixed inset-0 z-50 md:hidden">
+          <div className="fixed inset-0 z-50 lg:hidden">
             <button
               type="button"
               className="absolute inset-0 bg-black/60"
@@ -186,7 +186,7 @@ export default function GuestLayout({
           </div>
         )}
 
-      <div className="h-[84px] md:hidden" />
+      <div className="h-[84px] lg:hidden" />
     </div>
   );
 }
