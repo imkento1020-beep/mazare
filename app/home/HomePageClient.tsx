@@ -26,6 +26,7 @@ import ShopBrowseCard from "@/components/home/ShopBrowseCard";
 import TonightInterestsSection from "@/components/home/TonightInterestsSection";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
+import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 import type { User } from "@supabase/supabase-js";
 
 type HomeViewMode = "hot" | "popular" | "shops";
@@ -38,6 +39,7 @@ export default function HomePageClient({
   googleMapsApiKey,
 }: HomePageClientProps) {
   const router = useRouter();
+  const { apiKey: resolvedMapsApiKey } = useGoogleMapsApiKey(googleMapsApiKey);
   const { location: userLocation } = useUserLocation();
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<VibePost[]>([]);
@@ -350,7 +352,7 @@ export default function HomePageClient({
       onNewShopsOnlyChange={setNewShopsOnly}
       posts={posts}
       filteredCount={filteredPosts.length}
-      googleMapsApiKey={googleMapsApiKey}
+      googleMapsApiKey={resolvedMapsApiKey}
     >
       <TonightInterestsSection
         items={tonightInterests}

@@ -15,6 +15,7 @@ import BottomNav from "@/components/BottomNav";
 import GoogleMapView from "@/components/map/GoogleMapView";
 import MapShopCarousel from "@/components/map/MapShopCarousel";
 import MapShopPopup from "@/components/map/MapShopPopup";
+import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 
 type MapPageClientProps = {
   googleMapsApiKey: string;
@@ -40,7 +41,9 @@ export default function MapPageClient({
   const [locationError, setLocationError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const hasGoogleMapsKey = googleMapsApiKey.length > 0;
+  const { apiKey: resolvedMapsApiKey, loading: mapsKeyLoading } =
+    useGoogleMapsApiKey(googleMapsApiKey);
+  const hasGoogleMapsKey = resolvedMapsApiKey.length > 0;
 
   useEffect(() => {
     async function load() {
@@ -127,14 +130,14 @@ export default function MapPageClient({
 
       <div className="relative min-h-0 flex-1 basis-0">
         <GoogleMapView
-          apiKey={googleMapsApiKey}
+          apiKey={resolvedMapsApiKey}
           shops={mapShops}
           selectedId={selectedId}
           focusLocation={userLocation}
           onSelectShop={handleSelectShop}
         />
 
-        {!hasGoogleMapsKey && (
+        {!mapsKeyLoading && !hasGoogleMapsKey && (
           <div className="pointer-events-none absolute inset-x-4 top-4 z-10 rounded-xl border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
             Google Maps API キーが読み込まれていません。
             {setupHint}
