@@ -1,13 +1,10 @@
-/** サーバーコンポーネント / Route Handler 専用 — 本番は Vercel Environment Variables から読み込む */
+/** サーバーコンポーネント専用 — 本番ではホスティングの Environment Variables から読み込む */
 export function getServerGoogleMapsApiKey() {
-  // サーバー専用変数を優先（Vercel では再デプロイなしで反映される）
-  const serverKey = process.env.GOOGLE_MAPS_API_KEY?.trim();
-  if (serverKey) return serverKey;
-
-  const publicKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
-  if (publicKey) return publicKey;
-
-  return "";
+  return (
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ||
+    process.env.GOOGLE_MAPS_API_KEY?.trim() ||
+    ""
+  );
 }
 
 export function getGoogleMapsSetupHint() {
@@ -17,7 +14,7 @@ export function getGoogleMapsSetupHint() {
     process.env.VERCEL === "true";
 
   if (isProduction) {
-    return "Vercel の Project Settings → Environment Variables に NEXT_PUBLIC_GOOGLE_MAPS_API_KEY（または GOOGLE_MAPS_API_KEY）を Production 環境へ設定し、再デプロイしてください。";
+    return "ホスティング（Vercel 等）の Environment Variables に NEXT_PUBLIC_GOOGLE_MAPS_API_KEY を設定し、再デプロイしてください。";
   }
 
   return "`.env.local` に NEXT_PUBLIC_GOOGLE_MAPS_API_KEY を設定後、開発サーバーを再起動してください。";

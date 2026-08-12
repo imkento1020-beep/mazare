@@ -208,7 +208,7 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
 
         <form
           onSubmit={handleSearchSubmit}
-          className="relative mx-auto hidden max-w-[480px] flex-1 lg:block"
+          className="relative mx-auto hidden max-w-[480px] flex-1 md:block"
         >
           <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5a5668]">
             🔍
@@ -223,7 +223,7 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
         </form>
 
         <div className="ml-auto flex items-center gap-1 md:gap-2">
-          <div className="lg:hidden">
+          <div className="md:hidden">
             <IconButton href="/search" label="検索">
               🔍
             </IconButton>
@@ -232,7 +232,7 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
             <AppModeSwitcher mode={mode} onModeChange={setMode} compact />
           )}
           <NotificationBell />
-          <div className="hidden lg:contents">
+          <div className="hidden md:contents">
             <IconButton href="/mypage" label="プロフィール">
               👤
             </IconButton>

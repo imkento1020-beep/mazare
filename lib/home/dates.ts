@@ -128,17 +128,6 @@ export function isCurrentlyInTonightInterestHours(now = new Date()) {
   return parts.hour >= 17 || parts.hour < 5;
 }
 
-export function isInterestCreatedTonight(
-  iso: string | null | undefined,
-  now = new Date(),
-) {
-  if (!iso) return false;
-  const created = new Date(iso);
-  const { start, end } = getTonightInterestWindowJST(now);
-  const time = created.getTime();
-  return time >= start.getTime() && time < end.getTime();
-}
-
 /** 当日0時（JST） */
 export function getTodayStartJST(now = new Date()): Date {
   const parts = getJSTParts(now);

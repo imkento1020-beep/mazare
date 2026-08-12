@@ -26,7 +26,6 @@ import ShopBrowseCard from "@/components/home/ShopBrowseCard";
 import TonightInterestsSection from "@/components/home/TonightInterestsSection";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
-import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 import type { User } from "@supabase/supabase-js";
 
 type HomeViewMode = "hot" | "popular" | "shops";
@@ -39,7 +38,6 @@ export default function HomePageClient({
   googleMapsApiKey,
 }: HomePageClientProps) {
   const router = useRouter();
-  const { apiKey: resolvedMapsApiKey } = useGoogleMapsApiKey(googleMapsApiKey);
   const { location: userLocation } = useUserLocation();
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<VibePost[]>([]);
@@ -176,19 +174,13 @@ export default function HomePageClient({
   const latestPostsByShop = useMemo(() => {
     const map = new Map<
       string,
-      {
-        comment: string;
-        moods: string[] | null;
-        images: string[] | null;
-        posted_at: string | null;
-      }
+      { comment: string; moods: string[] | null; posted_at: string | null }
     >();
     for (const post of posts) {
       if (!map.has(post.shop_id)) {
         map.set(post.shop_id, {
           comment: post.comment,
           moods: post.moods,
-          images: post.images ?? null,
           posted_at: post.posted_at ?? null,
         });
       }
@@ -358,7 +350,7 @@ export default function HomePageClient({
       onNewShopsOnlyChange={setNewShopsOnly}
       posts={posts}
       filteredCount={filteredPosts.length}
-      googleMapsApiKey={resolvedMapsApiKey}
+      googleMapsApiKey={googleMapsApiKey}
     >
       <TonightInterestsSection
         items={tonightInterests}
@@ -525,8 +517,6 @@ export default function HomePageClient({
                 shop={shop}
                 live={live}
                 isNew={isNewShop(shop)}
-                moods={live ? latest?.moods : null}
-                postImages={live ? latest?.images : null}
                 latestComment={live ? latest?.comment : null}
                 latestPostedAt={latest?.posted_at}
                 interestCount={interestCounts[shop.id] ?? 0}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { extractCompactAreaFromAddress } from "@/lib/geo/area";
+import { extractAreaFromAddress } from "@/lib/geo/area";
 import { formatOpenHours, type TodayInterestRow } from "@/lib/home/types";
 
 type TonightInterestCardProps = {
@@ -18,7 +18,7 @@ export default function TonightInterestCard({
   compact = false,
 }: TonightInterestCardProps) {
   const shop = item.vibe_posts?.shops;
-  const area = extractCompactAreaFromAddress(shop?.address);
+  const area = extractAreaFromAddress(shop?.address);
 
   return (
     <div

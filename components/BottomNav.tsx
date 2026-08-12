@@ -67,7 +67,7 @@ export default function BottomNav() {
   if (!items) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[100] border-t border-white/[0.07] bg-[rgba(8,8,16,0.92)] pb-5 backdrop-blur-[20px] lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-[100] border-t border-white/[0.07] bg-[rgba(8,8,16,0.92)] pb-5 backdrop-blur-[20px] md:hidden">
       <div className="mx-auto grid h-16 max-w-[480px] grid-cols-5 px-1">
         {items.map((item) => {
           const active = isActivePath(pathname, item.href);

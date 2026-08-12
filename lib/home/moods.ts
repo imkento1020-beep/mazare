@@ -13,33 +13,10 @@ export function moodTagClass(mood: string) {
 
 export function heatLevel(moods: string[] | null) {
   if (moods?.includes("激熱")) {
-    return {
-      filled: 5,
-      percent: 85,
-      label: "激熱",
-      emoji: "🔥",
-      color: "text-[#ffaa00]",
-      barColor: "#ffaa00",
-    };
+    return { filled: 5, label: "激熱", color: "text-[#ffaa00]" };
   }
   if (moods?.includes("混ざり歓迎")) {
-    return {
-      filled: 3,
-      percent: 55,
-      label: "盛り上がり中",
-      emoji: "🎉",
-      color: "text-[#00e87a]",
-      barColor: "#00e87a",
-    };
+    return { filled: 3, label: "盛り上がり中", color: "text-[#00e87a]" };
   }
-  return {
-    filled: 2,
-    percent: 30,
-    label: "これから",
-    emoji: "✨",
-    color: "text-[#a855f7]",
-    barColor: "#a855f7",
-  };
+  return { filled: 2, label: "これから", color: "text-[#a855f7]" };
 }
-
-export type HeatInfo = ReturnType<typeof heatLevel>;
