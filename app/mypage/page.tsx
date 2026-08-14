@@ -13,11 +13,6 @@ import {
   fetchUserInterests,
 } from "@/lib/mypage/api";
 import {
-  acceptStaffInviteWithRole,
-  fetchPendingInvitesForEmail,
-  type StaffInvite,
-} from "@/lib/staff/api";
-import {
   fetchUserFavorites,
   removeFavoriteShop,
   type FavoriteShop,
@@ -42,11 +37,8 @@ export default function MyPage() {
   const [liveShopIds, setLiveShopIds] = useState<Set<string>>(new Set());
   const [sidebarPosts, setSidebarPosts] = useState<VibePost[]>([]);
   const [stats, setStats] = useState({ totalInterests: 0, visitedShops: 0 });
-  const [staffInvites, setStaffInvites] = useState<StaffInvite[]>([]);
-  const [acceptingInviteId, setAcceptingInviteId] = useState<string | null>(null);
   const [cancelingInterestId, setCancelingInterestId] = useState<string | null>(null);
   const [removingFavoriteId, setRemovingFavoriteId] = useState<string | null>(null);
-  const [inviteError, setInviteError] = useState<string | null>(null);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -64,16 +56,13 @@ export default function MyPage() {
 
       setUser(session.user);
 
-      const [profileResult, interestsResult, todayInterestsResult, interestStats, postsResult, invitesResult, favoritesResult, liveIds] =
+      const [profileResult, interestsResult, todayInterestsResult, interestStats, postsResult, favoritesResult, liveIds] =
         await Promise.all([
           fetchGuestProfile(session.user),
           fetchUserInterests(session.user.id),
           fetchTonightInterests(session.user.id),
           fetchUserInterestStats(session.user.id),
           fetchVibePosts(),
-          session.user.email
-            ? fetchPendingInvitesForEmail(session.user.email)
-            : Promise.resolve({ data: [], error: null }),
           fetchUserFavorites(session.user.id),
           fetchLiveShopIds(),
         ]);
@@ -83,7 +72,6 @@ export default function MyPage() {
       setTodayInterests(todayInterestsResult.data);
       setStats(interestStats);
       setSidebarPosts(postsResult.data ?? []);
-      setStaffInvites(invitesResult.data);
       if (favoritesResult.error) setFavoriteError(favoritesResult.error);
       setFavorites(favoritesResult.data);
       setLiveShopIds(liveIds);
@@ -92,24 +80,6 @@ export default function MyPage() {
 
     load();
   }, [router]);
-
-  async function handleAcceptInvite(inviteId: string) {
-    if (!user || acceptingInviteId) return;
-
-    setAcceptingInviteId(inviteId);
-    setInviteError(null);
-
-    const { error } = await acceptStaffInviteWithRole(inviteId, user);
-
-    setAcceptingInviteId(null);
-
-    if (error) {
-      setInviteError(error);
-      return;
-    }
-
-    setStaffInvites((prev) => prev.filter((invite) => invite.id !== inviteId));
-  }
 
   async function handleCancelTodayInterest(interestId: string) {
     if (!user || cancelingInterestId) return;
@@ -258,42 +228,6 @@ export default function MyPage() {
           )}
         </div>
       </section>
-
-      {staffInvites.length > 0 && (
-        <section className="mt-4 md:max-w-xl">
-          <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-[#5a5668]">
-            スタッフ招待
-          </h2>
-          <div className="mt-3 space-y-2">
-            {staffInvites.map((invite) => (
-              <div
-                key={invite.id}
-                className="rounded-[14px] border border-white/[0.07] bg-[#111118] p-4"
-              >
-                <p className="font-bold text-[#eeeaf4]">
-                  {invite.shops?.name ?? "お店"}
-                </p>
-                <p className="mt-1 text-sm text-[#9994a8]">
-                  スタッフとして招待されています
-                </p>
-                <button
-                  type="button"
-                  onClick={() => handleAcceptInvite(invite.id)}
-                  disabled={acceptingInviteId === invite.id}
-                  className="mt-3 w-full rounded-xl bg-[#ff3d00] py-2.5 text-sm font-bold text-white transition hover:bg-[#e63600] disabled:opacity-60"
-                >
-                  {acceptingInviteId === invite.id ? "承認中..." : "招待を承認する"}
-                </button>
-              </div>
-            ))}
-          </div>
-          {inviteError && (
-            <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              {inviteError}
-            </p>
-          )}
-        </section>
-      )}
 
       <section id="today-interests" className="mt-8 scroll-mt-24 md:max-w-2xl">
         <div className="flex items-center justify-between gap-3">

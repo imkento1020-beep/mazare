@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { fetchManagedShop, updateOwnerShop, fetchShopDashboardStats } from "@/lib/owner/api";
-import StaffManagementSection from "@/components/owner/StaffManagementSection";
 import { uploadShopImages } from "@/lib/owner/uploadImages";
 import { GENRE_OPTIONS, MAX_IMAGES } from "@/lib/owner/constants";
 import { getShopCoverImages } from "@/lib/home/types";
@@ -20,14 +19,12 @@ import {
   validateOpenHoursRange,
 } from "@/lib/shop/openHours";
 import type { Shop } from "@/lib/home/types";
-import type { User } from "@supabase/supabase-js";
 
 export default function OwnerProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [shop, setShop] = useState<Shop | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [stats, setStats] = useState({ views: 0, interests: 0, checkins: 0 });
   const [shopName, setShopName] = useState("");
@@ -58,7 +55,6 @@ export default function OwnerProfilePage() {
 
       const dashboardStats = await fetchShopDashboardStats(managedShop.id);
 
-      setUser(user);
       setIsOwner(shopOwner);
       setShop(managedShop);
       setShopName(managedShop.name);
@@ -248,17 +244,6 @@ export default function OwnerProfilePage() {
               })}
             </div>
           </div>
-
-          {shop && user && (
-          <StaffManagementSection
-            shop={shop}
-            user={user}
-            isOwner={isOwner}
-            onStaffIdsChange={(staffIds) =>
-              setShop((prev) => (prev ? { ...prev, staff_ids: staffIds } : prev))
-            }
-          />
-          )}
 
           {error && (
             <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
