@@ -8,6 +8,7 @@ import {
   fetchNotifications,
   markAllNotificationsRead,
   markNotificationRead,
+  syncPendingStaffInviteNotifications,
 } from "@/lib/notifications/api";
 import {
   formatNotificationTime,
@@ -37,6 +38,8 @@ export default function NotificationsPage() {
         router.replace("/login");
         return;
       }
+
+      await syncPendingStaffInviteNotifications();
 
       const { data, error: fetchError } = await fetchNotifications(50);
       setNotifications(data);

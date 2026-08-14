@@ -8,6 +8,7 @@ import {
   fetchUnreadNotificationCount,
   markAllNotificationsRead,
   markNotificationRead,
+  syncPendingStaffInviteNotifications,
 } from "@/lib/notifications/api";
 import {
   formatNotificationTime,
@@ -31,6 +32,8 @@ export default function NotificationBell({ className = "" }: NotificationBellPro
   async function loadNotifications() {
     setLoading(true);
     setError(null);
+
+    await syncPendingStaffInviteNotifications();
 
     const [listResult, countResult] = await Promise.all([
       fetchNotifications(),

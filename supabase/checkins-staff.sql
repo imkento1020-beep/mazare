@@ -104,7 +104,7 @@ DROP POLICY IF EXISTS "shop_staff_invites_select_invitee" ON public.shop_staff_i
 CREATE POLICY "shop_staff_invites_select_invitee" ON public.shop_staff_invites
   FOR SELECT TO authenticated
   USING (
-    lower(email) = lower(coalesce(auth.jwt()->>'email', ''))
+    lower(trim(email)) = lower(trim(coalesce(auth.jwt()->>'email', '')))
   );
 
 DROP POLICY IF EXISTS "shop_staff_invites_insert_owner" ON public.shop_staff_invites;
@@ -146,7 +146,7 @@ DECLARE
   v_invite public.shop_staff_invites%ROWTYPE;
   v_email TEXT;
 BEGIN
-  v_email := lower(coalesce(auth.jwt()->>'email', ''));
+  v_email := lower(trim(coalesce(auth.jwt()->>'email', '')));
   IF v_email = '' THEN
     RAISE EXCEPTION 'メールアドレスが確認できません';
   END IF;
@@ -160,7 +160,7 @@ BEGIN
     RAISE EXCEPTION '招待が見つからないか、既に処理済みです';
   END IF;
 
-  IF lower(v_invite.email) <> v_email THEN
+  IF lower(trim(v_invite.email)) <> v_email THEN
     RAISE EXCEPTION 'この招待は別のメールアドレス向けです';
   END IF;
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { clearStoredAppMode } from "@/lib/auth/mode";
+import { clearStoredAppMode, setStoredAppMode } from "@/lib/auth/mode";
 import {
   cancelInterest,
   fetchGuestProfile,
@@ -17,6 +17,7 @@ import {
   fetchPendingInvitesForEmail,
   type StaffInvite,
 } from "@/lib/staff/api";
+import { syncPendingStaffInviteNotifications } from "@/lib/notifications/api";
 import {
   fetchUserFavorites,
   removeFavoriteShop,
@@ -64,6 +65,8 @@ export default function MyPage() {
 
       setUser(session.user);
 
+      await syncPendingStaffInviteNotifications();
+
       const [profileResult, interestsResult, todayInterestsResult, interestStats, postsResult, invitesResult, favoritesResult, liveIds] =
         await Promise.all([
           fetchGuestProfile(session.user),
@@ -93,6 +96,20 @@ export default function MyPage() {
     load();
   }, [router]);
 
+  useEffect(() => {
+    if (loading || staffInvites.length === 0) return;
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#staff-invites") return;
+
+    const timer = window.setTimeout(() => {
+      document
+        .getElementById("staff-invites")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+
+    return () => window.clearTimeout(timer);
+  }, [loading, staffInvites.length]);
+
   async function handleAcceptInvite(inviteId: string) {
     if (!user || acceptingInviteId) return;
 
@@ -109,6 +126,8 @@ export default function MyPage() {
     }
 
     setStaffInvites((prev) => prev.filter((invite) => invite.id !== inviteId));
+    setStoredAppMode("owner");
+    router.replace("/owner/dashboard");
   }
 
   async function handleCancelTodayInterest(interestId: string) {
@@ -192,6 +211,45 @@ export default function MyPage() {
         </Link>
       </section>
 
+      {staffInvites.length > 0 && (
+        <section id="staff-invites" className="mt-4 scroll-mt-24 md:max-w-xl">
+          <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-[#5a5668]">
+            スタッフ招待
+          </h2>
+          <p className="mt-1 text-xs text-[#9994a8]">
+            お店からスタッフとして招待されています。承認すると店舗管理画面を使えます。
+          </p>
+          <div className="mt-3 space-y-2">
+            {staffInvites.map((invite) => (
+              <div
+                key={invite.id}
+                className="rounded-[14px] border border-[#ff3d00]/35 bg-[#ff3d00]/10 p-4"
+              >
+                <p className="font-bold text-[#eeeaf4]">
+                  {invite.shops?.name ?? "お店"}
+                </p>
+                <p className="mt-1 text-sm text-[#9994a8]">
+                  スタッフとして招待されています
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleAcceptInvite(invite.id)}
+                  disabled={acceptingInviteId === invite.id}
+                  className="mt-3 w-full rounded-xl bg-[#ff3d00] py-2.5 text-sm font-bold text-white transition hover:bg-[#e63600] disabled:opacity-60"
+                >
+                  {acceptingInviteId === invite.id ? "承認中..." : "招待を承認する"}
+                </button>
+              </div>
+            ))}
+          </div>
+          {inviteError && (
+            <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              {inviteError}
+            </p>
+          )}
+        </section>
+      )}
+
       <section className="mt-4 grid grid-cols-2 gap-3 md:max-w-xl">
         <div className="rounded-[14px] bg-[#111118] p-4 text-center">
           <p className="text-2xl font-black text-[#ff3d00]">
@@ -258,42 +316,6 @@ export default function MyPage() {
           )}
         </div>
       </section>
-
-      {staffInvites.length > 0 && (
-        <section className="mt-4 md:max-w-xl">
-          <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-[#5a5668]">
-            スタッフ招待
-          </h2>
-          <div className="mt-3 space-y-2">
-            {staffInvites.map((invite) => (
-              <div
-                key={invite.id}
-                className="rounded-[14px] border border-white/[0.07] bg-[#111118] p-4"
-              >
-                <p className="font-bold text-[#eeeaf4]">
-                  {invite.shops?.name ?? "お店"}
-                </p>
-                <p className="mt-1 text-sm text-[#9994a8]">
-                  スタッフとして招待されています
-                </p>
-                <button
-                  type="button"
-                  onClick={() => handleAcceptInvite(invite.id)}
-                  disabled={acceptingInviteId === invite.id}
-                  className="mt-3 w-full rounded-xl bg-[#ff3d00] py-2.5 text-sm font-bold text-white transition hover:bg-[#e63600] disabled:opacity-60"
-                >
-                  {acceptingInviteId === invite.id ? "承認中..." : "招待を承認する"}
-                </button>
-              </div>
-            ))}
-          </div>
-          {inviteError && (
-            <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              {inviteError}
-            </p>
-          )}
-        </section>
-      )}
 
       <section id="today-interests" className="mt-8 scroll-mt-24 md:max-w-2xl">
         <div className="flex items-center justify-between gap-3">
