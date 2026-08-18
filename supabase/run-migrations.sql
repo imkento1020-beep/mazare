@@ -82,6 +82,7 @@ GRANT UPDATE, DELETE ON public.vibe_posts TO authenticated;
 -- 4. 通知 (notifications) → supabase/notifications.sql を別途実行
 -- 5. 投稿ブースト（将来）→ supabase/promotions-future.sql を別途実行
 -- 6. チェックイン & スタッフ招待 → supabase/checkins-staff.sql を別途実行
+-- 6b. スタッフ招待のサイト内通知 → supabase/staff-invite-notifications.sql を別途実行
 -- 7. チェックイン (checkins) → supabase/checkins.sql を別途実行
 -- 8. 店舗座標 → supabase/shops-coordinates.sql を別途実行
 -- ============================================================

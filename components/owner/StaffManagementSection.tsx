@@ -91,7 +91,7 @@ export default function StaffManagementSection({
     }
 
     setEmail("");
-    setMessage("招待を送信しました");
+    setMessage("招待を登録しました。相手がログインすると通知で確認できます");
     const { data } = await fetchShopStaffInvites(shop.id);
     setInvites(data);
   }
@@ -138,7 +138,7 @@ export default function StaffManagementSection({
         <>
       <p className="text-sm font-medium">スタッフ管理</p>
       <p className="mt-1 text-xs leading-relaxed text-[#9994a8]">
-        メールでスタッフを招待できます。承認後、ダッシュボードの管理機能を利用できます。
+        メールでスタッフを招待できます。相手が Mazare にログインすると通知が届き、マイページから承認できます。
       </p>
 
       {isOwner && (

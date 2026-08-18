@@ -5,6 +5,7 @@ import {
   mergeRoles,
   rolesToMetadata,
 } from "@/lib/auth/roles";
+import { notifyStaffInviteCreated } from "@/lib/notifications/api";
 import {
   isMissingTableError,
   missingTableMessage,
@@ -34,30 +35,41 @@ export async function createStaffInvite(input: {
   shopId: string;
   ownerId: string;
   email: string;
-}): Promise<{ error: string | null }> {
+}): Promise<{ inviteId: string | null; error: string | null }> {
   const email = normalizeEmail(input.email);
   if (!email.includes("@")) {
-    return { error: "有効なメールアドレスを入力してください" };
+    return { inviteId: null, error: "有効なメールアドレスを入力してください" };
   }
 
-  const { error } = await supabase.from("shop_staff_invites").insert({
-    shop_id: input.shopId,
-    email,
-    invited_by: input.ownerId,
-    status: "pending",
-  });
+  const { data, error } = await supabase
+    .from("shop_staff_invites")
+    .insert({
+      shop_id: input.shopId,
+      email,
+      invited_by: input.ownerId,
+      status: "pending",
+    })
+    .select("id")
+    .single();
 
   if (error) {
     if (isMissingTableError(error.message, "shop_staff_invites")) {
-      return { error: missingTableMessage("shop_staff_invites") };
+      return { inviteId: null, error: missingTableMessage("shop_staff_invites") };
     }
     if (error.message.includes("duplicate") || error.code === "23505") {
-      return { error: "このメールアドレスには既に招待を送信済みです" };
+      return {
+        inviteId: null,
+        error: "このメールアドレスには既に招待を送信済みです",
+      };
     }
-    return { error: error.message };
+    return { inviteId: null, error: error.message };
   }
 
-  return { error: null };
+  if (data?.id) {
+    await notifyStaffInviteCreated(data.id);
+  }
+
+  return { inviteId: data?.id ?? null, error: null };
 }
 
 export async function fetchShopStaffInvites(shopId: string): Promise<{

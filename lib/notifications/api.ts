@@ -110,3 +110,40 @@ export async function notifyShopFavoritedCreated(favoriteId: string) {
     p_favorite_id: favoriteId,
   });
 }
+
+export async function notifyStaffInviteCreated(inviteId: string) {
+  return callNotifyRpc("notify_staff_invite_created", {
+    p_invite_id: inviteId,
+  });
+}
+
+export async function syncPendingStaffInviteNotifications(): Promise<{
+  created: number;
+  error: string | null;
+}> {
+  const { data, error } = await supabase.rpc(
+    "sync_pending_staff_invite_notifications",
+  );
+
+  if (!error) {
+    return { created: typeof data === "number" ? data : 0, error: null };
+  }
+
+  if (isMissingTableError(error.message, "notifications")) {
+    return { created: 0, error: null };
+  }
+
+  if (
+    error.message.includes("Could not find the function") ||
+    error.message.includes("schema cache") ||
+    isMissingTableError(error.message, "shop_staff_invites")
+  ) {
+    return { created: 0, error: null };
+  }
+
+  console.warn(
+    "Notification RPC sync_pending_staff_invite_notifications failed:",
+    error.message,
+  );
+  return { created: 0, error: null };
+}
