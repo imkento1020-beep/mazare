@@ -3,7 +3,7 @@ export const GUEST_BOTTOM_NAV = [
   { label: "地図", href: "/map", icon: "🗺️" },
   { label: "行くかも", href: "/tonight", icon: "👋" },
   { label: "探す", href: "/search", icon: "🔍" },
-  { label: "マイ", href: "/mypage", icon: "👤" },
+  { label: "マイページ", href: "/mypage", icon: "👤" },
 ] as const;
 
 export const GUEST_SIDEBAR_NAV = [
