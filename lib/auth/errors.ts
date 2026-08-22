@@ -62,6 +62,11 @@ function isNetworkError(error: AuthErrorLike) {
   );
 }
 
+function isRedirectNotAllowed(error: AuthErrorLike) {
+  const { message } = normalize(error);
+  return message.includes("redirect") && message.includes("not allowed");
+}
+
 export function getAuthErrorMessage(
   error: AuthErrorLike | null,
   context: "login" | "signup" | "resend" | "reset" = "login",
@@ -95,6 +100,10 @@ export function getAuthErrorMessage(
 
   if (isNetworkError(error)) {
     return "ネットワークエラーが発生しました。接続を確認して再度お試しください。";
+  }
+
+  if (isRedirectNotAllowed(error)) {
+    return "認証後のリダイレクト URL が Supabase に登録されていません。管理者に https://mazare.app/auth/callback の追加を依頼してください。";
   }
 
   if (context === "login") {
