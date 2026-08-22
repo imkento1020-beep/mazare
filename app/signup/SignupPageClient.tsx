@@ -1,21 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
-import { completeAuthFlow } from "@/lib/auth/postAuth";
-import { getAuthCallbackUrl } from "@/lib/auth/redirect";
-import { setStoredAppMode } from "@/lib/auth/mode";
 import { storePendingStaffInvite } from "@/lib/staff/pendingInvite";
-import {
-  getUserRoles,
-  mergeRoles,
-  rolesForSignup,
-  rolesToMetadata,
-} from "@/lib/auth/roles";
-import { getAuthErrorMessage, isEmailNotConfirmed, isInvalidCredentials } from "@/lib/auth/errors";
 
 type UserType = "guest" | "owner";
 
@@ -37,7 +26,6 @@ const userTypeOptions: {
 ];
 
 export default function SignupPageClient() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -66,28 +54,27 @@ export default function SignupPageClient() {
     }
   }, [searchParams]);
 
-  function getEmailRedirectTo() {
-    return getAuthCallbackUrl();
-  }
-
   async function handleResend() {
-    if (!email) return;
+    if (!email || !password) {
+      setError("確認メールの再送にはパスワード入力が必要です。");
+      return;
+    }
 
     setResending(true);
     setError(null);
 
-    const { error: resendError } = await supabase.auth.resend({
-      type: "signup",
-      email,
-      options: {
-        emailRedirectTo: getEmailRedirectTo(),
-      },
+    const response = await fetch("/api/auth/resend-confirmation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, userType }),
     });
+
+    const data = (await response.json()) as { message?: string };
 
     setResending(false);
 
-    if (resendError) {
-      setError(getAuthErrorMessage(resendError, "resend"));
+    if (!response.ok) {
+      setError(data.message ?? "確認メールの再送に失敗しました。");
       return;
     }
 
@@ -102,94 +89,26 @@ export default function SignupPageClient() {
     setEmailSent(false);
     setShowResend(false);
 
-    const signupRoles = rolesForSignup(userType);
+    const response = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, userType }),
+    });
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
-      {
-        email,
-        password,
-        options: {
-          emailRedirectTo: getEmailRedirectTo(),
-          data: rolesToMetadata(signupRoles),
-        },
-      },
-    );
+    const data = (await response.json()) as { message?: string };
 
     setLoading(false);
 
-    if (signUpError) {
-      setError(getAuthErrorMessage(signUpError, "signup"));
+    if (!response.ok) {
+      setError(data.message ?? "アカウントの作成に失敗しました。");
+      if (response.status === 409) {
+        setShowResend(false);
+      }
       return;
     }
 
-    if (signUpData.session && signUpData.user) {
-      setStoredAppMode(userType);
-      router.replace(await completeAuthFlow(signUpData.user, userType));
-      return;
-    }
-
-    if (signUpData.user?.identities?.length === 0) {
-      const { data: signInData, error: signInError } =
-        await supabase.auth.signInWithPassword({ email, password });
-
-      if (signInError) {
-        setError(
-          isInvalidCredentials(signInError)
-            ? "このメールアドレスは既に登録されています。パスワードをご確認のうえ、ログインしてください。"
-            : getAuthErrorMessage(signInError, "login"),
-        );
-        return;
-      }
-
-      if (signInData.user) {
-        const currentRoles = getUserRoles(signInData.user);
-        const mergedRoles = mergeRoles(currentRoles, signupRoles);
-
-        if (mergedRoles.length > currentRoles.length) {
-          await supabase.auth.updateUser({
-            data: rolesToMetadata(mergedRoles),
-          });
-
-          const {
-            data: { user: updatedUser },
-          } = await supabase.auth.getUser();
-
-          setStoredAppMode(userType);
-          router.replace(
-            await completeAuthFlow(updatedUser ?? signInData.user, userType),
-          );
-          return;
-        }
-
-        setStoredAppMode(userType);
-        router.replace(await completeAuthFlow(signInData.user, userType));
-        return;
-      }
-
-      setError("このメールアドレスは既に登録されています。ログインしてください。");
-      return;
-    }
-
-    if (signUpData.user) {
-      const { data: signInData, error: signInError } =
-        await supabase.auth.signInWithPassword({ email, password });
-
-      if (signInData.user) {
-        router.replace(await completeAuthFlow(signInData.user));
-        return;
-      }
-
-      if (signInError && isEmailNotConfirmed(signInError)) {
-        setEmailSent(true);
-        setShowResend(true);
-        return;
-      }
-
-      setError(getAuthErrorMessage(signInError ?? null, "login"));
-      return;
-    }
-
-    setError("アカウントの作成に失敗しました。もう一度お試しください。");
+    setEmailSent(true);
+    setShowResend(true);
   }
 
   return (

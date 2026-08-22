@@ -6,13 +6,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { completeAuthFlow } from "@/lib/auth/postAuth";
-import { getAuthCallbackUrl } from "@/lib/auth/redirect";
 import { storePendingStaffInvite } from "@/lib/staff/pendingInvite";
 import { getAuthErrorMessage, isEmailNotConfirmed } from "@/lib/auth/errors";
-
-function getEmailRedirectTo() {
-  return getAuthCallbackUrl();
-}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,28 +28,32 @@ export default function LoginPage() {
   }, []);
 
   async function handleResend() {
-    if (!email) return;
+    if (!email || !password) {
+      setError("確認メールの再送にはパスワード入力が必要です。");
+      return;
+    }
 
     setResending(true);
     setError(null);
     setResendSuccess(false);
 
-    const { error: resendError } = await supabase.auth.resend({
-      type: "signup",
-      email,
-      options: {
-        emailRedirectTo: getEmailRedirectTo(),
-      },
+    const response = await fetch("/api/auth/resend-confirmation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
     });
+
+    const data = (await response.json()) as { message?: string };
 
     setResending(false);
 
-    if (resendError) {
-      setError(getAuthErrorMessage(resendError, "resend"));
+    if (!response.ok) {
+      setError(data.message ?? "確認メールの再送に失敗しました。");
       return;
     }
 
     setResendSuccess(true);
+    setShowResend(true);
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
