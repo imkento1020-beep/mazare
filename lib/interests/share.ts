@@ -2,7 +2,7 @@ import { extractAreaFromAddress } from "@/lib/geo/area";
 import type { TodayInterestRow } from "@/lib/home/types";
 
 const DEFAULT_SHARE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://mazare.vercel.app";
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://mazare.app";
 
 export function getTonightListShareUrl() {
   if (typeof window !== "undefined" && window.location.origin) {

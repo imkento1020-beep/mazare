@@ -5,8 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
-import { resolvePostAuthPath } from "@/lib/auth/routing";
+import { completeAuthFlow } from "@/lib/auth/postAuth";
+import { getAuthCallbackUrl } from "@/lib/auth/redirect";
 import { setStoredAppMode } from "@/lib/auth/mode";
+import { storePendingStaffInvite } from "@/lib/staff/pendingInvite";
 import {
   getUserRoles,
   mergeRoles,
@@ -51,10 +53,21 @@ export default function SignupPageClient() {
     if (searchParams.get("type") === "owner") {
       setUserType("owner");
     }
+
+    const inviteId = searchParams.get("invite");
+    const invitedEmail = searchParams.get("email");
+
+    if (inviteId) {
+      storePendingStaffInvite(inviteId);
+    }
+
+    if (invitedEmail) {
+      setEmail(invitedEmail);
+    }
   }, [searchParams]);
 
   function getEmailRedirectTo() {
-    return `${window.location.origin}/auth/callback`;
+    return getAuthCallbackUrl();
   }
 
   async function handleResend() {
@@ -111,7 +124,7 @@ export default function SignupPageClient() {
 
     if (signUpData.session && signUpData.user) {
       setStoredAppMode(userType);
-      router.replace(await resolvePostAuthPath(signUpData.user, userType));
+      router.replace(await completeAuthFlow(signUpData.user, userType));
       return;
     }
 
@@ -143,13 +156,13 @@ export default function SignupPageClient() {
 
           setStoredAppMode(userType);
           router.replace(
-            await resolvePostAuthPath(updatedUser ?? signInData.user, userType),
+            await completeAuthFlow(updatedUser ?? signInData.user, userType),
           );
           return;
         }
 
         setStoredAppMode(userType);
-        router.replace(await resolvePostAuthPath(signInData.user, userType));
+        router.replace(await completeAuthFlow(signInData.user, userType));
         return;
       }
 
@@ -162,7 +175,7 @@ export default function SignupPageClient() {
         await supabase.auth.signInWithPassword({ email, password });
 
       if (signInData.user) {
-        router.replace(await resolvePostAuthPath(signInData.user));
+        router.replace(await completeAuthFlow(signInData.user));
         return;
       }
 
@@ -183,7 +196,9 @@ export default function SignupPageClient() {
     <AuthLayout>
       <h2 className="text-2xl font-semibold text-[#eeeaf4]">アカウント作成</h2>
       <p className="mt-2 text-sm text-[#9994a8]">
-        mazareへようこそ。アカウントを作成して始めましょう。
+        {searchParams.get("invite")
+          ? "スタッフ招待を承認するためにアカウントを作成します。"
+          : "mazareへようこそ。アカウントを作成して始めましょう。"}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -309,15 +324,16 @@ export default function SignupPageClient() {
             {emailSent && (
               <div className="space-y-2 rounded-lg border border-[#00e87a]/30 bg-[#00e87a]/10 px-4 py-3 text-sm text-[#00e87a]">
                 <p>
-                  確認メールを送信しました。メール内のリンクをクリックすると、自動的にログインして
-                  {userType === "owner"
-                    ? "お店の登録画面"
-                    : "ホーム画面"}
+                  確認メールを送信しました。メール内のリンクをクリックしてメールアドレスを確認すると、自動的にログインして
+                  {searchParams.get("invite")
+                    ? "スタッフ招待を承認し、店舗管理画面"
+                    : userType === "owner"
+                      ? "お店の登録画面"
+                      : "ホーム画面"}
                   へ移動します。
                 </p>
                 <p className="text-xs text-[#00e87a]/80">
-                  届かない場合は迷惑メールフォルダもご確認ください。Supabase
-                  の無料メールは1時間に2通までの制限があります。
+                  届かない場合は迷惑メールフォルダもご確認ください。
                 </p>
               </div>
             )}

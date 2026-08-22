@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import {
   buildStaffMembers,
-  createStaffInvite,
   fetchShopStaffInvites,
   removeStaffMember,
   revokeStaffInvite,
@@ -77,23 +77,43 @@ export default function StaffManagementSection({
     setError(null);
     setMessage(null);
 
-    const { error: inviteError } = await createStaffInvite({
-      shopId: shop.id,
-      ownerId: user.id,
-      email,
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      setSubmitting(false);
+      setError("ログインが必要です");
+      return;
+    }
+
+    const response = await fetch("/api/staff/invite", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        shopId: shop.id,
+        email: email.trim(),
+      }),
     });
+
+    const responseData = (await response.json()) as {
+      message?: string;
+    };
 
     setSubmitting(false);
 
-    if (inviteError) {
-      setError(inviteError);
+    if (!response.ok) {
+      setError(responseData.message ?? "招待メールの送信に失敗しました");
       return;
     }
 
     setEmail("");
-    setMessage("招待を登録しました。相手がログインすると通知で確認できます");
-    const { data } = await fetchShopStaffInvites(shop.id);
-    setInvites(data);
+    setMessage(responseData.message ?? "招待メールを送信しました");
+    const { data: inviteList } = await fetchShopStaffInvites(shop.id);
+    setInvites(inviteList);
   }
 
   async function handleRevoke(inviteId: string) {
@@ -138,7 +158,7 @@ export default function StaffManagementSection({
         <>
       <p className="text-sm font-medium">スタッフ管理</p>
       <p className="mt-1 text-xs leading-relaxed text-[#9994a8]">
-        メールでスタッフを招待できます。相手が Mazare にログインすると通知が届き、マイページから承認できます。
+        招待したメールアドレスに SendGrid から招待メールを送信します。相手がリンクから承認すると、店舗管理画面にアクセスできます。
       </p>
 
       {isOwner && (

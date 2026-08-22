@@ -1,14 +1,14 @@
+export {
+  getAuthCallbackUrl,
+  getLoginUrl,
+  getPasswordResetUrl,
+  getSignupUrl,
+  getSiteUrl,
+  getStaffJoinUrl,
+} from "@/lib/site/url";
+
+import { getSiteUrl } from "@/lib/site/url";
+
 export function getAuthRedirectOrigin() {
-  if (typeof window !== "undefined") {
-    return window.location.origin;
-  }
-  return "";
-}
-
-export function getAuthCallbackUrl() {
-  return `${getAuthRedirectOrigin()}/auth/callback`;
-}
-
-export function getPasswordResetUrl() {
-  return `${getAuthRedirectOrigin()}/login/reset-password`;
+  return getSiteUrl();
 }

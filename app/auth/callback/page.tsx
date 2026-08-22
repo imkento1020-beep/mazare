@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { EmailOtpType, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
-import { resolvePostAuthPath } from "@/lib/auth/routing";
+import { completeAuthFlow } from "@/lib/auth/postAuth";
 
 function getAuthErrorMessage(error: { message: string } | null) {
   if (!error) return "認証に失敗しました。もう一度お試しください。";
@@ -22,7 +22,8 @@ function getAuthErrorMessage(error: { message: string } | null) {
 
 export default function AuthCallbackPage() {
   const router = useRouter();
-  const [message, setMessage] = useState("認証処理中...");
+  const [message, setMessage] = useState("メールアドレスを確認しています...");
+  const [verified, setVerified] = useState(false);
   const handledRef = useRef(false);
 
   useEffect(() => {
@@ -30,8 +31,10 @@ export default function AuthCallbackPage() {
     handledRef.current = true;
 
     async function redirectAuthenticatedUser(user: User) {
+      setVerified(true);
+      setMessage("メールアドレスが確認されました。アカウントの準備をしています...");
       window.history.replaceState({}, "", "/auth/callback");
-      router.replace(await resolvePostAuthPath(user));
+      router.replace(await completeAuthFlow(user));
     }
 
     async function tryExistingSession() {
@@ -146,7 +149,13 @@ export default function AuthCallbackPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-[#080810] px-6">
       <div className="max-w-md text-center">
-        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#ff3d00] border-t-transparent" />
+        {!verified ? (
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#ff3d00] border-t-transparent" />
+        ) : (
+          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#00e87a]/15 text-xl">
+            ✓
+          </div>
+        )}
         <p className="mt-4 text-sm leading-relaxed text-[#9994a8]">{message}</p>
       </div>
     </div>

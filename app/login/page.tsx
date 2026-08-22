@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
-import { resolvePostAuthPath } from "@/lib/auth/routing";
+import { completeAuthFlow } from "@/lib/auth/postAuth";
 import { getAuthCallbackUrl } from "@/lib/auth/redirect";
+import { storePendingStaffInvite } from "@/lib/staff/pendingInvite";
 import { getAuthErrorMessage, isEmailNotConfirmed } from "@/lib/auth/errors";
 
 function getEmailRedirectTo() {
@@ -23,6 +24,13 @@ export default function LoginPage() {
   const [showResend, setShowResend] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+
+  useEffect(() => {
+    const inviteId = new URLSearchParams(window.location.search).get("invite");
+    if (inviteId) {
+      storePendingStaffInvite(inviteId);
+    }
+  }, []);
 
   async function handleResend() {
     if (!email) return;
@@ -77,7 +85,7 @@ export default function LoginPage() {
     const user = data.user ?? (await supabase.auth.getUser()).data.user;
 
     if (user) {
-      router.replace(await resolvePostAuthPath(user));
+      router.replace(await completeAuthFlow(user));
       return;
     }
 
