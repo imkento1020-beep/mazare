@@ -36,5 +36,14 @@ export async function sendEmail(input: {
     subject: input.subject,
     text: input.text,
     html: input.html,
+    trackingSettings: {
+      clickTracking: {
+        enable: false,
+        enableText: false,
+      },
+      openTracking: {
+        enable: false,
+      },
+    },
   });
 }
