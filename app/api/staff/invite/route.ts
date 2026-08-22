@@ -115,6 +115,6 @@ export async function POST(request: Request) {
   return Response.json({
     ok: true,
     inviteId: result.inviteId,
-    message: "招待メールを送信しました。",
+    message: `${email.trim().toLowerCase()} に招待メールを送信しました。相手がメール内のリンクから承認すると、店舗管理画面にアクセスできます。`,
   });
 }

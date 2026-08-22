@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { ensureFreshSession } from "@/lib/auth/session";
 import {
   buildStaffMembers,
   fetchShopStaffInvites,
@@ -27,6 +28,49 @@ function inviteStatusLabel(status: StaffInvite["status"]) {
   return "取消済み";
 }
 
+async function sendStaffInviteRequest(shopId: string, email: string) {
+  await ensureFreshSession();
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    return {
+      ok: false as const,
+      message: "ログインが必要です。再度ログインしてからお試しください。",
+    };
+  }
+
+  const response = await fetch("/api/staff/invite", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      shopId,
+      email: email.trim(),
+    }),
+  });
+
+  const data = (await response.json()) as { message?: string };
+
+  if (!response.ok) {
+    return {
+      ok: false as const,
+      message: data.message ?? "招待メールの送信に失敗しました。",
+    };
+  }
+
+  return {
+    ok: true as const,
+    message:
+      data.message ??
+      `${email.trim()} に招待メールを送信しました。相手がリンクから承認すると、店舗管理画面にアクセスできます。`,
+  };
+}
+
 export default function StaffManagementSection({
   shop,
   user,
@@ -38,9 +82,10 @@ export default function StaffManagementSection({
   const [members, setMembers] = useState<StaffMember[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [resendingInviteId, setResendingInviteId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,62 +114,67 @@ export default function StaffManagementSection({
     };
   }, [shop, user.email, isOwner]);
 
-  async function handleInvite(e: React.FormEvent) {
-    e.preventDefault();
-    if (!isOwner || submitting) return;
-
-    setSubmitting(true);
-    setError(null);
-    setMessage(null);
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.access_token) {
-      setSubmitting(false);
-      setError("ログインが必要です");
-      return;
-    }
-
-    const response = await fetch("/api/staff/invite", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        shopId: shop.id,
-        email: email.trim(),
-      }),
-    });
-
-    const responseData = (await response.json()) as {
-      message?: string;
-    };
-
-    setSubmitting(false);
-
-    if (!response.ok) {
-      setError(responseData.message ?? "招待メールの送信に失敗しました");
-      return;
-    }
-
-    setEmail("");
-    setMessage(responseData.message ?? "招待メールを送信しました");
+  async function refreshInvites() {
     const { data: inviteList } = await fetchShopStaffInvites(shop.id);
     setInvites(inviteList);
   }
 
+  async function handleInvite(e: React.FormEvent) {
+    e.preventDefault();
+    if (!isOwner || submitting) return;
+
+    const targetEmail = email.trim();
+    if (!targetEmail) return;
+
+    setSubmitting(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    const result = await sendStaffInviteRequest(shop.id, targetEmail);
+
+    setSubmitting(false);
+
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+
+    setEmail("");
+    setSuccessMessage(result.message);
+    await refreshInvites();
+  }
+
+  async function handleResendInvite(invite: StaffInvite) {
+    if (!isOwner || resendingInviteId) return;
+
+    setResendingInviteId(invite.id);
+    setError(null);
+    setSuccessMessage(null);
+
+    const result = await sendStaffInviteRequest(shop.id, invite.email);
+
+    setResendingInviteId(null);
+
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+
+    setSuccessMessage(
+      `${invite.email} に招待メールを再送しました。相手がリンクから承認すると、店舗管理画面にアクセスできます。`,
+    );
+    await refreshInvites();
+  }
+
   async function handleRevoke(inviteId: string) {
     setError(null);
+    setSuccessMessage(null);
     const { error: revokeError } = await revokeStaffInvite(inviteId);
     if (revokeError) {
       setError(revokeError);
       return;
     }
-    const { data } = await fetchShopStaffInvites(shop.id);
-    setInvites(data);
+    await refreshInvites();
   }
 
   async function handleRemoveStaff(staffUserId: string) {
@@ -132,6 +182,7 @@ export default function StaffManagementSection({
 
     setRemovingId(staffUserId);
     setError(null);
+    setSuccessMessage(null);
 
     const { staffIds, error: removeError } = await removeStaffMember({
       shopId: shop.id,
@@ -158,7 +209,7 @@ export default function StaffManagementSection({
         <>
       <p className="text-sm font-medium">スタッフ管理</p>
       <p className="mt-1 text-xs leading-relaxed text-[#9994a8]">
-        招待したメールアドレスに SendGrid から招待メールを送信します。相手がリンクから承認すると、店舗管理画面にアクセスできます。
+        招待したメールアドレスに招待メールを送信します。相手がリンクから承認すると、店舗管理画面にアクセスできます。
       </p>
 
       {isOwner && (
@@ -182,6 +233,18 @@ export default function StaffManagementSection({
           >
             {submitting ? "送信中..." : "スタッフを招待"}
           </button>
+
+          {successMessage && (
+            <p className="rounded-lg border border-[#00e87a]/30 bg-[#00e87a]/10 px-3 py-3 text-sm text-[#00e87a]">
+              {successMessage}
+            </p>
+          )}
+
+          {error && (
+            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-3 text-sm text-red-400">
+              {error}
+            </p>
+          )}
         </form>
       )}
 
@@ -229,13 +292,23 @@ export default function StaffManagementSection({
                   </p>
                 </div>
                 {isOwner && invite.status === "pending" && (
-                  <button
-                    type="button"
-                    onClick={() => handleRevoke(invite.id)}
-                    className="shrink-0 text-xs text-[#9994a8] hover:text-[#ff3d00]"
-                  >
-                    取消
-                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleResendInvite(invite)}
+                      disabled={resendingInviteId === invite.id}
+                      className="text-xs text-[#00e87a] hover:underline disabled:opacity-60"
+                    >
+                      {resendingInviteId === invite.id ? "再送中..." : "再送"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRevoke(invite.id)}
+                      className="text-xs text-[#9994a8] hover:text-[#ff3d00]"
+                    >
+                      取消
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
@@ -243,13 +316,7 @@ export default function StaffManagementSection({
         </div>
       )}
 
-      {message && (
-        <p className="mt-4 rounded-lg border border-[#00e87a]/30 bg-[#00e87a]/10 px-3 py-2 text-sm text-[#00e87a]">
-          {message}
-        </p>
-      )}
-
-      {error && (
+      {!isOwner && error && (
         <p className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
           {error}
         </p>

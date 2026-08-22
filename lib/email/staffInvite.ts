@@ -1,4 +1,5 @@
 import { sendEmail } from "@/lib/email/sendgrid";
+import { escapeHtml } from "@/lib/email/html";
 import { getSignupUrl, getStaffJoinUrl } from "@/lib/site/url";
 
 export async function sendStaffInviteEmail(input: {
@@ -16,7 +17,7 @@ export async function sendStaffInviteEmail(input: {
   const text = [
     `${input.shopName} から mazare のスタッフとして招待されました。`,
     "",
-    "以下のリンクから招待を確認し、アカウントを作成またはログインしてください。",
+    "以下のリンクから招待を確認し、店舗管理画面へのアクセスを承認してください。",
     joinUrl,
     "",
     "アカウントをお持ちでない場合:",
@@ -30,13 +31,17 @@ export async function sendStaffInviteEmail(input: {
       <p><strong>${escapeHtml(input.shopName)}</strong> から mazare のスタッフとして招待されました。</p>
       <p>以下のボタンから招待を確認し、店舗管理画面へのアクセスを承認してください。</p>
       <p style="margin:24px 0;">
-        <a href="${joinUrl}" style="display:inline-block;background:#ff3d00;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:bold;">
+        <a href="${escapeHtml(joinUrl)}" style="display:inline-block;background:#ff3d00;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:bold;">
           招待を確認する
         </a>
       </p>
       <p style="font-size:14px;color:#555;">
+        ボタンが開けない場合は、次の URL をブラウザに貼り付けてください。<br>
+        <a href="${escapeHtml(joinUrl)}">${escapeHtml(joinUrl)}</a>
+      </p>
+      <p style="font-size:14px;color:#555;">
         アカウントをお持ちでない場合は
-        <a href="${signupUrl}">こちらからアカウント作成</a>
+        <a href="${escapeHtml(signupUrl)}">こちらからアカウント作成</a>
         してください。
       </p>
       <p style="font-size:12px;color:#888;">このメールに心当たりがない場合は、破棄してください。</p>
@@ -50,5 +55,3 @@ export async function sendStaffInviteEmail(input: {
     html,
   });
 }
-
-import { escapeHtml } from "@/lib/email/html";
