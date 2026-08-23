@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { acceptStaffInviteWithRole } from "@/lib/staff/api";
-import { storePendingStaffInvite } from "@/lib/staff/pendingInvite";
+import { storePendingStaffInvite, clearPendingStaffInvite } from "@/lib/staff/pendingInvite";
 import { setStoredAppMode } from "@/lib/auth/mode";
 import AuthLayout from "@/components/auth/AuthLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
@@ -90,6 +90,7 @@ export default function StaffJoinPage() {
       return;
     }
 
+    clearPendingStaffInvite();
     setStoredAppMode("owner");
     router.replace("/owner/dashboard");
   }
