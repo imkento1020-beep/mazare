@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "mazare — 今夜、混ざれる。",
-  description: "今夜、知らない人と混ざれる場所を探せるプラットフォーム",
+  title: "mazare — 今夜、盛り上がれる場所へ",
+  description: "今夜、盛り上がれる場所を探せるプラットフォーム",
 };
 
 export default function RootLayout({

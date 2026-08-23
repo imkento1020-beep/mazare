@@ -12,7 +12,7 @@ const guestFeatures = [
   {
     emoji: "🔥",
     title: "今夜の盛り上がりがわかる",
-    body: "ムードタグと行くかも人数で、今まさに混ざれる場所が一目でわかる。",
+    body: "ムードタグと行くかも人数で、今まさに盛り上がっている場所が一目でわかる。",
   },
   {
     emoji: "🤝",
@@ -79,15 +79,15 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#ffaa00]">
-              今夜、知らない人と混ざれる場所を
+              今夜、盛り上がれる場所を
             </p>
             <h1 className="mt-4 text-5xl font-black leading-[1.05] tracking-tight lg:text-[56px]">
               今夜、
-              <span className="text-[#ff3d00]">混ざれる。</span>
+              <span className="text-[#ff3d00]">盛り上がれる場所へ</span>
             </h1>
             <p className="mt-6 max-w-lg text-base leading-relaxed text-[#9994a8] lg:text-lg">
               お店がリアルタイムで「今夜の空気」を発信。
-              行くかもを押して、知らない人と肩を組める夜を見つけよう。
+              行くかもを押して、今いちばん熱い夜を見つけよう。
             </p>
             <Link
               href="/signup"
@@ -107,7 +107,7 @@ export default function LandingPage() {
           mazareでできること
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-center text-sm text-[#9994a8]">
-          今夜混ざりたいゲストも、集客したいお店も、mazareひとつで。
+          今夜盛り上がりたいゲストも、集客したいお店も、mazareひとつで。
         </p>
 
         <div className="mt-14 space-y-16">
@@ -121,7 +121,7 @@ export default function LandingPage() {
                   飲食店を探すゲストの方へ
                 </h3>
                 <p className="mt-2 text-sm text-[#9994a8]">
-                  今夜、知らない人と混ざれる場所を見つけよう。
+                  今夜、盛り上がれる場所を見つけよう。
                 </p>
               </div>
               <Link
@@ -144,7 +144,7 @@ export default function LandingPage() {
                   集客したいお店の方へ
                 </h3>
                 <p className="mt-2 text-sm text-[#9994a8]">
-                  今夜の空気を発信して、混ざりたい客を呼び込もう。
+                  今夜の空気を発信して、来店したい客を呼び込もう。
                 </p>
               </div>
               <Link

@@ -17,7 +17,7 @@ export default function Footer() {
           <Link href="/" className="text-xl font-black tracking-tight text-[#eeeaf4]">
             maz<span className="text-[#ff3d00]">a</span>re
           </Link>
-          <p className="text-sm text-[#9994a8]">今夜、混ざれる。</p>
+          <p className="text-sm text-[#9994a8]">今夜、盛り上がれる場所へ</p>
         </div>
 
         <nav className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm">
