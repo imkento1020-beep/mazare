@@ -249,17 +249,6 @@ export default function OwnerProfilePage() {
             </div>
           </div>
 
-          {shop && user && (
-          <StaffManagementSection
-            shop={shop}
-            user={user}
-            isOwner={isOwner}
-            onStaffIdsChange={(staffIds) =>
-              setShop((prev) => (prev ? { ...prev, staff_ids: staffIds } : prev))
-            }
-          />
-          )}
-
           {error && (
             <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
               {error}
@@ -280,6 +269,19 @@ export default function OwnerProfilePage() {
             {submitting ? "保存中..." : isOwner ? "保存する" : "オーナーのみ編集可能"}
           </button>
       </form>
+
+      {shop && user && (
+        <div className="mt-6 max-w-xl">
+          <StaffManagementSection
+          shop={shop}
+          user={user}
+          isOwner={isOwner}
+          onStaffIdsChange={(staffIds) =>
+            setShop((prev) => (prev ? { ...prev, staff_ids: staffIds } : prev))
+          }
+          />
+        </div>
+      )}
 
       <div className="mt-8 max-w-xl md:hidden">
         <OwnerLogoutButton />
