@@ -360,40 +360,6 @@ export default function HomePageClient({
         cancelingId={cancelingTonightId}
       />
 
-      <div className="mb-6 flex items-center justify-between rounded-[14px] border border-[#ff3d00]/20 bg-gradient-to-br from-[#ff3d00]/10 to-[#ffaa00]/6 px-4 py-3.5">
-        <div className="flex items-center gap-2.5">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff3d00] opacity-60" />
-            <span className="relative h-2 w-2 rounded-full bg-[#ff3d00]" />
-          </span>
-          <p className="text-[13px] text-[#9994a8]">
-            {viewMode === "shops" ? (
-              <>
-                <strong className="font-bold text-[#ffaa00]">
-                  {filteredShops.length}件のお店
-                </strong>
-                が見つかりました
-              </>
-            ) : (
-              <>
-                今夜{" "}
-                <strong className="font-bold text-[#ffaa00]">
-                  {hotPosts.length}件の場所
-                </strong>{" "}
-                が「混ざれる」状態で発信中
-              </>
-            )}
-          </p>
-        </div>
-        <span className="hidden text-xs text-[#5a5668] sm:inline">
-          {viewMode === "shops"
-            ? `今夜発信中 ${liveTonightShopIds.size}店`
-            : viewMode === "hot"
-              ? `今夜 ${hotPosts.length}件`
-              : `全${publishedPosts.length}件`}
-        </span>
-      </div>
-
       {error && (
         <p className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
           {error}
