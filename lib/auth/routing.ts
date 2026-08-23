@@ -8,14 +8,18 @@ export async function resolvePostAuthPath(
   user: User,
   preferredMode?: AppMode | null,
 ): Promise<string> {
+  if (hasRole(user, "owner")) {
+    const { data: shop } = await fetchManagedShop(user.id);
+    if (!shop && !user.user_metadata?.onboarding_completed) {
+      setStoredAppMode("owner");
+      return "/owner/onboarding";
+    }
+  }
+
   const mode = resolveAppMode(user, preferredMode);
   setStoredAppMode(mode);
 
   if (mode === "owner" && hasRole(user, "owner")) {
-    const { data: shop } = await fetchManagedShop(user.id);
-    if (!shop && !user.user_metadata?.onboarding_completed) {
-      return "/owner/onboarding";
-    }
     return "/owner/dashboard";
   }
 

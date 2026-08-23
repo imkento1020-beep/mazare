@@ -4,12 +4,19 @@ import { useState } from "react";
 import { isPostScheduled } from "@/lib/home/dates";
 import { MOOD_OPTIONS, MAX_IMAGES } from "@/lib/owner/constants";
 import {
+  addCustomMood,
+  MAX_CUSTOM_MOOD_LENGTH,
+  MAX_MOOD_TAGS,
+  mergeMoods,
+  splitMoods,
+} from "@/lib/owner/moods";
+import {
   datetimeLocalJSTToIso,
   getDefaultScheduledPostTimeJST,
   isoToDatetimeLocalJST,
 } from "@/lib/owner/scheduling";
 import { readFilesAsDataUrls } from "@/lib/files";
-import { primaryButtonClassName } from "@/lib/ui/styles";
+import { inputClassName, primaryButtonClassName } from "@/lib/ui/styles";
 
 type PublishMode = "now" | "schedule";
 
@@ -41,10 +48,13 @@ export default function VibePostForm({
   error,
   onSubmit,
 }: VibePostFormProps) {
+  const initialSplit = splitMoods(initialMoods);
   const initialScheduled =
     Boolean(initialPostedAt) && isPostScheduled(initialPostedAt);
 
-  const [moods, setMoods] = useState<Set<string>>(new Set(initialMoods));
+  const [presetMoods, setPresetMoods] = useState<Set<string>>(initialSplit.preset);
+  const [customMoods, setCustomMoods] = useState<string[]>(initialSplit.custom);
+  const [customMoodInput, setCustomMoodInput] = useState("");
   const [comment, setComment] = useState(initialComment);
   const [images, setImages] = useState<string[]>(initialImages);
   const [publishMode, setPublishMode] = useState<PublishMode>(
@@ -60,13 +70,43 @@ export default function VibePostForm({
   });
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  function toggleMood(id: string) {
-    setMoods((prev) => {
+  const totalMoodCount = presetMoods.size + customMoods.length;
+
+  function togglePresetMood(id: string) {
+    setValidationError(null);
+    setPresetMoods((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        return next;
+      }
+
+      if (next.size + customMoods.length >= MAX_MOOD_TAGS) {
+        setValidationError(`タグは最大${MAX_MOOD_TAGS}個まで追加できます`);
+        return prev;
+      }
+
+      next.add(id);
       return next;
     });
+  }
+
+  function handleAddCustomMood() {
+    const result = addCustomMood(customMoodInput, presetMoods, customMoods);
+
+    if (result.error) {
+      setValidationError(result.error);
+      return;
+    }
+
+    setCustomMoods(result.custom);
+    setCustomMoodInput("");
+    setValidationError(null);
+  }
+
+  function handleRemoveCustomMood(tag: string) {
+    setCustomMoods((prev) => prev.filter((item) => item !== tag));
+    setValidationError(null);
   }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -105,7 +145,7 @@ export default function VibePostForm({
     }
 
     await onSubmit({
-      moods: Array.from(moods),
+      moods: mergeMoods(presetMoods, customMoods),
       comment: comment.trim(),
       images,
       postedAt,
@@ -119,15 +159,20 @@ export default function VibePostForm({
   return (
     <form onSubmit={handleSubmit} className="max-w-xl space-y-6">
       <div>
-        <p className="text-sm font-medium">ムード（複数選択可）</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-medium">ムード（複数選択可）</p>
+          <p className="text-xs text-[#5a5668]">
+            {totalMoodCount}/{MAX_MOOD_TAGS}
+          </p>
+        </div>
         <div className="mt-3 grid grid-cols-3 gap-2 md:grid-cols-4">
           {MOOD_OPTIONS.map((mood) => {
-            const selected = moods.has(mood.id);
+            const selected = presetMoods.has(mood.id);
             return (
               <button
                 key={mood.id}
                 type="button"
-                onClick={() => toggleMood(mood.id)}
+                onClick={() => togglePresetMood(mood.id)}
                 className={`rounded-xl border px-2 py-3 text-center text-xs font-medium transition ${
                   selected
                     ? "border-[#ff3d00]/40 bg-[#ff3d00]/12 text-[#ff3d00]"
@@ -140,6 +185,61 @@ export default function VibePostForm({
             );
           })}
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="custom-mood" className="block text-sm font-medium">
+          自由にタグを追加
+        </label>
+        <p className="mt-1 text-xs leading-relaxed text-[#9994a8]">
+          お店独自のタグも追加できます（最大{MAX_CUSTOM_MOOD_LENGTH}文字）。
+        </p>
+        <div className="mt-3 flex gap-2">
+          <input
+            id="custom-mood"
+            type="text"
+            value={customMoodInput}
+            maxLength={MAX_CUSTOM_MOOD_LENGTH}
+            onChange={(e) => setCustomMoodInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAddCustomMood();
+              }
+            }}
+            placeholder="例: カラオケ開放中"
+            className={inputClassName}
+          />
+          <button
+            type="button"
+            onClick={handleAddCustomMood}
+            disabled={totalMoodCount >= MAX_MOOD_TAGS}
+            className="shrink-0 rounded-xl border border-[#ff3d00]/30 px-4 py-3 text-sm font-bold text-[#ff3d00] transition hover:bg-[#ff3d00]/10 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            追加
+          </button>
+        </div>
+
+        {customMoods.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {customMoods.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#18181f] px-3 py-1.5 text-xs font-medium text-[#eeeaf4]"
+              >
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveCustomMood(tag)}
+                  className="text-[#9994a8] transition hover:text-[#ff3d00]"
+                  aria-label={`${tag} を削除`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <div>
