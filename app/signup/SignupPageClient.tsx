@@ -16,12 +16,12 @@ const userTypeOptions: {
   {
     value: "guest",
     label: "飲みに行く人",
-    description: "今夜、知らない人と混ざれる場所を探す",
+    description: "今夜、最高に盛り上がれる場所を探す",
   },
   {
     value: "owner",
     label: "お店を運営している",
-    description: "混ざれる空間としてお店を掲載する",
+    description: "お店の盛り上がりを発信する",
   },
 ];
 
