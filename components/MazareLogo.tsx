@@ -8,9 +8,9 @@ type MazareLogoProps = {
 };
 
 const sizeClassName = {
-  sm: "h-4 w-auto",
-  md: "h-5 w-auto",
-  lg: "h-6 w-auto sm:h-7",
+  sm: "h-3 w-auto",
+  md: "h-[15px] w-auto",
+  lg: "h-[18px] w-auto sm:h-[21px]",
 } as const;
 
 export default function MazareLogo({
