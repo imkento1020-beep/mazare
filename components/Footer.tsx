@@ -1,4 +1,5 @@
 import Link from "next/link";
+import MazareLogo from "@/components/MazareLogo";
 
 const FOOTER_LINKS = [
   { label: "サービスについて", href: "/about" },
@@ -14,9 +15,7 @@ export default function Footer() {
     <footer className="border-t border-white/[0.07] bg-[#111118] px-10 pb-8 pt-12 text-[#5a5668]">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:gap-4">
-          <Link href="/" className="text-xl font-black tracking-tight text-[#eeeaf4]">
-            maz<span className="text-[#ff3d00]">a</span>re
-          </Link>
+          <MazareLogo href="/" size="md" />
           <p className="text-sm text-[#9994a8]">今夜、盛り上がれる場所へ</p>
         </div>
 

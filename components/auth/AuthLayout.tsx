@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AuthSampleCards from "./AuthSampleCards";
+import MazareLogo from "@/components/MazareLogo";
 
 const VISUAL_BG =
   "radial-gradient(ellipse 80% 60% at 20% 80%, rgba(255,61,0,0.18) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 20%, rgba(120,60,200,0.15) 0%, transparent 55%), linear-gradient(160deg, #0d0d1a 0%, #080810 50%, #120810 100%)";
@@ -20,9 +21,7 @@ function AuthVisualPanel() {
       />
 
       <div className="relative z-10 flex w-full max-w-xl flex-1 flex-col md:flex-none">
-        <span className="text-2xl font-bold tracking-tight text-[#eeeaf4]">
-          mazare
-        </span>
+        <MazareLogo href="/" size="lg" />
 
         <div className="mt-8 md:mt-10">
           <h1 className="max-w-lg text-2xl font-semibold leading-snug tracking-tight text-[#eeeaf4] md:text-4xl md:leading-tight">

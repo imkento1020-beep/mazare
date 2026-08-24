@@ -8,6 +8,7 @@ import { fetchManagedShop } from "@/lib/owner/api";
 import { hasRole } from "@/lib/auth/roles";
 import { useAppMode } from "@/hooks/useAppMode";
 import AppModeSwitcher from "@/components/auth/AppModeSwitcher";
+import MazareLogo from "@/components/MazareLogo";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
 type HeaderProps = {
@@ -19,11 +20,7 @@ const headerShellClassName =
   "sticky top-0 z-[100] h-16 border-b border-white/[0.07] bg-[rgba(8,8,16,0.92)] backdrop-blur-[20px]";
 
 function Logo({ href = "/" }: { href?: string }) {
-  return (
-    <Link href={href} className="shrink-0 text-xl font-black tracking-tight md:text-2xl">
-      maz<span className="text-[#ff3d00]">a</span>re
-    </Link>
-  );
+  return <MazareLogo href={href} size="md" />;
 }
 
 function LiveStatusPill() {
