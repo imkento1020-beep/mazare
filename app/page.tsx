@@ -78,10 +78,7 @@ export default function LandingPage() {
       >
         <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#ffaa00]">
-              今夜、盛り上がれる場所を
-            </p>
-            <h1 className="mt-4 text-5xl font-black leading-[1.05] tracking-tight lg:text-[56px]">
+            <h1 className="text-5xl font-black leading-[1.05] tracking-tight lg:text-[56px]">
               今夜、
               <span className="text-[#ff3d00]">盛り上がれる場所へ</span>
             </h1>
@@ -121,7 +118,7 @@ export default function LandingPage() {
                   飲食店を探すゲストの方へ
                 </h3>
                 <p className="mt-2 text-sm text-[#9994a8]">
-                  今夜、盛り上がれる場所を見つけよう。
+                  今夜行きたいお店を、リアルタイムの空気感から見つけよう。
                 </p>
               </div>
               <Link

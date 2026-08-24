@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "mazare — 今夜、盛り上がれる場所へ",
-  description: "今夜、盛り上がれる場所を探せるプラットフォーム",
+  description: "お店の今夜の空気がわかる、飲食店探索プラットフォーム",
 };
 
 export default function RootLayout({

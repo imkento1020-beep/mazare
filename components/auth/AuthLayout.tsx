@@ -25,10 +25,7 @@ function AuthVisualPanel() {
         </span>
 
         <div className="mt-8 md:mt-10">
-          <p className="max-w-md text-sm leading-relaxed text-[#9994a8] md:text-base">
-            今夜、盛り上がれる場所を探せるプラットフォーム
-          </p>
-          <h1 className="mt-4 max-w-lg text-2xl font-semibold leading-snug tracking-tight text-[#eeeaf4] md:text-4xl md:leading-tight">
+          <h1 className="max-w-lg text-2xl font-semibold leading-snug tracking-tight text-[#eeeaf4] md:text-4xl md:leading-tight">
             今夜、
             <span className="text-[#ff3d00]">盛り上がれる場所へ</span>
             <br />
