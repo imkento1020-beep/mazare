@@ -22,8 +22,8 @@ export default function MazareLogo({
     <Image
       src="/mazare-logo.png"
       alt="mazare"
-      width={720}
-      height={144}
+      width={255}
+      height={52}
       priority={size !== "sm"}
       className={`${sizeClassName[size]} ${className}`.trim()}
     />
