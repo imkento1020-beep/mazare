@@ -71,7 +71,7 @@ export default function GuestLayout({
       <div className="flex flex-1 flex-col">
         <div className="mx-auto flex w-full max-w-[480px] md:max-w-[1200px]">
           {showLeftSidebar && (
-            <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-[260px] shrink-0 overflow-y-auto border-r border-white/7 px-5 py-7 md:block">
+            <aside className="scrollbar-hidden sticky top-16 hidden h-[calc(100vh-4rem)] w-[260px] shrink-0 overflow-y-auto border-r border-white/7 px-5 py-7 md:block">
               <FilterPanel
                 genres={genres}
                 moods={moods}
