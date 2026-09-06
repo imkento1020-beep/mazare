@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { completeAuthFlow } from "@/lib/auth/postAuth";
+import { getSafeRedirectPath } from "@/lib/auth/safeRedirectPath";
 import { storePendingStaffInvite } from "@/lib/staff/pendingInvite";
 import { getAuthErrorMessage, isEmailNotConfirmed } from "@/lib/auth/errors";
 
@@ -84,7 +85,11 @@ export default function LoginPage() {
     const user = data.user ?? (await supabase.auth.getUser()).data.user;
 
     if (user) {
-      router.replace(await completeAuthFlow(user));
+      const nextPath = getSafeRedirectPath(
+        new URLSearchParams(window.location.search).get("next"),
+      );
+      const defaultPath = await completeAuthFlow(user);
+      router.replace(nextPath === "/home" ? defaultPath : nextPath);
       return;
     }
 
