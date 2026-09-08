@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { fetchVibePosts } from "@/lib/home/api";
@@ -16,10 +15,11 @@ import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import TonightInterestCard from "@/components/interests/TonightInterestCard";
 import TonightInterestsShareButton from "@/components/interests/TonightInterestsShareButton";
+import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { isCurrentlyInTonightInterestHours } from "@/lib/home/dates";
 
 export default function TonightPage() {
-  const router = useRouter();
+  const { openAuthPrompt } = useAuthPrompt();
   const [items, setItems] = useState<TodayInterestRow[]>([]);
   const [sidebarPosts, setSidebarPosts] = useState<VibePost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,13 @@ export default function TonightPage() {
       } = await supabase.auth.getSession();
 
       if (!session?.user) {
-        router.replace("/login");
+        openAuthPrompt({
+          title: "今夜の行くかもを見るにはアカウントが必要です",
+          description:
+            "「行くかも」したお店のリストを使うには、サインアップまたはログインしてください。",
+          returnPath: "/tonight",
+        });
+        setLoading(false);
         return;
       }
 
@@ -54,7 +60,7 @@ export default function TonightPage() {
     }
 
     load();
-  }, [router]);
+  }, [openAuthPrompt]);
 
   async function handleCancel(interestId: string) {
     const {

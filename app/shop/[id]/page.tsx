@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
@@ -44,6 +44,7 @@ import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import ShopVibePostItem from "@/components/home/ShopVibePostItem";
 import type { User } from "@supabase/supabase-js";
+import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 
 function genreEmoji(genre: string) {
   if (genre.includes("居酒屋")) return "🎵";
@@ -85,8 +86,8 @@ function CoverGallery({ shop, posts }: { shop: Shop; posts: VibePost[] }) {
 
 export default function ShopDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const shopId = params.id as string;
+  const { openAuthPrompt } = useAuthPrompt();
   const { location: userLocation } = useUserLocation();
 
   const [user, setUser] = useState<User | null>(null);
@@ -112,12 +113,8 @@ export default function ShopDetailPage() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session?.user) {
-        router.replace("/login");
-        return;
-      }
-
-      setUser(session.user);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
 
       const [shopResult, postsResult, count, allPostsResult] = await Promise.all([
         fetchShopById(shopId),
@@ -138,25 +135,27 @@ export default function ShopDetailPage() {
       setInterestCount(count);
 
       const firstPost = postsResult.data?.[0];
-      if (firstPost) {
+      if (currentUser && firstPost) {
         const hasInterest = await fetchUserInterestForPost(
-          session.user.id,
+          currentUser.id,
           firstPost.id,
         );
         setInterested(hasInterest);
       }
 
-      const { favorited: isFav } = await isShopFavorited(
-        session.user.id,
-        shopId,
-      );
-      setFavorited(isFav);
+      if (currentUser) {
+        const { favorited: isFav } = await isShopFavorited(
+          currentUser.id,
+          shopId,
+        );
+        setFavorited(isFav);
 
-      const alreadyCheckedIn = await hasActiveCheckin(
-        session.user.id,
-        shopId,
-      );
-      setCheckedIn(alreadyCheckedIn);
+        const alreadyCheckedIn = await hasActiveCheckin(
+          currentUser.id,
+          shopId,
+        );
+        setCheckedIn(alreadyCheckedIn);
+      }
 
       const checkinsResult = await fetchActiveCheckinUsersForShop(shopId);
       setCheckinUsers(checkinsResult.data);
@@ -165,10 +164,19 @@ export default function ShopDetailPage() {
     }
 
     load();
-  }, [shopId, router]);
+  }, [shopId]);
 
   async function handleInterestToggle() {
-    if (!user || !latestPost || submitting) return;
+    if (!latestPost || submitting) return;
+    if (!user) {
+      openAuthPrompt({
+        title: "行くかもするにはアカウントが必要です",
+        description:
+          "このお店を今夜の候補に追加するには、サインアップまたはログインしてください。",
+        returnPath: `/shop/${shopId}`,
+      });
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
@@ -209,7 +217,16 @@ export default function ShopDetailPage() {
   }
 
   async function handleCheckinToggle() {
-    if (!user || checkinLoading) return;
+    if (checkinLoading) return;
+    if (!user) {
+      openAuthPrompt({
+        title: "チェックインにはアカウントが必要です",
+        description:
+          "お店にチェックインするには、サインアップまたはログインしてください。",
+        returnPath: `/shop/${shopId}`,
+      });
+      return;
+    }
 
     setCheckinLoading(true);
     setError(null);
@@ -310,12 +327,14 @@ export default function ShopDetailPage() {
             <h1 className="text-2xl font-black">{shop.name}</h1>
             <p className="mt-1 text-sm text-[#ff3d00]">{formatGenre(shop.genre)}</p>
           </div>
-          <FavoriteButton
-            favorited={favorited}
-            loading={favoriteLoading}
-            onToggle={handleFavoriteToggle}
-            compact
-          />
+          {user && (
+            <FavoriteButton
+              favorited={favorited}
+              loading={favoriteLoading}
+              onToggle={handleFavoriteToggle}
+              compact
+            />
+          )}
         </div>
         <p className="mt-2 text-sm text-[#9994a8]">
           📍 {shop.address}

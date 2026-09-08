@@ -4,6 +4,7 @@ import Link from "next/link";
 import AuthSampleCards from "@/components/auth/AuthSampleCards";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AuthPromptTrigger from "@/components/auth/AuthPromptTrigger";
 
 const VISUAL_BG =
   "radial-gradient(ellipse 80% 60% at 20% 80%, rgba(255,61,0,0.18) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 20%, rgba(120,60,200,0.15) 0%, transparent 55%), linear-gradient(160deg, #0d0d1a 0%, #080810 50%, #120810 100%)";
@@ -86,12 +87,17 @@ export default function LandingPage() {
               お店がリアルタイムで「今夜の空気」を発信。
               行くかもを押して、今いちばん熱い夜を見つけよう。
             </p>
-            <Link
-              href="/signup"
+            <AuthPromptTrigger
+              returnPath="/home"
+              promptOptions={{
+                title: "mazareを始めましょう",
+                description:
+                  "サインアップまたはログインして、今夜盛り上がれる場所を探しましょう。",
+              }}
               className="mt-8 inline-flex rounded-[14px] bg-[#ff3d00] px-8 py-4 text-base font-bold text-white transition hover:bg-[#e63600]"
             >
               今すぐ始める
-            </Link>
+            </AuthPromptTrigger>
           </div>
           <div className="relative mx-auto w-full max-w-md lg:max-w-none">
             <AuthSampleCards />
@@ -121,12 +127,17 @@ export default function LandingPage() {
                   今夜行きたいお店を、リアルタイムの空気感から見つけよう。
                 </p>
               </div>
-              <Link
-                href="/signup"
+              <AuthPromptTrigger
+                returnPath="/home"
+                promptOptions={{
+                  title: "ゲストとして始める",
+                  description:
+                    "サインアップまたはログインして、今夜の場所探しを始めましょう。",
+                }}
                 className="shrink-0 rounded-[13px] bg-[#ff3d00] px-6 py-2.5 text-sm font-bold text-white transition hover:bg-[#e63600]"
               >
                 ゲストとして始める
-              </Link>
+              </AuthPromptTrigger>
             </div>
             <FeatureGrid items={guestFeatures} />
           </div>
@@ -144,12 +155,18 @@ export default function LandingPage() {
                   今夜の空気を発信して、来店したい客を呼び込もう。
                 </p>
               </div>
-              <Link
-                href="/signup?type=owner"
+              <AuthPromptTrigger
+                ownerSignup
+                returnPath="/owner/onboarding"
+                promptOptions={{
+                  title: "オーナーとして登録",
+                  description:
+                    "お店の情報を発信するには、サインアップまたはログインしてください。",
+                }}
                 className="shrink-0 rounded-[13px] border border-[#ff3d00]/40 bg-[#ff3d00]/10 px-6 py-2.5 text-sm font-bold text-[#ff3d00] transition hover:bg-[#ff3d00]/20"
               >
                 オーナーとして登録
-              </Link>
+              </AuthPromptTrigger>
             </div>
             <FeatureGrid items={ownerFeatures} />
           </div>

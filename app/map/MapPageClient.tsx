@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import {
   fetchAllShops,
   fetchLatestVibePostsByShop,
@@ -26,7 +24,6 @@ export default function MapPageClient({
   googleMapsApiKey,
   setupHint,
 }: MapPageClientProps) {
-  const router = useRouter();
   const [shops, setShops] = useState<Shop[]>([]);
   const [liveIds, setLiveIds] = useState<Set<string>>(new Set());
   const [latestPosts, setLatestPosts] = useState<Map<string, LatestVibePost>>(
@@ -47,15 +44,6 @@ export default function MapPageClient({
 
   useEffect(() => {
     async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.user) {
-        router.replace("/login");
-        return;
-      }
-
       const [shopsResult, liveShopIds, postsByShop] = await Promise.all([
         fetchAllShops(),
         fetchLiveShopIds(),
@@ -73,7 +61,7 @@ export default function MapPageClient({
     }
 
     load();
-  }, [router]);
+  }, []);
 
   const mapShops = useMemo(
     () =>

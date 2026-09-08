@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AuthLayout from "@/components/auth/AuthLayout";
+import { storePendingReturnPath } from "@/lib/auth/pendingReturnPath";
+import { getLoginPathWithReturn, getSignupPathWithReturn } from "@/lib/auth/authPaths";
+import { getSafeRedirectPath } from "@/lib/auth/safeRedirectPath";
 import { storePendingStaffInvite } from "@/lib/staff/pendingInvite";
 
 type UserType = "guest" | "owner";
@@ -52,6 +55,11 @@ export default function SignupPageClient() {
   useEffect(() => {
     if (searchParams.get("type") === "owner") {
       setUserType("owner");
+    }
+
+    const nextPath = searchParams.get("next");
+    if (nextPath) {
+      storePendingReturnPath(getSafeRedirectPath(nextPath));
     }
 
     const inviteId = searchParams.get("invite");
@@ -117,6 +125,11 @@ export default function SignupPageClient() {
     setEmailSent(true);
     setShowResend(true);
   }
+
+  const nextPath = searchParams.get("next");
+  const loginHref = nextPath
+    ? getLoginPathWithReturn(getSafeRedirectPath(nextPath))
+    : "/login";
 
   return (
     <AuthLayout>
@@ -293,7 +306,7 @@ export default function SignupPageClient() {
       <p className="mt-6 text-center text-sm text-[#9994a8]">
         すでにアカウントをお持ちの方は{" "}
         <Link
-          href="/login"
+          href={loginHref}
           className="font-medium text-[#ff3d00] transition hover:text-[#e63600]"
         >
           ログイン

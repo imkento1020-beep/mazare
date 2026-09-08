@@ -46,7 +46,7 @@ export default function BottomNav() {
     }
   }, [pathname, setMode]);
 
-  if (!ready || roles.length === 0) return null;
+  if (!ready) return null;
 
   const onOwnerSection = isOwnerAppPath(pathname);
   const onGuestSection = isGuestAppPath(pathname) && !onOwnerSection;
@@ -60,7 +60,7 @@ export default function BottomNav() {
       mode === "owner" && roles.includes("owner")
         ? OWNER_BOTTOM_NAV
         : GUEST_BOTTOM_NAV;
-  } else if (onGuestSection && roles.includes("guest")) {
+  } else if (onGuestSection) {
     items = GUEST_BOTTOM_NAV;
   }
 

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { SerwistProvider } from "@serwist/turbopack/react";
+import AppProviders from "@/components/AppProviders";
 import {
   APP_DEFAULT_TITLE,
   APP_DESCRIPTION,
@@ -66,9 +66,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-dvh flex-col bg-[#080810] text-[#eeeaf4]">
-        <SerwistProvider swUrl="/serwist/sw.js" reloadOnOnline={false}>
-          {children}
-        </SerwistProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

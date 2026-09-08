@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { completeAuthFlow } from "@/lib/auth/postAuth";
+import { getLoginPathWithReturn, getSignupPathWithReturn } from "@/lib/auth/authPaths";
 import { getSafeRedirectPath } from "@/lib/auth/safeRedirectPath";
 import { storePendingStaffInvite } from "@/lib/staff/pendingInvite";
 import { getAuthErrorMessage, isEmailNotConfirmed } from "@/lib/auth/errors";
@@ -20,11 +21,18 @@ export default function LoginPage() {
   const [showResend, setShowResend] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [signupHref, setSignupHref] = useState("/signup");
 
   useEffect(() => {
-    const inviteId = new URLSearchParams(window.location.search).get("invite");
+    const params = new URLSearchParams(window.location.search);
+    const inviteId = params.get("invite");
     if (inviteId) {
       storePendingStaffInvite(inviteId);
+    }
+
+    const nextPath = params.get("next");
+    if (nextPath) {
+      setSignupHref(getSignupPathWithReturn(getSafeRedirectPath(nextPath)));
     }
   }, []);
 
@@ -231,7 +239,7 @@ export default function LoginPage() {
       <p className="mt-6 text-center text-sm text-[#9994a8]">
         アカウントをお持ちでない方は{" "}
         <Link
-          href="/signup"
+          href={signupHref}
           className="font-medium text-[#ff3d00] transition hover:text-[#e63600]"
         >
           サインアップ

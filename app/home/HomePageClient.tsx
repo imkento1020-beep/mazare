@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { countByPostId, countByShopId, fetchAllShops, fetchVibePosts } from "@/lib/home/api";
 import { filterPostsPostedTonight, filterPublishedPosts } from "@/lib/home/dates";
@@ -15,6 +14,7 @@ import {
 import { notifyPostInterestCreated } from "@/lib/notifications/api";
 import { formatSupabaseError, isJwtAuthError } from "@/lib/supabase/errors";
 import { ensureFreshSession, signOutAndRedirectToLogin } from "@/lib/auth/session";
+import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { fetchActiveCheckinUsersByShopIds } from "@/lib/checkins/api";
 import type { CheckinUser } from "@/lib/checkins/api";
 import { fetchTonightInterests, cancelInterest } from "@/lib/mypage/api";
@@ -38,7 +38,7 @@ type HomePageClientProps = {
 export default function HomePageClient({
   googleMapsApiKey,
 }: HomePageClientProps) {
-  const router = useRouter();
+  const { openAuthPrompt } = useAuthPrompt();
   const { apiKey: resolvedMapsApiKey } = useGoogleMapsApiKey(googleMapsApiKey);
   const { location: userLocation } = useUserLocation();
   const [user, setUser] = useState<User | null>(null);
@@ -66,41 +66,47 @@ export default function HomePageClient({
 
   useEffect(() => {
     async function fetchData() {
+      let activeUser: User | null = null;
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session?.user) {
-        setLoading(false);
-        router.replace("/login");
-        return;
+      if (session?.user) {
+        await ensureFreshSession();
+        const {
+          data: { session: refreshedSession },
+        } = await supabase.auth.getSession();
+        activeUser = refreshedSession?.user ?? null;
       }
 
-      await ensureFreshSession();
+      setUser(activeUser);
 
-      const {
-        data: { session: activeSession },
-      } = await supabase.auth.getSession();
+      const [postsResult, shopsResult, allInterestsResult] = await Promise.all([
+        fetchVibePosts(),
+        fetchAllShops(),
+        supabase.from("interests").select("shop_id, vibe_post_id"),
+      ]);
 
-      if (!activeSession?.user) {
-        setLoading(false);
-        router.replace("/login");
-        return;
-      }
+      let myInterestsResult: {
+        data: { vibe_post_id: string }[] | null;
+        error: { message: string } | null;
+      } = { data: [], error: null };
+      let tonightInterestsResult: {
+        data: TodayInterestRow[];
+        error: string | null;
+      } = { data: [], error: null };
 
-      setUser(activeSession.user);
-
-      const [postsResult, shopsResult, allInterestsResult, myInterestsResult, todayInterestsResult] =
-        await Promise.all([
-          fetchVibePosts(),
-          fetchAllShops(),
-          supabase.from("interests").select("shop_id, vibe_post_id"),
+      if (activeUser) {
+        const [myInterests, tonightInterests] = await Promise.all([
           supabase
             .from("interests")
             .select("vibe_post_id")
-            .eq("user_id", activeSession.user.id),
-          fetchTonightInterests(activeSession.user.id),
+            .eq("user_id", activeUser.id),
+          fetchTonightInterests(activeUser.id),
         ]);
+        myInterestsResult = myInterests;
+        tonightInterestsResult = tonightInterests;
+      }
 
       const rawErrors: string[] = [];
       if (postsResult.error) rawErrors.push(postsResult.error);
@@ -111,7 +117,7 @@ export default function HomePageClient({
       if (myInterestsResult.error) {
         rawErrors.push(myInterestsResult.error.message);
       }
-      if (rawErrors.some(isJwtAuthError)) {
+      if (activeUser && rawErrors.some(isJwtAuthError)) {
         await signOutAndRedirectToLogin();
         return;
       }
@@ -120,9 +126,7 @@ export default function HomePageClient({
       }
 
       const boosts = await fetchActivePromotionBoosts("home_feed");
-      setPosts(
-        sortPostsWithPromotions(postsResult.data ?? [], boosts),
-      );
+      setPosts(sortPostsWithPromotions(postsResult.data ?? [], boosts));
       setShops(shopsResult.data ?? []);
       setInterestCounts(countByShopId(allInterestsResult.data ?? []));
       setPostInterestCounts(countByPostId(allInterestsResult.data ?? []));
@@ -133,7 +137,7 @@ export default function HomePageClient({
           ),
         ),
       );
-      setTonightInterests(todayInterestsResult.data);
+      setTonightInterests(tonightInterestsResult.data);
 
       const shopIds = [
         ...new Set([
@@ -147,7 +151,7 @@ export default function HomePageClient({
     }
 
     fetchData();
-  }, [router]);
+  }, []);
 
   const filteredPosts = useMemo(
     () => filterPosts(posts, genres, moods, areas, search),
@@ -239,7 +243,16 @@ export default function HomePageClient({
     (newShopsOnly ? 1 : 0);
 
   async function handleInterest(post: VibePost) {
-    if (!user || submittingId) return;
+    if (submittingId) return;
+    if (!user) {
+      openAuthPrompt({
+        title: "行くかもするにはアカウントが必要です",
+        description:
+          "気になるお店を今夜の候補に追加するには、サインアップまたはログインしてください。",
+        returnPath: "/home",
+      });
+      return;
+    }
 
     const isInterested = interestedPostIds.has(post.id);
 
@@ -355,7 +368,7 @@ export default function HomePageClient({
       googleMapsApiKey={resolvedMapsApiKey}
     >
       <TonightInterestsSection
-        items={tonightInterests}
+        items={user ? tonightInterests : []}
         onCancel={handleCancelTonightInterest}
         cancelingId={cancelingTonightId}
       />

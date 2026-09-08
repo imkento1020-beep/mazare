@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 import { fetchLiveShopIds, fetchVibePosts } from "@/lib/home/api";
 import { filterPosts } from "@/lib/home/filters";
 import {
@@ -57,7 +56,6 @@ function ShopResultCard({
 }
 
 export default function SearchPageClient() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [posts, setPosts] = useState<VibePost[]>([]);
   const [liveShopIds, setLiveShopIds] = useState<Set<string>>(new Set());
@@ -74,15 +72,6 @@ export default function SearchPageClient() {
 
   useEffect(() => {
     async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.user) {
-        router.replace("/login");
-        return;
-      }
-
       const [postsResult, liveIds] = await Promise.all([
         fetchVibePosts(),
         fetchLiveShopIds(),
@@ -94,7 +83,7 @@ export default function SearchPageClient() {
     }
 
     load();
-  }, [router]);
+  }, []);
 
   const filteredPosts = useMemo(
     () => filterPosts(posts, genres, moods, areas, search),

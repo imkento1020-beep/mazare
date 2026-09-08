@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { EmailOtpType, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { completeAuthFlow } from "@/lib/auth/postAuth";
+import { readPendingReturnPath } from "@/lib/auth/pendingReturnPath";
 
 function getAuthErrorMessage(error: { message: string } | null) {
   if (!error) return "認証に失敗しました。もう一度お試しください。";
@@ -34,6 +35,13 @@ export default function AuthCallbackPage() {
       setVerified(true);
       setMessage("メールアドレスが確認されました。アカウントの準備をしています...");
       window.history.replaceState({}, "", "/auth/callback");
+
+      const pendingReturnPath = readPendingReturnPath();
+      if (pendingReturnPath) {
+        router.replace(pendingReturnPath);
+        return;
+      }
+
       router.replace(await completeAuthFlow(user));
     }
 
