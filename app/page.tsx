@@ -87,17 +87,12 @@ export default function LandingPage() {
               お店がリアルタイムで「今夜の空気」を発信。
               行くかもを押して、今いちばん熱い夜を見つけよう。
             </p>
-            <AuthPromptTrigger
-              returnPath="/home"
-              promptOptions={{
-                title: "mazareを始めましょう",
-                description:
-                  "サインアップまたはログインして、今夜盛り上がれる場所を探しましょう。",
-              }}
+            <Link
+              href="/home"
               className="mt-8 inline-flex rounded-[14px] bg-[#ff3d00] px-8 py-4 text-base font-bold text-white transition hover:bg-[#e63600]"
             >
               今すぐ始める
-            </AuthPromptTrigger>
+            </Link>
           </div>
           <div className="relative mx-auto w-full max-w-md lg:max-w-none">
             <AuthSampleCards />
@@ -127,17 +122,12 @@ export default function LandingPage() {
                   今夜行きたいお店を、リアルタイムの空気感から見つけよう。
                 </p>
               </div>
-              <AuthPromptTrigger
-                returnPath="/home"
-                promptOptions={{
-                  title: "ゲストとして始める",
-                  description:
-                    "サインアップまたはログインして、今夜の場所探しを始めましょう。",
-                }}
+              <Link
+                href="/home"
                 className="shrink-0 rounded-[13px] bg-[#ff3d00] px-6 py-2.5 text-sm font-bold text-white transition hover:bg-[#e63600]"
               >
                 ゲストとして始める
-              </AuthPromptTrigger>
+              </Link>
             </div>
             <FeatureGrid items={guestFeatures} />
           </div>

@@ -10,8 +10,6 @@ import { useAppMode } from "@/hooks/useAppMode";
 import AppModeSwitcher from "@/components/auth/AppModeSwitcher";
 import MazareLogo from "@/components/MazareLogo";
 import NotificationBell from "@/components/notifications/NotificationBell";
-import AuthPromptTrigger from "@/components/auth/AuthPromptTrigger";
-
 type HeaderProps = {
   search?: string;
   onSearchChange?: (value: string) => void;
@@ -160,17 +158,12 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
             >
               ログイン
             </Link>
-            <AuthPromptTrigger
-              returnPath="/home"
-              promptOptions={{
-                title: "mazareを始めましょう",
-                description:
-                  "アカウントを作成するか、ログインして今夜の場所探しを始めましょう。",
-              }}
+            <Link
+              href="/home"
               className="rounded-[14px] bg-[#ff3d00] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#e63600] md:px-5 md:py-2.5"
             >
               はじめる
-            </AuthPromptTrigger>
+            </Link>
           </div>
         </div>
       </header>
