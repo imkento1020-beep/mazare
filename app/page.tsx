@@ -87,12 +87,20 @@ export default function LandingPage() {
               お店がリアルタイムで「今夜の空気」を発信。
               行くかもを押して、今いちばん熱い夜を見つけよう。
             </p>
-            <Link
-              href="/home"
-              className="mt-8 inline-flex rounded-[14px] bg-[#ff3d00] px-8 py-4 text-base font-bold text-white transition hover:bg-[#e63600]"
-            >
-              今すぐ始める
-            </Link>
+            <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+              <Link
+                href="/home"
+                className="inline-flex rounded-[14px] bg-[#ff3d00] px-8 py-4 text-base font-bold text-white transition hover:bg-[#e63600]"
+              >
+                今すぐ始める
+              </Link>
+              <Link
+                href="/install"
+                className="text-sm font-semibold text-[#9994a8] underline-offset-4 transition hover:text-[#eeeaf4] hover:underline"
+              >
+                スマホにアプリとして追加
+              </Link>
+            </div>
           </div>
           <div className="relative mx-auto w-full max-w-md lg:max-w-none">
             <AuthSampleCards />
@@ -160,6 +168,29 @@ export default function LandingPage() {
             </div>
             <FeatureGrid items={ownerFeatures} />
           </div>
+        </div>
+      </section>
+
+      <section className="border-t border-white/[0.07] bg-[#111118] px-6 py-16">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 rounded-[20px] border border-white/7 bg-[#080810] p-8 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#00e87a]">
+              PWA
+            </p>
+            <h2 className="mt-2 text-xl font-black lg:text-2xl">
+              スマホに追加して、アプリのように使う
+            </h2>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#9994a8]">
+              ホーム画面に mazare を置けば、ワンタップで今夜のお店探しが始まります。App
+              Store のダウンロードは不要です。
+            </p>
+          </div>
+          <Link
+            href="/install"
+            className="shrink-0 rounded-[13px] border border-[#00e87a]/40 bg-[#00e87a]/10 px-6 py-3 text-sm font-bold text-[#00e87a] transition hover:bg-[#00e87a]/20"
+          >
+            追加方法を見る
+          </Link>
         </div>
       </section>
 

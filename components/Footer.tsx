@@ -2,6 +2,7 @@ import Link from "next/link";
 import MazareLogo from "@/components/MazareLogo";
 
 const FOOTER_LINKS = [
+  { label: "アプリとして追加", href: "/install" },
   { label: "サービスについて", href: "/about" },
   { label: "お店の方へ", href: "/signup?type=owner" },
   { label: "よくある質問", href: "/faq" },
