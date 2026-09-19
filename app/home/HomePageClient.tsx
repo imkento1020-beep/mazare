@@ -13,7 +13,7 @@ import {
 } from "@/lib/promotions";
 import { notifyPostInterestCreated } from "@/lib/notifications/api";
 import { formatSupabaseError, isJwtAuthError } from "@/lib/supabase/errors";
-import { ensureFreshSession, signOutAndRedirectToLogin } from "@/lib/auth/session";
+import { ensureFreshSession, signOutSilently } from "@/lib/auth/session";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { fetchActiveCheckinUsersByShopIds } from "@/lib/checkins/api";
 import type { CheckinUser } from "@/lib/checkins/api";
@@ -81,11 +81,16 @@ export default function HomePageClient({
 
       setUser(activeUser);
 
-      const [postsResult, shopsResult, allInterestsResult] = await Promise.all([
-        fetchVibePosts(),
-        fetchAllShops(),
-        supabase.from("interests").select("shop_id, vibe_post_id"),
-      ]);
+      const loadFeed = async () => {
+        const [postsResult, shopsResult, allInterestsResult] = await Promise.all([
+          fetchVibePosts(),
+          fetchAllShops(),
+          supabase.from("interests").select("shop_id, vibe_post_id"),
+        ]);
+        return { postsResult, shopsResult, allInterestsResult };
+      };
+
+      let { postsResult, shopsResult, allInterestsResult } = await loadFeed();
 
       let myInterestsResult: {
         data: { vibe_post_id: string }[] | null;
@@ -108,21 +113,31 @@ export default function HomePageClient({
         tonightInterestsResult = tonightInterests;
       }
 
-      const rawErrors: string[] = [];
-      if (postsResult.error) rawErrors.push(postsResult.error);
-      if (shopsResult.error) rawErrors.push(shopsResult.error);
-      if (allInterestsResult.error) {
-        rawErrors.push(allInterestsResult.error.message);
+      const feedErrors = [postsResult.error, shopsResult.error].filter(
+        (message): message is string => Boolean(message),
+      );
+
+      if (activeUser && feedErrors.some(isJwtAuthError)) {
+        await signOutSilently();
+        activeUser = null;
+        setUser(null);
+        myInterestsResult = { data: [], error: null };
+        tonightInterestsResult = { data: [], error: null };
+        ({ postsResult, shopsResult, allInterestsResult } = await loadFeed());
       }
-      if (myInterestsResult.error) {
-        rawErrors.push(myInterestsResult.error.message);
+
+      const feedErrorsAfterRetry = [postsResult.error, shopsResult.error].filter(
+        (message): message is string => Boolean(message),
+      );
+      if (feedErrorsAfterRetry.length > 0) {
+        setError(feedErrorsAfterRetry.map(formatSupabaseError).join(" / "));
       }
-      if (activeUser && rawErrors.some(isJwtAuthError)) {
-        await signOutAndRedirectToLogin();
-        return;
-      }
-      if (rawErrors.length > 0) {
-        setError(rawErrors.map(formatSupabaseError).join(" / "));
+
+      if (
+        myInterestsResult.error?.message &&
+        isJwtAuthError(myInterestsResult.error.message)
+      ) {
+        myInterestsResult = { data: [], error: null };
       }
 
       const boosts = await fetchActivePromotionBoosts("home_feed");
@@ -130,6 +145,7 @@ export default function HomePageClient({
       setShops(shopsResult.data ?? []);
       setInterestCounts(countByShopId(allInterestsResult.data ?? []));
       setPostInterestCounts(countByPostId(allInterestsResult.data ?? []));
+
       setInterestedPostIds(
         new Set(
           (myInterestsResult.data ?? []).map(

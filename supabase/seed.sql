@@ -78,7 +78,7 @@ CREATE POLICY "profiles_update_own" ON public.profiles
 -- shops（全員閲覧可）
 DROP POLICY IF EXISTS "shops_select_all" ON public.shops;
 CREATE POLICY "shops_select_all" ON public.shops
-  FOR SELECT TO authenticated USING (true);
+  FOR SELECT TO anon, authenticated USING (true);
 
 DROP POLICY IF EXISTS "shops_insert_owner" ON public.shops;
 CREATE POLICY "shops_insert_owner" ON public.shops
@@ -91,7 +91,7 @@ CREATE POLICY "shops_update_owner" ON public.shops
 -- vibe_posts（全員閲覧可）
 DROP POLICY IF EXISTS "vibe_posts_select_all" ON public.vibe_posts;
 CREATE POLICY "vibe_posts_select_all" ON public.vibe_posts
-  FOR SELECT TO authenticated USING (true);
+  FOR SELECT TO anon, authenticated USING (true);
 
 DROP POLICY IF EXISTS "vibe_posts_insert_owner" ON public.vibe_posts;
 CREATE POLICY "vibe_posts_insert_owner" ON public.vibe_posts
@@ -126,7 +126,7 @@ CREATE POLICY "vibe_posts_delete_owner" ON public.vibe_posts
 -- interests
 DROP POLICY IF EXISTS "interests_select_all" ON public.interests;
 CREATE POLICY "interests_select_all" ON public.interests
-  FOR SELECT TO authenticated USING (true);
+  FOR SELECT TO anon, authenticated USING (true);
 
 DROP POLICY IF EXISTS "interests_insert_own" ON public.interests;
 CREATE POLICY "interests_insert_own" ON public.interests

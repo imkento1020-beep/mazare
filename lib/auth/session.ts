@@ -19,7 +19,11 @@ export async function ensureFreshSession(): Promise<boolean> {
   return !error && Boolean(data.session);
 }
 
-export async function signOutAndRedirectToLogin() {
+export async function signOutSilently() {
   await supabase.auth.signOut();
+}
+
+export async function signOutAndRedirectToLogin() {
+  await signOutSilently();
   window.location.assign("/login");
 }

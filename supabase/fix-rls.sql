@@ -14,7 +14,7 @@ DROP POLICY IF EXISTS "shops_insert_owner" ON public.shops;
 DROP POLICY IF EXISTS "shops_update_owner" ON public.shops;
 
 CREATE POLICY "shops_select_all" ON public.shops
-  FOR SELECT TO authenticated USING (true);
+  FOR SELECT TO anon, authenticated USING (true);
 
 CREATE POLICY "shops_insert_owner" ON public.shops
   FOR INSERT TO authenticated WITH CHECK (auth.uid() = owner_id);
@@ -28,7 +28,7 @@ DROP POLICY IF EXISTS "vibe_posts_select_authenticated" ON public.vibe_posts;
 DROP POLICY IF EXISTS "vibe_posts_insert_owner" ON public.vibe_posts;
 
 CREATE POLICY "vibe_posts_select_all" ON public.vibe_posts
-  FOR SELECT TO authenticated USING (true);
+  FOR SELECT TO anon, authenticated USING (true);
 
 CREATE POLICY "vibe_posts_insert_owner" ON public.vibe_posts
   FOR INSERT TO authenticated WITH CHECK (
@@ -67,7 +67,7 @@ DROP POLICY IF EXISTS "interests_insert_authenticated" ON public.interests;
 DROP POLICY IF EXISTS "interests_delete_own" ON public.interests;
 
 CREATE POLICY "interests_select_all" ON public.interests
-  FOR SELECT TO authenticated USING (true);
+  FOR SELECT TO anon, authenticated USING (true);
 
 CREATE POLICY "interests_insert_own" ON public.interests
   FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
@@ -109,6 +109,7 @@ GRANT SELECT ON public.shops TO anon, authenticated;
 GRANT INSERT, UPDATE ON public.shops TO authenticated;
 GRANT SELECT ON public.vibe_posts TO anon, authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.vibe_posts TO authenticated;
+GRANT SELECT ON public.interests TO anon;
 GRANT SELECT, INSERT, DELETE ON public.interests TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.profiles TO authenticated;
 GRANT SELECT, INSERT, DELETE ON public.favorite_shops TO authenticated;

@@ -19,7 +19,7 @@ ALTER TABLE public.checkins ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "checkins_select_active" ON public.checkins;
 CREATE POLICY "checkins_select_active" ON public.checkins
-  FOR SELECT TO authenticated
+  FOR SELECT TO anon, authenticated
   USING (expires_at > NOW());
 
 DROP POLICY IF EXISTS "checkins_select_own" ON public.checkins;
@@ -51,4 +51,5 @@ CREATE POLICY "checkins_delete_own" ON public.checkins
   FOR DELETE TO authenticated
   USING (auth.uid() = user_id);
 
+GRANT SELECT ON public.checkins TO anon;
 GRANT SELECT, INSERT, DELETE ON public.checkins TO authenticated;
