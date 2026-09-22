@@ -12,8 +12,19 @@ export function getGoogleCloudApiKey() {
   );
 }
 
+/** サーバーから Places REST を叩くとき（Referer 制限のないキーを優先） */
+export function getServerGooglePlacesApiKey() {
+  return (
+    process.env.GOOGLE_PLACES_API_KEY?.trim() ||
+    process.env.GOOGLE_MAPS_API_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ||
+    ""
+  );
+}
+
 export function getGooglePlacesApiKey() {
-  return getGoogleCloudApiKey();
+  return getServerGooglePlacesApiKey();
 }
 
 export function getGooglePlacesSetupHint() {

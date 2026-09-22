@@ -11,6 +11,12 @@ import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { countGuestPostsByUser } from "@/lib/auth/anonymous";
 import type { PlaceSummary } from "@/lib/places/types";
+import {
+  cachePlacesOnServer,
+  searchNearbyPlacesClient,
+  searchPlacesByTextClient,
+} from "@/lib/places/clientPlaces";
+
 export default function PostPageClient() {
   const { openFormalRegistrationPrompt } = useAuthPrompt();
   const { user } = useAnonymousAuth();
@@ -41,25 +47,12 @@ export default function PostPageClient() {
         });
       });
 
-      const response = await fetch("/api/places/nearby", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        }),
+      const found = await searchNearbyPlacesClient({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
       });
-
-      const json = (await response.json()) as {
-        places?: PlaceSummary[];
-        error?: string;
-      };
-
-      if (!response.ok) {
-        throw new Error(json.error ?? "近くのお店の取得に失敗しました");
-      }
-
-      setPlaces(json.places ?? []);
+      const cached = await cachePlacesOnServer(found);
+      setPlaces(cached);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "位置情報またはお店の取得に失敗しました",
@@ -81,19 +74,9 @@ export default function PostPageClient() {
     setLoadingPlaces(true);
     setError(null);
     try {
-      const response = await fetch("/api/places/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
-      });
-      const json = (await response.json()) as {
-        places?: PlaceSummary[];
-        error?: string;
-      };
-      if (!response.ok) {
-        throw new Error(json.error ?? "検索に失敗しました");
-      }
-      setPlaces(json.places ?? []);
+      const found = await searchPlacesByTextClient(query);
+      const cached = await cachePlacesOnServer(found);
+      setPlaces(cached);
     } catch (err) {
       setError(err instanceof Error ? err.message : "検索に失敗しました");
     } finally {
