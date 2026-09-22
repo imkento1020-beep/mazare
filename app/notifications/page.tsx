@@ -20,10 +20,15 @@ import GuestLayout from "@/components/layout/GuestLayout";
 import OwnerLayout from "@/components/layout/OwnerLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import { fetchManagedShop } from "@/lib/owner/api";
+import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
+import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
+import { isRegisteredUser } from "@/lib/auth/anonymous";
 
 export default function NotificationsPage() {
   const router = useRouter();
   const { mode, ready: modeReady } = useAppMode();
+  const { user: authUser, ready: authReady } = useAnonymousAuth();
+  const { openFormalRegistrationPrompt } = useAuthPrompt();
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -34,8 +39,20 @@ export default function NotificationsPage() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session?.user) {
-        router.replace("/login");
+      const user = session?.user ?? authUser;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      if (authReady && !isRegisteredUser(user)) {
+        openFormalRegistrationPrompt({
+          returnPath: "/notifications",
+          title: "通知を受け取る",
+          description:
+            "通知一覧を見る・受け取るには正式登録（Google またはメール）が必要です。",
+        });
+        setLoading(false);
         return;
       }
 

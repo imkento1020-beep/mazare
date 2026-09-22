@@ -11,9 +11,10 @@ import {
 import { useRouter } from "next/navigation";
 import {
   getLoginPathWithReturn,
-  getSignupPathWithReturn,
+  getFormalSignupPathWithReturn,
   prepareAuthNavigation,
 } from "@/lib/auth/authPaths";
+import { startGoogleAuth } from "@/lib/auth/googleLink";
 import { primaryButtonClassName } from "@/lib/ui/styles";
 
 export type AuthPromptOptions = {
@@ -21,32 +22,50 @@ export type AuthPromptOptions = {
   title?: string;
   description?: string;
   signupPath?: string;
+  /** @deprecated 匿名認証により通常アクションでは未使用 */
+  legacyGuestGate?: boolean;
 };
 
 type AuthPromptContextValue = {
   openAuthPrompt: (options?: AuthPromptOptions) => void;
+  openFormalRegistrationPrompt: (options?: AuthPromptOptions) => void;
   closeAuthPrompt: () => void;
 };
 
 const AuthPromptContext = createContext<AuthPromptContextValue | null>(null);
 
-const DEFAULT_TITLE = "mazareを始めましょう";
-const DEFAULT_DESCRIPTION =
-  "「行くかも」やチェックインを使うには、アカウントが必要です。サインアップまたはログインを選んでください。";
+const FORMAL_TITLE = "正式登録で機能を解放";
+const FORMAL_DESCRIPTION =
+  "行くかも履歴の保存、通知の受け取り、投稿の継続には正式登録（Google またはメール）が必要です。これまでのデータはそのまま引き継がれます。";
 
 export function AuthPromptProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [formal, setFormal] = useState(false);
   const [options, setOptions] = useState<AuthPromptOptions>({});
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const closeAuthPrompt = useCallback(() => {
     setOpen(false);
+    setFormal(false);
+    setGoogleError(null);
   }, []);
 
   const openAuthPrompt = useCallback((nextOptions: AuthPromptOptions = {}) => {
     setOptions(nextOptions);
+    setFormal(Boolean(nextOptions.legacyGuestGate));
     setOpen(true);
   }, []);
+
+  const openFormalRegistrationPrompt = useCallback(
+    (nextOptions: AuthPromptOptions = {}) => {
+      setOptions(nextOptions);
+      setFormal(true);
+      setOpen(true);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -59,10 +78,13 @@ export function AuthPromptProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [closeAuthPrompt, open]);
 
-  function handleSignup() {
+  function handleEmailSignup() {
     const returnPath = prepareAuthNavigation(options.returnPath);
     const destination =
-      options.signupPath ?? getSignupPathWithReturn(returnPath);
+      options.signupPath ??
+      (formal
+        ? getFormalSignupPathWithReturn(returnPath)
+        : getFormalSignupPathWithReturn(returnPath));
     closeAuthPrompt();
     router.push(destination);
   }
@@ -73,8 +95,34 @@ export function AuthPromptProvider({ children }: { children: ReactNode }) {
     router.push(getLoginPathWithReturn(returnPath));
   }
 
+  async function handleGoogle() {
+    setGoogleLoading(true);
+    setGoogleError(null);
+    try {
+      const returnPath = prepareAuthNavigation(options.returnPath);
+      await startGoogleAuth(returnPath);
+      closeAuthPrompt();
+    } catch (error) {
+      setGoogleError(
+        error instanceof Error ? error.message : "Google 連携に失敗しました",
+      );
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
+
+  const title = formal
+    ? (options.title ?? FORMAL_TITLE)
+    : (options.title ?? "mazareを始めましょう");
+  const description = formal
+    ? (options.description ?? FORMAL_DESCRIPTION)
+    : (options.description ??
+      "サインアップまたはログインを選んでください。");
+
   return (
-    <AuthPromptContext.Provider value={{ openAuthPrompt, closeAuthPrompt }}>
+    <AuthPromptContext.Provider
+      value={{ openAuthPrompt, openFormalRegistrationPrompt, closeAuthPrompt }}
+    >
       {children}
 
       {open && (
@@ -91,32 +139,43 @@ export function AuthPromptProvider({ children }: { children: ReactNode }) {
             aria-labelledby="auth-prompt-title"
             className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#111118] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.55)]"
           >
-            <p className="text-3xl">👋</p>
+            <p className="text-3xl">{formal ? "✨" : "👋"}</p>
             <h2
               id="auth-prompt-title"
               className="mt-4 text-lg font-black text-[#eeeaf4]"
             >
-              {options.title ?? DEFAULT_TITLE}
+              {title}
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-[#9994a8]">
-              {options.description ?? DEFAULT_DESCRIPTION}
+              {description}
             </p>
 
             <div className="mt-6 space-y-3">
               <button
                 type="button"
-                onClick={handleSignup}
+                disabled={googleLoading}
+                onClick={() => void handleGoogle()}
+                className="w-full rounded-[13px] border border-white/12 bg-white px-4 py-3.5 text-sm font-bold text-[#111118] transition hover:bg-[#eeeaf4] disabled:opacity-60"
+              >
+                {googleLoading ? "Google 連携中…" : "Google で続ける"}
+              </button>
+              <button
+                type="button"
+                onClick={handleEmailSignup}
                 className={primaryButtonClassName}
               >
-                サインアップ
+                メールアドレスで登録
               </button>
               <button
                 type="button"
                 onClick={handleLogin}
                 className="w-full rounded-[13px] border border-white/12 bg-[#18181f] px-4 py-3.5 text-sm font-bold text-[#eeeaf4] transition hover:border-white/20"
               >
-                ログイン
+                ログイン（既存アカウント）
               </button>
+              {googleError && (
+                <p className="text-xs text-red-400">{googleError}</p>
+              )}
               <button
                 type="button"
                 onClick={closeAuthPrompt}

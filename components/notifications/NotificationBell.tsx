@@ -15,6 +15,9 @@ import {
   notificationEmoji,
   type Notification,
 } from "@/lib/notifications/types";
+import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
+import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
+import { isRegisteredUser } from "@/lib/auth/anonymous";
 
 type NotificationBellProps = {
   className?: string;
@@ -22,6 +25,8 @@ type NotificationBellProps = {
 
 export default function NotificationBell({ className = "" }: NotificationBellProps) {
   const router = useRouter();
+  const { user } = useAnonymousAuth();
+  const { openFormalRegistrationPrompt } = useAuthPrompt();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -67,6 +72,16 @@ export default function NotificationBell({ className = "" }: NotificationBellPro
   }, [open]);
 
   async function handleToggle() {
+    if (!isRegisteredUser(user)) {
+      openFormalRegistrationPrompt({
+        returnPath: "/notifications",
+        title: "通知を受け取る",
+        description:
+          "「行くかも」や投稿への反応を通知で受け取るには、正式登録（Google またはメール）が必要です。",
+      });
+      return;
+    }
+
     const nextOpen = !open;
     setOpen(nextOpen);
     if (nextOpen) await loadNotifications();

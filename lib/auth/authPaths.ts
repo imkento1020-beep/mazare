@@ -28,6 +28,11 @@ export function getLoginPathWithReturn(returnPath?: string) {
   return `/login?next=${encodeURIComponent(path)}`;
 }
 
+export function getFormalSignupPathWithReturn(returnPath?: string) {
+  const path = resolveReturnPath(returnPath);
+  return `/signup?upgrade=1&next=${encodeURIComponent(path)}`;
+}
+
 export function prepareAuthNavigation(returnPath?: string) {
   const path = resolveReturnPath(returnPath);
   storePendingReturnPath(path);

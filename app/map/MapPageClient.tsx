@@ -1,19 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import {
-  fetchAllShops,
-  fetchLatestVibePostsByShop,
-  fetchLiveShopIds,
-  type LatestVibePost,
-} from "@/lib/home/api";
-import type { Shop } from "@/lib/home/types";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import GoogleMapView from "@/components/map/GoogleMapView";
-import MapShopCarousel from "@/components/map/MapShopCarousel";
-import MapShopPopup from "@/components/map/MapShopPopup";
+import MapActivityGoogleMapView from "@/components/map/MapActivityGoogleMapView";
+import MapActivitySheet from "@/components/map/MapActivitySheet";
+import GoogleAttribution from "@/components/places/GoogleAttribution";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
+import {
+  buildMapShopActivity,
+  fetchRecentVibePosts,
+  type MapShopActivity,
+} from "@/lib/feed/recentFeed";
+import { notifyPostInterestCreated } from "@/lib/notifications/api";
+import type { User } from "@supabase/supabase-js";
 
 type MapPageClientProps = {
   googleMapsApiKey: string;
@@ -24,84 +25,110 @@ export default function MapPageClient({
   googleMapsApiKey,
   setupHint,
 }: MapPageClientProps) {
-  const [shops, setShops] = useState<Shop[]>([]);
-  const [liveIds, setLiveIds] = useState<Set<string>>(new Set());
-  const [latestPosts, setLatestPosts] = useState<Map<string, LatestVibePost>>(
-    new Map(),
-  );
+  const [activities, setActivities] = useState<MapShopActivity[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [popupOpen, setPopupOpen] = useState(false);
-  const [userLocation, setUserLocation] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [interestedPostIds, setInterestedPostIds] = useState<Set<string>>(new Set());
+  const [submitting, setSubmitting] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const { apiKey: resolvedMapsApiKey, loading: mapsKeyLoading } =
     useGoogleMapsApiKey(googleMapsApiKey);
-  const hasGoogleMapsKey = resolvedMapsApiKey.length > 0;
+
+  const reload = useCallback(async () => {
+    const { data, error } = await fetchRecentVibePosts();
+    if (error) setLoadError(error);
+    setActivities(buildMapShopActivity(data));
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    async function load() {
-      const [shopsResult, liveShopIds, postsByShop] = await Promise.all([
-        fetchAllShops(),
-        fetchLiveShopIds(),
-        fetchLatestVibePostsByShop(),
-      ]);
+    void reload();
 
-      if (shopsResult.error) {
-        setLoadError(shopsResult.error);
-      }
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const activeUser = session?.user ?? null;
+      setUser(activeUser);
+      if (!activeUser) return;
+      const { data } = await supabase
+        .from("interests")
+        .select("vibe_post_id")
+        .eq("user_id", activeUser.id);
+      setInterestedPostIds(new Set((data ?? []).map((row) => row.vibe_post_id)));
+    });
 
-      setShops(shopsResult.data ?? []);
-      setLiveIds(liveShopIds);
-      setLatestPosts(postsByShop);
-      setLoading(false);
-    }
+    const channel = supabase
+      .channel("map-vibe-posts")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "vibe_posts" },
+        () => {
+          void reload();
+        },
+      )
+      .subscribe();
 
-    load();
-  }, []);
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [reload]);
 
   const mapShops = useMemo(
     () =>
-      shops.map((shop) => ({
-        id: shop.id,
-        name: shop.name,
-        address: shop.address,
-        live: liveIds.has(shop.id),
-        latitude: shop.latitude,
-        longitude: shop.longitude,
+      activities.map((item) => ({
+        id: item.shopId,
+        name: item.shop.name,
+        address: item.shop.address,
+        latitude: item.shop.latitude,
+        longitude: item.shop.longitude,
+        uniquePosterCount: item.uniquePosterCount,
       })),
-    [shops, liveIds],
+    [activities],
   );
 
-  const selectedShop = shops.find((shop) => shop.id === selectedId) ?? null;
+  const selectedActivity =
+    activities.find((item) => item.shopId === selectedId) ?? null;
 
-  function handleSelectShop(shopId: string) {
-    setSelectedId(shopId);
-    setPopupOpen(true);
-  }
+  async function handleInterest() {
+    if (!selectedActivity) return;
+    if (!user) return;
 
-  function handleCurrentLocation() {
-    if (!navigator.geolocation) {
-      setLocationError("お使いのブラウザは位置情報に対応していません");
-      return;
+    const postId = selectedActivity.latestPostId;
+    const interested = interestedPostIds.has(postId);
+    setSubmitting(true);
+
+    if (interested) {
+      await supabase
+        .from("interests")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("vibe_post_id", postId);
+      setInterestedPostIds((prev) => {
+        const next = new Set(prev);
+        next.delete(postId);
+        return next;
+      });
+    } else {
+      const { data, error } = await supabase
+        .from("interests")
+        .insert({
+          user_id: user.id,
+          shop_id: selectedActivity.shopId,
+          vibe_post_id: postId,
+        })
+        .select("id")
+        .single();
+
+      if (!error && data?.id) {
+        await notifyPostInterestCreated(data.id);
+        setInterestedPostIds((prev) => new Set(prev).add(postId));
+      }
     }
 
-    setLocationError(null);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-      },
-      () => {
-        setLocationError("位置情報を取得できませんでした。設定を確認してください");
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
+    setSubmitting(false);
   }
 
   if (loading) {
@@ -117,58 +144,60 @@ export default function MapPageClient({
       <Header />
 
       <div className="relative min-h-0 flex-1 basis-0">
-        <GoogleMapView
+        <MapActivityGoogleMapView
           apiKey={resolvedMapsApiKey}
           shops={mapShops}
           selectedId={selectedId}
           focusLocation={userLocation}
-          onSelectShop={handleSelectShop}
+          onSelectShop={(shopId) => {
+            setSelectedId(shopId);
+            setSheetOpen(true);
+          }}
         />
 
-        {!mapsKeyLoading && !hasGoogleMapsKey && (
+        {!mapsKeyLoading && !resolvedMapsApiKey && (
           <div className="pointer-events-none absolute inset-x-4 top-4 z-10 rounded-xl border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
-            Google Maps API キーが読み込まれていません。
-            {setupHint}
+            Google Maps API キーが読み込まれていません。{setupHint}
           </div>
         )}
 
         {loadError && (
           <div className="absolute inset-x-4 top-4 z-10 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-400">
-            お店の読み込みに失敗しました: {loadError}
+            {loadError}
           </div>
-        )}
-
-        {locationError && (
-          <div className="absolute inset-x-4 top-16 z-10 rounded-xl border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
-            {locationError}
-          </div>
-        )}
-
-        {popupOpen && selectedShop && (
-          <MapShopPopup
-            shop={selectedShop}
-            live={liveIds.has(selectedShop.id)}
-            latestPost={latestPosts.get(selectedShop.id)}
-            onClose={() => setPopupOpen(false)}
-          />
         )}
 
         <button
           type="button"
-          className="absolute bottom-[168px] right-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[#111118]/95 text-lg shadow-lg backdrop-blur-md md:bottom-[132px]"
-          aria-label="現在地"
-          onClick={handleCurrentLocation}
+          onClick={() => {
+            navigator.geolocation.getCurrentPosition((position) => {
+              setUserLocation({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              });
+            });
+          }}
+          className="absolute right-4 top-4 z-10 rounded-full border border-white/10 bg-[#111118] px-4 py-2 text-xs font-bold"
         >
-          📍
+          現在地
         </button>
 
-        <MapShopCarousel
-          shops={shops}
-          liveIds={liveIds}
-          selectedId={selectedId}
-          latestPosts={latestPosts}
-          onSelectShop={handleSelectShop}
+        <MapActivitySheet
+          activity={selectedActivity}
+          open={sheetOpen}
+          interested={
+            selectedActivity
+              ? interestedPostIds.has(selectedActivity.latestPostId)
+              : false
+          }
+          interestLoading={submitting}
+          onClose={() => setSheetOpen(false)}
+          onInterest={() => void handleInterest()}
         />
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-20 z-10 flex justify-center md:bottom-4">
+          <GoogleAttribution />
+        </div>
       </div>
 
       <BottomNav />

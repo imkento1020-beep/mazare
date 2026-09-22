@@ -103,6 +103,9 @@ export async function createVibePost(input: {
       comment: input.comment,
       images: input.images,
       posted_at: postedAt,
+      is_guest_post: false,
+      author_id: null,
+      hashtags: [],
     })
     .select("id")
     .single();

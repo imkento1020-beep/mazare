@@ -39,12 +39,12 @@ import { getDistanceLabel } from "@/lib/geo/haversine";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import CheckinAvatarStack from "@/components/checkins/CheckinAvatarStack";
 import BackButton from "@/components/layout/BackButton";
+import PostSourceBadge from "@/components/posts/PostSourceBadge";
 import FavoriteButton from "@/components/favorites/FavoriteButton";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import ShopVibePostItem from "@/components/home/ShopVibePostItem";
 import type { User } from "@supabase/supabase-js";
-import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 
 function genreEmoji(genre: string) {
   if (genre.includes("居酒屋")) return "🎵";
@@ -87,7 +87,6 @@ function CoverGallery({ shop, posts }: { shop: Shop; posts: VibePost[] }) {
 export default function ShopDetailPage() {
   const params = useParams();
   const shopId = params.id as string;
-  const { openAuthPrompt } = useAuthPrompt();
   const { location: userLocation } = useUserLocation();
 
   const [user, setUser] = useState<User | null>(null);
@@ -168,15 +167,7 @@ export default function ShopDetailPage() {
 
   async function handleInterestToggle() {
     if (!latestPost || submitting) return;
-    if (!user) {
-      openAuthPrompt({
-        title: "行くかもするにはアカウントが必要です",
-        description:
-          "このお店を今夜の候補に追加するには、サインアップまたはログインしてください。",
-        returnPath: `/shop/${shopId}`,
-      });
-      return;
-    }
+    if (!user) return;
 
     setSubmitting(true);
     setError(null);
@@ -218,15 +209,7 @@ export default function ShopDetailPage() {
 
   async function handleCheckinToggle() {
     if (checkinLoading) return;
-    if (!user) {
-      openAuthPrompt({
-        title: "チェックインにはアカウントが必要です",
-        description:
-          "お店にチェックインするには、サインアップまたはログインしてください。",
-        returnPath: `/shop/${shopId}`,
-      });
-      return;
-    }
+    if (!user) return;
 
     setCheckinLoading(true);
     setError(null);
@@ -325,6 +308,9 @@ export default function ShopDetailPage() {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-2xl font-black">{shop.name}</h1>
+            {latestPost && (
+              <PostSourceBadge post={latestPost} className="mt-2" />
+            )}
             <p className="mt-1 text-sm text-[#ff3d00]">{formatGenre(shop.genre)}</p>
           </div>
           {user && (

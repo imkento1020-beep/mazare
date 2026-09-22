@@ -16,6 +16,8 @@ function isGuestAppPath(pathname: string) {
     pathname.startsWith("/map") ||
     pathname.startsWith("/tonight") ||
     pathname.startsWith("/search") ||
+    pathname.startsWith("/post") ||
+    pathname.startsWith("/trending") ||
     pathname.startsWith("/favorites") ||
     pathname.startsWith("/mypage") ||
     pathname.startsWith("/notifications") ||
@@ -38,6 +40,8 @@ export default function BottomNav() {
       pathname.startsWith("/map") ||
       pathname.startsWith("/tonight") ||
       pathname.startsWith("/search") ||
+    pathname.startsWith("/post") ||
+    pathname.startsWith("/trending") ||
       pathname.startsWith("/favorites") ||
       pathname.startsWith("/mypage") ||
       pathname.startsWith("/shop")

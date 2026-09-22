@@ -6,6 +6,8 @@ export type Shop = {
   open_hours: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  google_place_id?: string | null;
+  cached_at?: string | null;
   cover_image?: string | null;
   cover_images?: string[] | null;
   description?: string | null;
@@ -20,6 +22,11 @@ export type VibePost = {
   comment: string;
   moods: string[] | null;
   images?: string[] | null;
+  video_url?: string | null;
+  hashtags?: string[] | null;
+  media_type?: "image" | "video" | null;
+  is_guest_post?: boolean;
+  author_id?: string | null;
   posted_at?: string | null;
   shops: Shop | null;
 };

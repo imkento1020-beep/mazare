@@ -59,7 +59,7 @@ export default function MyPage() {
       } = await supabase.auth.getSession();
 
       if (!session?.user) {
-        router.replace("/login");
+        setLoading(false);
         return;
       }
 

@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
+import { isAnonymousUser } from "@/lib/auth/anonymous";
 import { storePendingReturnPath } from "@/lib/auth/pendingReturnPath";
 import { getLoginPathWithReturn, getSignupPathWithReturn } from "@/lib/auth/authPaths";
 import { getSafeRedirectPath } from "@/lib/auth/safeRedirectPath";
@@ -103,6 +105,29 @@ export default function SignupPageClient() {
     setError(null);
     setEmailSent(false);
     setShowResend(false);
+
+    const isUpgrade = searchParams.get("upgrade") === "1";
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+
+    if (isUpgrade && isAnonymousUser(currentUser)) {
+      const { error: upgradeError } = await supabase.auth.updateUser({
+        email,
+        password,
+      });
+
+      setLoading(false);
+
+      if (upgradeError) {
+        setError(upgradeError.message);
+        return;
+      }
+
+      setEmailSent(true);
+      setShowResend(true);
+      return;
+    }
 
     const response = await fetch("/api/auth/signup", {
       method: "POST",

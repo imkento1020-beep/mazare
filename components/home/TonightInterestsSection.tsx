@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import FormalRegistrationLink from "@/components/auth/FormalRegistrationLink";
 import type { TodayInterestRow } from "@/lib/home/types";
 import TonightInterestCard from "@/components/interests/TonightInterestCard";
 
@@ -31,12 +32,14 @@ export default function TonightInterestsSection({
           </p>
           <p className="mt-0.5 text-xs text-[#9994a8]">17:00〜翌5:00に追加したお店</p>
         </div>
-        <Link
+        <FormalRegistrationLink
           href="/tonight"
+          title="行くかも履歴を見る"
+          description="これまでに「行くかも」したお店の履歴を保存・確認するには正式登録してください。"
           className="shrink-0 rounded-lg bg-[#00e87a]/15 px-3 py-1.5 text-xs font-bold text-[#00e87a] hover:bg-[#00e87a]/25"
         >
           すべて見る
-        </Link>
+        </FormalRegistrationLink>
       </div>
 
       <div className="space-y-2">
@@ -52,12 +55,14 @@ export default function TonightInterestsSection({
       </div>
 
       {hasMore && (
-        <Link
+        <FormalRegistrationLink
           href="/tonight"
+          title="行くかも履歴を見る"
+          description="これまでに「行くかも」したお店の履歴を保存・確認するには正式登録してください。"
           className="mt-3 block text-center text-xs font-semibold text-[#00e87a] hover:underline"
         >
           あと{items.length - previewLimit}件を見る →
-        </Link>
+        </FormalRegistrationLink>
       )}
     </section>
   );

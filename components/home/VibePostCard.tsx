@@ -15,6 +15,7 @@ import { getDistanceLabel, type GeoPoint } from "@/lib/geo/haversine";
 import type { CheckinUser } from "@/lib/checkins/api";
 import CheckinAvatarStack from "@/components/checkins/CheckinAvatarStack";
 import PostImageCarousel from "./PostImageCarousel";
+import PostSourceBadge from "@/components/posts/PostSourceBadge";
 
 function genreEmoji(genre: string) {
   if (genre.includes("居酒屋")) return "🎵";
@@ -64,9 +65,12 @@ export default function VibePostCard({
         fallbackEmoji={genreEmoji(genre)}
         overlay={
           <>
-            <span className="absolute left-3 top-3 rounded-md bg-[#ff3d00] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-lg">
-              LIVE NOW
-            </span>
+            <div className="absolute left-3 top-3 flex flex-col gap-1.5">
+              <PostSourceBadge post={post} />
+              <span className="w-fit rounded-md bg-[#ff3d00] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-lg">
+                LIVE NOW
+              </span>
+            </div>
             <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-white/12 bg-[#080810]/80 px-2.5 py-1 backdrop-blur-sm">
               <div className="flex gap-0.5">
                 {[1, 2, 3, 4, 5].map((i) => (

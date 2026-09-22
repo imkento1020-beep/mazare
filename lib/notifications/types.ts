@@ -2,6 +2,7 @@ export type NotificationType =
   | "favorite_shop_posted"
   | "shop_reposted"
   | "post_interest"
+  | "guest_post_interest"
   | "shop_favorited"
   | "staff_invite";
 
@@ -24,6 +25,7 @@ export function notificationEmoji(type: string) {
     case "shop_reposted":
       return "👋";
     case "post_interest":
+    case "guest_post_interest":
       return "🔥";
     case "shop_favorited":
       return "⭐";

@@ -15,11 +15,13 @@ import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import TonightInterestCard from "@/components/interests/TonightInterestCard";
 import TonightInterestsShareButton from "@/components/interests/TonightInterestsShareButton";
+import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { isCurrentlyInTonightInterestHours } from "@/lib/home/dates";
 
 export default function TonightPage() {
-  const { openAuthPrompt } = useAuthPrompt();
+  const { openFormalRegistrationPrompt } = useAuthPrompt();
+  const { user: authUser, ready: authReady, isAnonymous } = useAnonymousAuth();
   const [items, setItems] = useState<TodayInterestRow[]>([]);
   const [sidebarPosts, setSidebarPosts] = useState<VibePost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,21 +36,27 @@ export default function TonightPage() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session?.user) {
-        openAuthPrompt({
-          title: "今夜の行くかもを見るにはアカウントが必要です",
+      const user = session?.user ?? authUser;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      if (authReady && isAnonymous) {
+        openFormalRegistrationPrompt({
+          title: "行くかも履歴を見る",
           description:
-            "「行くかも」したお店のリストを使うには、サインアップまたはログインしてください。",
+            "「行くかも」したお店の履歴を確認・保存するには正式登録（Google またはメール）が必要です。",
           returnPath: "/tonight",
         });
         setLoading(false);
         return;
       }
 
-      setUserId(session.user.id);
+      setUserId(user.id);
 
       const [interestsResult, postsResult] = await Promise.all([
-        fetchTonightInterests(session.user.id),
+        fetchTonightInterests(user.id),
         fetchVibePosts(),
       ]);
 
@@ -60,7 +68,7 @@ export default function TonightPage() {
     }
 
     load();
-  }, [openAuthPrompt]);
+  }, [authReady, authUser, isAnonymous, openFormalRegistrationPrompt]);
 
   async function handleCancel(interestId: string) {
     const {

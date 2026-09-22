@@ -21,7 +21,9 @@ export async function fetchShopPosts(shopId: string): Promise<{
 }> {
   const { data, error } = await supabase
     .from("vibe_posts")
-    .select("id, shop_id, comment, moods, images, posted_at")
+    .select(
+      "id, shop_id, comment, moods, images, posted_at, is_guest_post, hashtags, media_type, video_url",
+    )
     .eq("shop_id", shopId)
     .lte("posted_at", new Date().toISOString())
     .order("posted_at", { ascending: false });
@@ -37,6 +39,13 @@ export async function fetchShopPosts(shopId: string): Promise<{
         moods: normalizeMoods(post.moods),
         images: Array.isArray(post.images) ? post.images.map(String) : [],
         posted_at: post.posted_at ?? null,
+        is_guest_post: post.is_guest_post ?? true,
+        hashtags: Array.isArray(post.hashtags) ? post.hashtags.map(String) : [],
+        media_type:
+          post.media_type === "image" || post.media_type === "video"
+            ? post.media_type
+            : null,
+        video_url: typeof post.video_url === "string" ? post.video_url : null,
         shops: null,
       })),
     ),
