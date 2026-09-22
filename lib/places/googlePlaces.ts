@@ -3,6 +3,12 @@ import {
   getGooglePlacesSetupHint,
   PLACES_FIELD_MASK,
 } from "@/lib/places/config";
+import { formatPlacesApiError, isNewPlacesApiBlocked } from "@/lib/places/errors";
+import {
+  fetchPlaceByIdLegacy,
+  searchNearbyPlacesLegacy,
+  searchPlacesByTextLegacy,
+} from "@/lib/places/legacyPlaces";
 import type { PlaceSummary } from "@/lib/places/types";
 
 type GooglePlace = {
@@ -83,7 +89,31 @@ async function placesRequest<T>(path: string, body: Record<string, unknown>) {
   return (await response.json()) as T;
 }
 
-export async function searchNearbyPlaces(input: {
+async function withLegacyFallback<T>(
+  callNew: () => Promise<T>,
+  callLegacy: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await callNew();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!isNewPlacesApiBlocked(message)) {
+      throw new Error(formatPlacesApiError(message));
+    }
+
+    try {
+      return await callLegacy();
+    } catch (legacyError) {
+      const legacyMessage =
+        legacyError instanceof Error ? legacyError.message : String(legacyError);
+      throw new Error(
+        `${formatPlacesApiError(message)} 詳細: ${legacyMessage}`,
+      );
+    }
+  }
+}
+
+async function searchNearbyPlacesNew(input: {
   latitude: number;
   longitude: number;
   radiusMeters?: number;
@@ -113,7 +143,18 @@ export async function searchNearbyPlaces(input: {
     .filter((place): place is PlaceSummary => place !== null);
 }
 
-export async function searchPlacesByText(query: string): Promise<PlaceSummary[]> {
+export async function searchNearbyPlaces(input: {
+  latitude: number;
+  longitude: number;
+  radiusMeters?: number;
+}): Promise<PlaceSummary[]> {
+  return withLegacyFallback(
+    () => searchNearbyPlacesNew(input),
+    () => searchNearbyPlacesLegacy(input),
+  );
+}
+
+async function searchPlacesByTextNew(query: string): Promise<PlaceSummary[]> {
   const apiKey = getGooglePlacesApiKey();
   const data = await placesRequest<{ places?: GooglePlace[] }>(
     "places:searchText",
@@ -130,23 +171,35 @@ export async function searchPlacesByText(query: string): Promise<PlaceSummary[]>
     .filter((place): place is PlaceSummary => place !== null);
 }
 
-export async function fetchPlaceById(placeId: string): Promise<PlaceSummary | null> {
-  const apiKey = getGooglePlacesApiKey();
-  const response = await fetch(
-    `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`,
-    {
-      headers: {
-        "X-Goog-Api-Key": apiKey,
-        "X-Goog-FieldMask": PLACES_FIELD_MASK.replace("places.", ""),
-      },
-    },
+export async function searchPlacesByText(query: string): Promise<PlaceSummary[]> {
+  return withLegacyFallback(
+    () => searchPlacesByTextNew(query),
+    () => searchPlacesByTextLegacy(query),
   );
+}
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Place details error (${response.status})`);
-  }
+export async function fetchPlaceById(placeId: string): Promise<PlaceSummary | null> {
+  return withLegacyFallback(
+    async () => {
+      const apiKey = getGooglePlacesApiKey();
+      const response = await fetch(
+        `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`,
+        {
+          headers: {
+            "X-Goog-Api-Key": apiKey,
+            "X-Goog-FieldMask": PLACES_FIELD_MASK.replace("places.", ""),
+          },
+        },
+      );
 
-  const place = (await response.json()) as GooglePlace;
-  return mapGooglePlaceToSummary({ ...place, id: placeId }, apiKey);
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `Place details error (${response.status})`);
+      }
+
+      const place = (await response.json()) as GooglePlace;
+      return mapGooglePlaceToSummary({ ...place, id: placeId }, apiKey);
+    },
+    () => fetchPlaceByIdLegacy(placeId),
+  );
 }
