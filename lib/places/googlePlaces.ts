@@ -1,4 +1,8 @@
-import { getGooglePlacesApiKey, PLACES_FIELD_MASK } from "@/lib/places/config";
+import {
+  getGooglePlacesApiKey,
+  getGooglePlacesSetupHint,
+  PLACES_FIELD_MASK,
+} from "@/lib/places/config";
 import type { PlaceSummary } from "@/lib/places/types";
 
 type GooglePlace = {
@@ -58,7 +62,7 @@ export function mapGooglePlaceToSummary(
 async function placesRequest<T>(path: string, body: Record<string, unknown>) {
   const apiKey = getGooglePlacesApiKey();
   if (!apiKey) {
-    throw new Error("Google Places API キーが未設定です");
+    throw new Error(`Google Places API キーが未設定です。${getGooglePlacesSetupHint()}`);
   }
 
   const response = await fetch(`https://places.googleapis.com/v1/${path}`, {

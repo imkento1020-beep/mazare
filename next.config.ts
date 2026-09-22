@@ -6,9 +6,15 @@ const googleMapsApiKey =
   process.env.GOOGLE_MAPS_API_KEY?.trim() ||
   "";
 
+const googlePlacesApiKey =
+  process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY?.trim() ||
+  process.env.GOOGLE_PLACES_API_KEY?.trim() ||
+  googleMapsApiKey;
+
 const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: googleMapsApiKey,
+    NEXT_PUBLIC_GOOGLE_PLACES_API_KEY: googlePlacesApiKey,
   },
   async redirects() {
     return [

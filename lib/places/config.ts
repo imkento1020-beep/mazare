@@ -1,10 +1,7 @@
-export function getGooglePlacesApiKey() {
-  return (
-    process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY?.trim() ||
-    process.env.GOOGLE_PLACES_API_KEY?.trim() ||
-    ""
-  );
-}
+export {
+  getGooglePlacesApiKey,
+  getGooglePlacesSetupHint,
+} from "@/lib/google/apiKey";
 
 export const PLACES_FIELD_MASK = [
   "places.id",
