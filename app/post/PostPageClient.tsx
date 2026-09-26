@@ -12,14 +12,23 @@ import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { countGuestPostsByUser } from "@/lib/auth/anonymous";
 import type { PlaceSummary } from "@/lib/places/types";
 import {
-  cachePlacesOnServer,
+  cachePlacesForPost,
   searchNearbyPlacesClient,
   searchPlacesByTextClient,
 } from "@/lib/places/clientPlaces";
+import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 
-export default function PostPageClient() {
+type PostPageClientProps = {
+  googleMapsApiKey: string;
+};
+
+export default function PostPageClient({
+  googleMapsApiKey,
+}: PostPageClientProps) {
   const { openFormalRegistrationPrompt } = useAuthPrompt();
   const { user } = useAnonymousAuth();
+  const { apiKey: mapsApiKey, loading: mapsKeyLoading } =
+    useGoogleMapsApiKey(googleMapsApiKey);
   const [places, setPlaces] = useState<PlaceSummary[]>([]);
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,6 +46,8 @@ export default function PostPageClient() {
   );
 
   const loadNearby = useCallback(async () => {
+    if (!mapsApiKey) return;
+
     setLoadingPlaces(true);
     setError(null);
     try {
@@ -47,11 +58,11 @@ export default function PostPageClient() {
         });
       });
 
-      const found = await searchNearbyPlacesClient({
+      const found = await searchNearbyPlacesClient(mapsApiKey, {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
       });
-      const cached = await cachePlacesOnServer(found);
+      const cached = await cachePlacesForPost(found);
       setPlaces(cached);
     } catch (err) {
       setError(
@@ -60,22 +71,28 @@ export default function PostPageClient() {
     } finally {
       setLoadingPlaces(false);
     }
-  }, []);
+  }, [mapsApiKey]);
 
   useEffect(() => {
+    if (mapsKeyLoading || !mapsApiKey) return;
     void loadNearby();
-  }, [loadNearby]);
+  }, [loadNearby, mapsApiKey, mapsKeyLoading]);
 
   async function handleSearch(event: React.FormEvent) {
     event.preventDefault();
     const query = searchQuery.trim();
     if (query.length < 2) return;
 
+    if (!mapsApiKey) {
+      setError("Google Maps API キーを読み込めていません。");
+      return;
+    }
+
     setLoadingPlaces(true);
     setError(null);
     try {
-      const found = await searchPlacesByTextClient(query);
-      const cached = await cachePlacesOnServer(found);
+      const found = await searchPlacesByTextClient(mapsApiKey, query);
+      const cached = await cachePlacesForPost(found);
       setPlaces(cached);
     } catch (err) {
       setError(err instanceof Error ? err.message : "検索に失敗しました");
@@ -162,6 +179,11 @@ export default function PostPageClient() {
         <p className="mt-2 text-sm text-[#9994a8]">
           お店を選んで、写真・動画・タグだけで投稿できます。
         </p>
+        {!mapsKeyLoading && !mapsApiKey && (
+          <p className="mt-3 rounded-lg border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
+            Google Maps API キーが未設定です。Vercel の環境変数を確認してください。
+          </p>
+        )}
 
         <form onSubmit={handleSearch} className="mt-6 flex gap-2">
           <input

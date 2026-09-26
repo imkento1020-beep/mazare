@@ -17,17 +17,18 @@ export function isGoogleMapsConfigured() {
   return getGoogleMapsApiKey().length > 0;
 }
 
-let loaderConfigured = false;
+let configuredApiKey: string | null = null;
 
 export function configureGoogleMapsLoader(apiKey: string) {
-  if (loaderConfigured || !apiKey) return;
+  const trimmed = apiKey.trim();
+  if (!trimmed || configuredApiKey === trimmed) return;
   setOptions({
-    key: apiKey,
+    key: trimmed,
     v: "weekly",
     language: "ja",
     region: "JP",
   });
-  loaderConfigured = true;
+  configuredApiKey = trimmed;
 }
 
 /** mazare のダークテーマに合わせた地図スタイル */

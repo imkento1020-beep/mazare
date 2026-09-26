@@ -9,6 +9,23 @@ DROP POLICY IF EXISTS "shops_select_all" ON public.shops;
 CREATE POLICY "shops_select_all" ON public.shops
   FOR SELECT TO anon, authenticated USING (true);
 
+-- Places キャッシュ（クライアントから upsert する場合）
+DROP POLICY IF EXISTS "shops_insert_from_places" ON public.shops;
+CREATE POLICY "shops_insert_from_places" ON public.shops
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    google_place_id IS NOT NULL
+    AND owner_id IS NULL
+  );
+
+DROP POLICY IF EXISTS "shops_update_place_cache" ON public.shops;
+CREATE POLICY "shops_update_place_cache" ON public.shops
+  FOR UPDATE TO authenticated
+  USING (google_place_id IS NOT NULL)
+  WITH CHECK (google_place_id IS NOT NULL);
+
+GRANT INSERT ON public.shops TO authenticated;
+
 -- vibe_posts: 閲覧
 DROP POLICY IF EXISTS "vibe_posts_select_all" ON public.vibe_posts;
 CREATE POLICY "vibe_posts_select_all" ON public.vibe_posts

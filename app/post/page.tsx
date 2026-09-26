@@ -1,4 +1,5 @@
 import PostPageClient from "./PostPageClient";
+import { getServerGoogleMapsApiKey } from "@/lib/map/server-env";
 
 export const metadata = {
   title: "投稿する | mazare",
@@ -6,5 +7,5 @@ export const metadata = {
 };
 
 export default function PostPage() {
-  return <PostPageClient />;
+  return <PostPageClient googleMapsApiKey={getServerGoogleMapsApiKey()} />;
 }

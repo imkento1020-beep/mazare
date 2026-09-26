@@ -1,7 +1,8 @@
 "use client";
 
 import { importLibrary } from "@googlemaps/js-api-loader";
-import { configureGoogleMapsLoader, getGoogleMapsApiKey } from "@/lib/map/google";
+import { configureGoogleMapsLoader } from "@/lib/map/google";
+import { ensureShopsFromPlacesClient } from "@/lib/places/cacheShopClient";
 import type { PlaceSummary } from "@/lib/places/types";
 
 const PLACE_FIELDS: Array<keyof google.maps.places.Place> = [
@@ -14,6 +15,15 @@ const PLACE_FIELDS: Array<keyof google.maps.places.Place> = [
   "photos",
 ];
 
+function displayNameText(place: google.maps.places.Place) {
+  const name = place.displayName;
+  if (typeof name === "string") return name;
+  if (name && typeof name === "object" && "text" in name) {
+    return String((name as { text?: string }).text ?? "");
+  }
+  return "名称未設定";
+}
+
 function mapTypesToGenre(types: string[] | undefined): string[] {
   if (!types?.length) return ["飲食店"];
   const foodish = types.filter((t) =>
@@ -23,40 +33,44 @@ function mapTypesToGenre(types: string[] | undefined): string[] {
   return foodish.slice(0, 3).map((t) => t.replace(/_/g, " "));
 }
 
-async function getPlacesLibrary() {
-  const apiKey = getGoogleMapsApiKey();
-  if (!apiKey) {
+async function getPlacesLibrary(apiKey: string) {
+  const trimmed = apiKey.trim();
+  if (!trimmed) {
     throw new Error(
-      "Google Maps API キーが未設定です。Vercel または .env.local に NEXT_PUBLIC_GOOGLE_MAPS_API_KEY を設定してください。",
+      "Google Maps API キーが読み込まれていません。Vercel の NEXT_PUBLIC_GOOGLE_MAPS_API_KEY を確認し、再デプロイしてください。",
     );
   }
-  configureGoogleMapsLoader(apiKey);
+  configureGoogleMapsLoader(trimmed);
   return importLibrary("places");
 }
 
 async function toPlaceSummary(
   place: google.maps.places.Place,
 ): Promise<PlaceSummary | null> {
-  await place.fetchFields({ fields: PLACE_FIELDS });
+  if (!place.id || !place.location) {
+    await place.fetchFields({ fields: PLACE_FIELDS });
+  }
 
   const id = place.id?.replace(/^places\//, "") ?? place.id;
   const location = place.location;
   if (!id || !location) return null;
 
-  const lat = location.lat();
-  const lng = location.lng();
-
-  const photoUrl =
-    place.photos?.[0]?.getURI?.({ maxWidth: 800, maxHeight: 800 }) ?? null;
+  let photoUrl: string | null = null;
+  try {
+    photoUrl =
+      place.photos?.[0]?.getURI?.({ maxWidth: 800, maxHeight: 800 }) ?? null;
+  } catch {
+    photoUrl = null;
+  }
 
   const hours = place.regularOpeningHours?.weekdayDescriptions;
 
   return {
     googlePlaceId: id,
-    name: place.displayName ?? "名称未設定",
+    name: displayNameText(place),
     address: place.formattedAddress ?? "",
-    latitude: lat,
-    longitude: lng,
+    latitude: location.lat(),
+    longitude: location.lng(),
     types: mapTypesToGenre(place.types ?? undefined),
     openHoursText: hours?.length ? hours.join("\n") : null,
     photoUrl,
@@ -64,71 +78,115 @@ async function toPlaceSummary(
   };
 }
 
-export async function searchNearbyPlacesClient(input: {
-  latitude: number;
-  longitude: number;
-  radiusMeters?: number;
-}): Promise<PlaceSummary[]> {
-  try {
-    const { Place } = (await getPlacesLibrary()) as google.maps.PlacesLibrary;
-    const { places } = await Place.searchNearby({
-      fields: PLACE_FIELDS,
-      locationRestriction: {
-        center: { lat: input.latitude, lng: input.longitude },
-        radius: input.radiusMeters ?? 1200,
-      },
-      includedPrimaryTypes: ["restaurant", "bar", "cafe", "night_club"],
-      maxResultCount: 20,
-      language: "ja",
-      region: "jp",
-    });
-
-    const summaries = await Promise.all(places.map((place) => toPlaceSummary(place)));
-    return summaries.filter((place): place is PlaceSummary => place !== null);
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      `近くのお店を取得できませんでした。Google Cloud で Maps JavaScript API と Places API (New) を有効化し、ブラウザ用 API キーの Referer に mazare.app を許可してください。(${detail})`,
-    );
-  }
-}
-
-export async function searchPlacesByTextClient(query: string): Promise<PlaceSummary[]> {
-  try {
-    const { Place } = (await getPlacesLibrary()) as google.maps.PlacesLibrary;
-    const { places } = await Place.searchByText({
-      fields: PLACE_FIELDS,
-      textQuery: query,
-      maxResultCount: 20,
-      language: "ja",
-      region: "jp",
-    });
-
-    const summaries = await Promise.all(places.map((place) => toPlaceSummary(place)));
-    return summaries.filter((place): place is PlaceSummary => place !== null);
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      `お店の検索に失敗しました。Places API (New) と Maps JavaScript API の有効化を確認してください。(${detail})`,
-    );
-  }
-}
-
-export async function cachePlacesOnServer(places: PlaceSummary[]) {
-  const response = await fetch("/api/places/cache", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ places }),
-  });
-
-  const json = (await response.json()) as {
-    places?: PlaceSummary[];
-    error?: string;
+async function runNearbySearch(
+  Place: google.maps.PlacesLibrary["Place"],
+  input: { latitude: number; longitude: number; radiusMeters?: number },
+) {
+  const base = {
+    fields: PLACE_FIELDS,
+    locationRestriction: {
+      center: { lat: input.latitude, lng: input.longitude },
+      radius: input.radiusMeters ?? 1200,
+    },
+    maxResultCount: 20,
+    language: "ja",
+    region: "jp",
   };
 
-  if (!response.ok) {
-    throw new Error(json.error ?? "お店情報の保存に失敗しました");
+  const primaryTypes = ["restaurant", "bar", "cafe", "night_club"] as const;
+  for (const type of primaryTypes) {
+    const { places } = await Place.searchNearby({
+      ...base,
+      includedPrimaryTypes: [type],
+    });
+    if (places.length > 0) return places;
   }
 
-  return json.places ?? [];
+  const { places } = await Place.searchNearby({
+    ...base,
+    includedPrimaryTypes: ["restaurant"],
+  });
+  return places;
+}
+
+export async function searchNearbyPlacesClient(
+  apiKey: string,
+  input: {
+    latitude: number;
+    longitude: number;
+    radiusMeters?: number;
+  },
+): Promise<PlaceSummary[]> {
+  try {
+    const { Place } = (await getPlacesLibrary(apiKey)) as google.maps.PlacesLibrary;
+    const places = await runNearbySearch(Place, input);
+
+    const summaries = await Promise.all(places.map((place) => toPlaceSummary(place)));
+    const filtered = summaries.filter((place): place is PlaceSummary => place !== null);
+
+    if (filtered.length === 0) {
+      throw new Error(
+        "近くに飲食店が見つかりませんでした。位置情報または検索でお店を選んでください。",
+      );
+    }
+
+    return filtered;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("近くに飲食店")) {
+      throw error;
+    }
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Places の検索に失敗しました。API キーの Referer 制限に https://www.mazare.app/* が含まれているか確認してください。(${detail})`,
+    );
+  }
+}
+
+export async function searchPlacesByTextClient(
+  apiKey: string,
+  query: string,
+): Promise<PlaceSummary[]> {
+  try {
+    const { Place } = (await getPlacesLibrary(apiKey)) as google.maps.PlacesLibrary;
+    const { places } = await Place.searchByText({
+      fields: PLACE_FIELDS,
+      textQuery: query.includes("飲食") ? query : `${query} 飲食店`,
+      maxResultCount: 20,
+      language: "ja",
+      region: "jp",
+    });
+
+    const summaries = await Promise.all(places.map((place) => toPlaceSummary(place)));
+    return summaries.filter((place): place is PlaceSummary => place !== null);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `お店の検索に失敗しました。(${detail})`,
+    );
+  }
+}
+
+export async function cachePlacesForPost(places: PlaceSummary[]) {
+  if (places.length === 0) return [];
+
+  try {
+    const response = await fetch("/api/places/cache", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ places }),
+    });
+
+    const json = (await response.json()) as {
+      places?: PlaceSummary[];
+      error?: string;
+    };
+
+    if (response.ok && (json.places?.length ?? 0) > 0) {
+      return json.places ?? [];
+    }
+  } catch {
+    // fall through to client cache
+  }
+
+  return ensureShopsFromPlacesClient(places);
 }
