@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DEFAULT_HASHTAG_SUGGESTIONS,
   fetchHashtagSuggestions,
@@ -30,11 +30,6 @@ export default function HashtagInput({ tags, onChange }: HashtagInputProps) {
     };
   }, [draft]);
 
-  const displayDraft = useMemo(() => {
-    if (!draft) return "#";
-    return draft.startsWith("#") ? draft : `#${draft}`;
-  }, [draft]);
-
   function addTag(raw: string) {
     const normalized = normalizeHashtagInput(raw);
     if (!normalized || tags.includes(normalized)) return;
@@ -61,21 +56,23 @@ export default function HashtagInput({ tags, onChange }: HashtagInputProps) {
           </button>
         ))}
       </div>
-      <input
-        value={displayDraft === "#" && !draft ? "" : displayDraft}
-        onChange={(event) => {
-          const value = event.target.value.replace(/^#+/, "");
-          setDraft(value);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            addTag(draft);
-          }
-        }}
-        placeholder="# タグを入力"
-        className="w-full rounded-[12px] border border-white/10 bg-[#111118] px-4 py-3 text-sm text-[#eeeaf4] outline-none focus:border-[#ff3d00]/50"
-      />
+      <div className="flex items-center rounded-[12px] border border-white/10 bg-[#111118] focus-within:border-[#ff3d00]/50">
+        <span className="pl-4 text-sm font-bold text-[#9994a8]">#</span>
+        <input
+          value={draft}
+          onChange={(event) => {
+            setDraft(event.target.value.replace(/^#+/, ""));
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              addTag(draft);
+            }
+          }}
+          placeholder="タグを入力"
+          className="min-w-0 flex-1 bg-transparent py-3 pr-4 pl-1 text-sm text-[#eeeaf4] outline-none"
+        />
+      </div>
       <div className="flex flex-wrap gap-2">
         {suggestions.map((tag) => (
           <button
