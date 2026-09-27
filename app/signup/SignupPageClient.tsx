@@ -10,6 +10,10 @@ import { storePendingReturnPath } from "@/lib/auth/pendingReturnPath";
 import { getLoginPathWithReturn, getSignupPathWithReturn } from "@/lib/auth/authPaths";
 import { getSafeRedirectPath } from "@/lib/auth/safeRedirectPath";
 import { storePendingStaffInvite } from "@/lib/staff/pendingInvite";
+import {
+  DISPLAY_NAME_MAX_LENGTH,
+  validateDisplayName,
+} from "@/lib/auth/displayName";
 
 type UserType = "guest" | "owner";
 
@@ -34,6 +38,7 @@ async function resendSignupConfirmation(input: {
   email: string;
   password: string;
   userType: UserType;
+  displayName: string;
 }) {
   return fetch("/api/auth/resend-confirmation", {
     method: "POST",
@@ -44,6 +49,7 @@ async function resendSignupConfirmation(input: {
 
 export default function SignupPageClient() {
   const searchParams = useSearchParams();
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -85,7 +91,19 @@ export default function SignupPageClient() {
     setResending(true);
     setError(null);
 
-    const response = await resendSignupConfirmation({ email, password, userType });
+    const nameCheck = validateDisplayName(displayName);
+    if (!nameCheck.ok) {
+      setResending(false);
+      setError(nameCheck.message);
+      return;
+    }
+
+    const response = await resendSignupConfirmation({
+      email,
+      password,
+      userType,
+      displayName: nameCheck.value,
+    });
     const data = (await response.json()) as { message?: string };
 
     setResending(false);
@@ -106,6 +124,13 @@ export default function SignupPageClient() {
     setEmailSent(false);
     setShowResend(false);
 
+    const nameCheck = validateDisplayName(displayName);
+    if (!nameCheck.ok) {
+      setLoading(false);
+      setError(nameCheck.message);
+      return;
+    }
+
     const isUpgrade = searchParams.get("upgrade") === "1";
     const {
       data: { user: currentUser },
@@ -115,6 +140,7 @@ export default function SignupPageClient() {
       const { error: upgradeError } = await supabase.auth.updateUser({
         email,
         password,
+        data: { display_name: nameCheck.value },
       });
 
       setLoading(false);
@@ -132,7 +158,12 @@ export default function SignupPageClient() {
     const response = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, userType }),
+      body: JSON.stringify({
+        email,
+        password,
+        userType,
+        displayName: nameCheck.value,
+      }),
     });
 
     const data = (await response.json()) as { message?: string };
@@ -166,6 +197,29 @@ export default function SignupPageClient() {
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+            <div>
+              <label
+                htmlFor="displayName"
+                className="block text-sm font-medium text-[#eeeaf4]"
+              >
+                ユーザー名
+              </label>
+              <input
+                id="displayName"
+                type="text"
+                required
+                autoComplete="nickname"
+                maxLength={DISPLAY_NAME_MAX_LENGTH}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="例: kento"
+                className="mt-2 w-full rounded-lg border border-white/10 bg-[#111118] px-4 py-3 text-[#eeeaf4] placeholder:text-[#9994a8]/60 outline-none transition focus:border-[#ff3d00]/50 focus:ring-2 focus:ring-[#ff3d00]/20"
+              />
+              <p className="mt-1.5 text-xs text-[#5a5668]">
+                マイページや来店記録などに表示されます（{DISPLAY_NAME_MAX_LENGTH}文字以内）
+              </p>
+            </div>
+
             <div>
               <label
                 htmlFor="email"

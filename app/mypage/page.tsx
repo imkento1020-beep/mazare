@@ -9,6 +9,7 @@ import {
   cancelInterest,
   fetchGuestProfile,
   fetchTonightInterests,
+  fetchUserGuestPosts,
   fetchUserInterestStats,
   fetchUserInterests,
 } from "@/lib/mypage/api";
@@ -30,6 +31,7 @@ import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import FavoriteShopCard from "@/components/favorites/FavoriteShopCard";
 import TonightInterestCard from "@/components/interests/TonightInterestCard";
+import MyGuestPostCard from "@/components/mypage/MyGuestPostCard";
 import type { GuestProfile } from "@/lib/mypage/types";
 import type { User } from "@supabase/supabase-js";
 
@@ -42,6 +44,8 @@ export default function MyPage() {
   const [favorites, setFavorites] = useState<FavoriteShop[]>([]);
   const [liveShopIds, setLiveShopIds] = useState<Set<string>>(new Set());
   const [sidebarPosts, setSidebarPosts] = useState<VibePost[]>([]);
+  const [myPosts, setMyPosts] = useState<VibePost[]>([]);
+  const [myPostsError, setMyPostsError] = useState<string | null>(null);
   const [stats, setStats] = useState({ totalInterests: 0, visitedShops: 0 });
   const [staffInvites, setStaffInvites] = useState<StaffInvite[]>([]);
   const [acceptingInviteId, setAcceptingInviteId] = useState<string | null>(null);
@@ -67,13 +71,23 @@ export default function MyPage() {
 
       await syncPendingStaffInviteNotifications();
 
-      const [profileResult, interestsResult, todayInterestsResult, interestStats, postsResult, invitesResult, favoritesResult, liveIds] =
-        await Promise.all([
+      const [
+        profileResult,
+        interestsResult,
+        todayInterestsResult,
+        interestStats,
+        postsResult,
+        myPostsResult,
+        invitesResult,
+        favoritesResult,
+        liveIds,
+      ] = await Promise.all([
           fetchGuestProfile(session.user),
           fetchUserInterests(session.user.id),
           fetchTonightInterests(session.user.id),
           fetchUserInterestStats(session.user.id),
           fetchVibePosts(),
+          fetchUserGuestPosts(session.user.id),
           session.user.email
             ? fetchPendingInvitesForEmail(session.user.email)
             : Promise.resolve({ data: [], error: null }),
@@ -86,6 +100,8 @@ export default function MyPage() {
       setTodayInterests(todayInterestsResult.data);
       setStats(interestStats);
       setSidebarPosts(postsResult.data ?? []);
+      setMyPosts(myPostsResult.data);
+      if (myPostsResult.error) setMyPostsError(myPostsResult.error);
       setStaffInvites(invitesResult.data);
       if (favoritesResult.error) setFavoriteError(favoritesResult.error);
       setFavorites(favoritesResult.data);
@@ -262,6 +278,36 @@ export default function MyPage() {
             {stats.visitedShops}
           </p>
           <p className="mt-1 text-xs text-[#5a5668]">実際に行ったお店</p>
+        </div>
+      </section>
+
+      <section id="my-posts" className="mt-8 md:max-w-2xl">
+        <div className="flex items-end justify-between gap-3">
+          <h2 className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">
+            あなたの投稿
+          </h2>
+          <Link
+            href="/post"
+            className="text-xs font-semibold text-[#ff3d00] hover:underline"
+          >
+            投稿する →
+          </Link>
+        </div>
+
+        {myPostsError && (
+          <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            {myPostsError}
+          </p>
+        )}
+
+        <div className="mt-3 space-y-2">
+          {myPosts.length === 0 ? (
+            <p className="rounded-[14px] border border-white/[0.07] bg-[#111118] p-4 text-sm text-[#9994a8]">
+              まだ投稿がありません。今夜のお店をシェアしてみましょう。
+            </p>
+          ) : (
+            myPosts.map((post) => <MyGuestPostCard key={post.id} post={post} />)
+          )}
         </div>
       </section>
 

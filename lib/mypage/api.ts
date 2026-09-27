@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { getTonightInterestWindowJST } from "@/lib/home/dates";
-import type { InterestRow, TodayInterestRow } from "@/lib/home/types";
+import type { InterestRow, Shop, TodayInterestRow, VibePost } from "@/lib/home/types";
 import type { GuestProfile } from "./types";
 import type { User } from "@supabase/supabase-js";
 import { countUserVisitedShops } from "@/lib/checkins/api";
@@ -145,6 +145,68 @@ export async function fetchUserInterests(userId: string): Promise<{
   });
 
   return { data: rows, error: null };
+}
+
+function mapGuestPostRow(row: Record<string, unknown>): VibePost {
+  const shopRaw = row.shops;
+  const shopEntry = Array.isArray(shopRaw) ? shopRaw[0] : shopRaw;
+  const shop =
+    shopEntry && typeof shopEntry === "object"
+      ? (shopEntry as Shop)
+      : null;
+
+  return {
+    id: String(row.id),
+    shop_id: String(row.shop_id),
+    comment: String(row.comment ?? ""),
+    moods: Array.isArray(row.moods) ? row.moods.map(String) : [],
+    images: Array.isArray(row.images) ? row.images.map(String) : [],
+    video_url: typeof row.video_url === "string" ? row.video_url : null,
+    posted_at: typeof row.posted_at === "string" ? row.posted_at : null,
+    hashtags: Array.isArray(row.hashtags) ? row.hashtags.map(String) : [],
+    media_type:
+      row.media_type === "image" || row.media_type === "video"
+        ? row.media_type
+        : null,
+    is_guest_post: Boolean(row.is_guest_post),
+    author_id: typeof row.author_id === "string" ? row.author_id : null,
+    shops: shop,
+  };
+}
+
+export async function fetchUserGuestPosts(userId: string): Promise<{
+  data: VibePost[];
+  error: string | null;
+}> {
+  const { data, error } = await supabase
+    .from("vibe_posts")
+    .select(
+      `
+      id,
+      shop_id,
+      comment,
+      moods,
+      images,
+      video_url,
+      posted_at,
+      hashtags,
+      media_type,
+      is_guest_post,
+      author_id,
+      shops ( id, name, address, genre, open_hours )
+    `,
+    )
+    .eq("author_id", userId)
+    .order("posted_at", { ascending: false });
+
+  if (error) return { data: [], error: error.message };
+
+  return {
+    data: (data ?? []).map((row) =>
+      mapGuestPostRow(row as Record<string, unknown>),
+    ),
+    error: null,
+  };
 }
 
 export async function fetchTonightInterests(userId: string): Promise<{

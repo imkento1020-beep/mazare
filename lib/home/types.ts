@@ -1,3 +1,5 @@
+import { formatShopGenreDisplay } from "@/lib/home/genreDisplay";
+
 export type Shop = {
   id: string;
   name: string;
@@ -48,9 +50,7 @@ export type InterestRow = {
 export type TodayInterestRow = InterestRow;
 
 export function formatGenre(genre: string | string[] | null | undefined) {
-  if (!genre) return "—";
-  if (Array.isArray(genre)) return genre.join(" · ");
-  return genre;
+  return formatShopGenreDisplay(genre);
 }
 
 export function formatOpenHours(hours: unknown) {

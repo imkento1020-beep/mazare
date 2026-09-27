@@ -4,7 +4,12 @@ import type { AppRole } from "@/lib/auth/roles";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  let body: { email?: string; password?: string; userType?: AppRole };
+  let body: {
+    email?: string;
+    password?: string;
+    userType?: AppRole;
+    displayName?: string;
+  };
 
   try {
     body = await request.json();
@@ -19,6 +24,7 @@ export async function POST(request: Request) {
     email: body.email ?? "",
     password: body.password ?? "",
     userType: body.userType === "owner" ? "owner" : "guest",
+    displayName: body.displayName ?? "",
   });
 
   if (!result.ok) {

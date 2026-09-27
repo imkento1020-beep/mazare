@@ -171,11 +171,12 @@ export default function PostPageClient({
         <Header />
         <main className="mx-auto flex max-w-lg flex-1 flex-col justify-center px-6 py-12 text-center">
           <p className="text-2xl font-black">投稿しました🔥</p>
-          <p className="mt-4 text-sm leading-relaxed text-[#9994a8]">
-            あなたの投稿がこのお店を mazare に登録しました。
-            <br />
-            <span className="font-bold text-[#eeeaf4]">{successShopName}</span>
+          <p className="mt-4 text-base font-semibold leading-relaxed text-[#eeeaf4]">
+            引き続き、最高の夜を。乾杯！🍺
           </p>
+          {successShopName && (
+            <p className="mt-2 text-xs text-[#9994a8]">{successShopName}</p>
+          )}
           <Link
             href="/home"
             className="mt-8 inline-flex rounded-[14px] bg-[#ff3d00] px-6 py-3 text-sm font-bold text-white"

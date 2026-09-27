@@ -9,6 +9,7 @@ import {
 import { getAuthCallbackUrl } from "@/lib/site/url";
 import { sendSignupConfirmationEmail } from "@/lib/email/signupConfirmation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { validateDisplayName } from "@/lib/auth/displayName";
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -81,16 +82,33 @@ async function generateConfirmationLink(input: {
   return { confirmUrl, error: null };
 }
 
-function metadataForSignup(userType: AppRole, existingUser?: User | null) {
+function metadataForSignup(
+  userType: AppRole,
+  existingUser?: User | null,
+  displayName?: string,
+) {
   const signupRoles = rolesForSignup(userType);
   const mergedRoles = mergeRoles(getUserRoles(existingUser ?? null), signupRoles);
-  return rolesToMetadata(mergedRoles);
+  const base = rolesToMetadata(mergedRoles);
+
+  const trimmed = displayName?.trim();
+  if (trimmed) {
+    return { ...base, display_name: trimmed };
+  }
+
+  const existingName = existingUser?.user_metadata?.display_name;
+  if (typeof existingName === "string" && existingName.trim()) {
+    return { ...base, display_name: existingName.trim() };
+  }
+
+  return base;
 }
 
 export async function sendSignupConfirmation(input: {
   email: string;
   password: string;
   userType?: AppRole;
+  displayName?: string;
 }): Promise<{ ok: true } | { ok: false; message: string; code?: string }> {
   const email = normalizeEmail(input.email);
   const password = input.password;
@@ -104,9 +122,14 @@ export async function sendSignupConfirmation(input: {
     return { ok: false, message: "パスワードは6文字以上で入力してください。" };
   }
 
+  const displayNameResult = validateDisplayName(input.displayName ?? "");
+  if (!displayNameResult.ok) {
+    return { ok: false, message: displayNameResult.message };
+  }
+
   try {
     const admin = createSupabaseAdminClient();
-    const metadata = metadataForSignup(userType);
+    const metadata = metadataForSignup(userType, null, displayNameResult.value);
 
     const { data: created, error: createError } = await admin.auth.admin.createUser({
       email,
@@ -145,7 +168,11 @@ export async function sendSignupConfirmation(input: {
         existingUser.id,
         {
           password,
-          user_metadata: metadataForSignup(userType, existingUser),
+          user_metadata: metadataForSignup(
+            userType,
+            existingUser,
+            displayNameResult.value,
+          ),
         },
       );
 

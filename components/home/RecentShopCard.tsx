@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import type { RecentShopFeedItem } from "@/lib/feed/recentFeed";
-import { formatGenre } from "@/lib/home/types";
+import {
+  formatShopGenreLabels,
+  genreDisplayEmoji,
+} from "@/lib/home/genreDisplay";
 import PostSourceBadge from "@/components/posts/PostSourceBadge";
 
 function mediaPreview(item: RecentShopFeedItem) {
@@ -45,32 +48,59 @@ export default function RecentShopCard({
   interestLoading,
   interested,
 }: RecentShopCardProps) {
-  const genre = formatGenre(item.shop.genre);
+  const genreLabels = formatShopGenreLabels(item.shop.genre, 2);
+  const displayGenres = genreLabels.length > 0 ? genreLabels : ["飲食店"];
 
   return (
     <article className="overflow-hidden rounded-[14px] border border-white/7 bg-[#111118]">
       <Link href={`/shop/${item.shop.id}`} className="block">
-        <div className="relative aspect-[16/10] bg-[#18181f]">{mediaPreview(item)}</div>
-        <div className="p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <PostSourceBadge post={item.latestPost} className="mb-2" />
-              <h3 className="text-lg font-black">{item.shop.name}</h3>
-              <p className="mt-1 text-xs text-[#ff3d00]">{genre}</p>
+        <div className="relative aspect-[16/10] bg-[#18181f]">
+          {mediaPreview(item)}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-3 pt-10">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-black/50 px-2.5 py-1.5 backdrop-blur-sm">
+                  <span className="text-sm leading-none" aria-hidden>
+                    📝
+                  </span>
+                  <span className="text-sm font-black tabular-nums text-white">
+                    {item.postCount}
+                  </span>
+                  <span className="text-[11px] font-medium text-white/85">件</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-black/50 px-2.5 py-1.5 backdrop-blur-sm">
+                  <span className="text-sm leading-none" aria-hidden>
+                    👥
+                  </span>
+                  <span className="text-sm font-black tabular-nums text-white">
+                    {item.uniquePosterCount}
+                  </span>
+                  <span className="text-[11px] font-medium text-white/85">人がシェア</span>
+                </span>
+              </div>
             </div>
-            <span className="rounded-md bg-[#ff3d00]/15 px-2 py-1 text-[11px] font-bold text-[#ff3d00]">
-              {item.postCount}投稿
-            </span>
           </div>
-          <p className="mt-2 text-xs text-[#9994a8]">
-            {item.uniquePosterCount}人が今夜シェア
-          </p>
+        </div>
+        <div className="p-4">
+          <PostSourceBadge post={item.latestPost} className="mb-2" />
+          <h3 className="text-lg font-black leading-tight">{item.shop.name}</h3>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+              {displayGenres.map((label) => (
+                <span
+                  key={label}
+                  className="inline-flex items-center gap-1 rounded-full border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-2.5 py-1 text-[11px] font-bold text-[#ffcc66]"
+                >
+                  <span aria-hidden>{genreDisplayEmoji(label)}</span>
+                  {label}
+                </span>
+              ))}
+          </div>
           {item.latestHashtags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {item.latestHashtags.slice(0, 4).map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-[#9994a8]"
+                  className="rounded-full border border-white/10 bg-[#18181f] px-2.5 py-0.5 text-[10px] font-medium text-[#9994a8]"
                 >
                   {tag}
                 </span>
