@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/lib/feed/recentFeed";
 import { notifyPostInterestCreated } from "@/lib/notifications/api";
 import { ensureFreshSession } from "@/lib/auth/session";
+import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { fetchTonightInterests, cancelInterest } from "@/lib/mypage/api";
 import type { TodayInterestRow, VibePost } from "@/lib/home/types";
 import RecentShopCard from "@/components/home/RecentShopCard";
@@ -29,7 +30,9 @@ export default function HomePageClient({
   googleMapsApiKey,
 }: HomePageClientProps) {
   const { apiKey: resolvedMapsApiKey } = useGoogleMapsApiKey(googleMapsApiKey);
+  const { user: authUser, ready: authReady } = useAnonymousAuth();
   const [user, setUser] = useState<User | null>(null);
+  const userRef = useRef<User | null>(null);
   const [feedItems, setFeedItems] = useState<RecentShopFeedItem[]>([]);
   const [recentPosts, setRecentPosts] = useState<VibePost[]>([]);
   const [interestedPostIds, setInterestedPostIds] = useState<Set<string>>(new Set());
@@ -64,26 +67,42 @@ export default function HomePageClient({
   }, []);
 
   useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  useEffect(() => {
+    if (!authReady) return;
+
+    setUser(authUser);
+    userRef.current = authUser;
+    void reloadFeed(authUser);
+  }, [authReady, authUser, reloadFeed]);
+
+  useEffect(() => {
+    let cancelled = false;
+
     async function init() {
-      let activeUser: User | null = null;
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        await ensureFreshSession();
-        const {
-          data: { session: refreshed },
-        } = await supabase.auth.getSession();
-        activeUser = refreshed?.user ?? null;
+      try {
+        await Promise.race([
+          reloadFeed(userRef.current),
+          new Promise<void>((resolve) => {
+            setTimeout(resolve, 12_000);
+          }),
+        ]);
+      } catch {
+        if (!cancelled) {
+          setError("フィードの読み込みに失敗しました。ページを再読み込みしてください。");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-
-      setUser(activeUser);
-      await reloadFeed(activeUser);
-      setLoading(false);
     }
 
     void init();
+
+    void ensureFreshSession().catch(() => {
+      // Home must render even when token refresh fails or stalls.
+    });
 
     const channel = supabase
       .channel("home-vibe-posts")
@@ -91,15 +110,16 @@ export default function HomePageClient({
         "postgres_changes",
         { event: "*", schema: "public", table: "vibe_posts" },
         () => {
-          void reloadFeed(user);
+          void reloadFeed(userRef.current);
         },
       )
       .subscribe();
 
     return () => {
+      cancelled = true;
       void supabase.removeChannel(channel);
     };
-  }, [reloadFeed, user]);
+  }, [reloadFeed]);
 
   const trendingTags = useMemo(
     () => countTrendingTags(recentPosts, 5),

@@ -15,7 +15,17 @@ export async function ensureFreshSession(): Promise<boolean> {
 
   if (!shouldRefresh) return true;
 
-  const { data, error } = await supabase.auth.refreshSession();
+  const refreshResult = await Promise.race([
+    supabase.auth.refreshSession(),
+    new Promise<{ data: { session: null }; error: Error }>((resolve) => {
+      setTimeout(
+        () => resolve({ data: { session: null }, error: new Error("refresh timeout") }),
+        8_000,
+      );
+    }),
+  ]);
+
+  const { data, error } = refreshResult;
   return !error && Boolean(data.session);
 }
 
