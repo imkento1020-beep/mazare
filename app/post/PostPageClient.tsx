@@ -8,6 +8,7 @@ import GoogleAttribution from "@/components/places/GoogleAttribution";
 import HashtagInput from "@/components/guest-post/HashtagInput";
 import { createGuestVibePost } from "@/lib/guest-post/createPost";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
+import { ensureAnonymousSession } from "@/lib/auth/anonymous";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { countGuestPostsByUser } from "@/lib/auth/anonymous";
 import type { PlaceSummary } from "@/lib/places/types";
@@ -26,7 +27,7 @@ export default function PostPageClient({
   googleMapsApiKey,
 }: PostPageClientProps) {
   const { openFormalRegistrationPrompt } = useAuthPrompt();
-  const { user } = useAnonymousAuth();
+  const { user, ready: authReady, authError } = useAnonymousAuth();
   const { apiKey: mapsApiKey, loading: mapsKeyLoading } =
     useGoogleMapsApiKey(googleMapsApiKey);
   const [places, setPlaces] = useState<PlaceSummary[]>([]);
@@ -106,7 +107,7 @@ export default function PostPageClient({
       setError("お店を選んでください");
       return;
     }
-    if (!user) {
+    if (!authReady) {
       setError("接続を準備しています。少し待ってから再度お試しください。");
       return;
     }
@@ -114,10 +115,27 @@ export default function PostPageClient({
     setSubmitting(true);
     setError(null);
 
-    const priorCount = await countGuestPostsByUser(user.id);
+    let activeUser = user;
+    let sessionError = authError;
+    if (!activeUser) {
+      const session = await ensureAnonymousSession();
+      activeUser = session.user;
+      sessionError = session.error ?? sessionError;
+    }
+
+    if (!activeUser) {
+      setSubmitting(false);
+      setError(
+        sessionError ??
+          "ログインの準備に失敗しました。ページを再読み込みしてお試しください。",
+      );
+      return;
+    }
+
+    const priorCount = await countGuestPostsByUser(activeUser.id);
 
     const result = await createGuestVibePost({
-      userId: user.id,
+      userId: activeUser.id,
       shopId: selectedShopId,
       hashtags: tags,
       imageFiles: videoFile ? undefined : imageFiles,
@@ -137,7 +155,7 @@ export default function PostPageClient({
     setVideoFile(null);
 
     const totalPosts = priorCount + 1;
-    if (user.is_anonymous && totalPosts >= 5) {
+    if (activeUser.is_anonymous && totalPosts >= 5) {
       openFormalRegistrationPrompt({
         returnPath: "/post",
         title: "5回目の投稿ありがとうございます",
@@ -182,6 +200,11 @@ export default function PostPageClient({
         {!mapsKeyLoading && !mapsApiKey && (
           <p className="mt-3 rounded-lg border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
             Google Maps API キーが未設定です。Vercel の環境変数を確認してください。
+          </p>
+        )}
+        {authReady && !user && authError && (
+          <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-400">
+            {authError}
           </p>
         )}
 
@@ -261,11 +284,15 @@ export default function PostPageClient({
 
             <button
               type="button"
-              disabled={submitting}
+              disabled={submitting || !authReady}
               onClick={() => void handleSubmit()}
               className="w-full rounded-[14px] bg-[#ff3d00] py-4 text-base font-black text-white disabled:opacity-60"
             >
-              {submitting ? "投稿中…" : "投稿する"}
+              {!authReady
+                ? "接続を準備中…"
+                : submitting
+                  ? "投稿中…"
+                  : "投稿する"}
             </button>
           </section>
         )}

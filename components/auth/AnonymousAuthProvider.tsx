@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -15,27 +16,33 @@ type AnonymousAuthContextValue = {
   user: User | null;
   ready: boolean;
   isAnonymous: boolean;
+  authError: string | null;
 };
 
 const AnonymousAuthContext = createContext<AnonymousAuthContextValue>({
   user: null,
   ready: false,
   isAnonymous: false,
+  authError: null,
 });
 
 export function AnonymousAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const bootstrapDoneRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
 
     async function bootstrap() {
-      const sessionUser = await ensureAnonymousSession();
-      if (!cancelled) {
-        setUser(sessionUser);
-        setReady(true);
-      }
+      const { user: sessionUser, error } = await ensureAnonymousSession();
+      if (cancelled) return;
+
+      bootstrapDoneRef.current = true;
+      setUser(sessionUser);
+      setAuthError(sessionUser ? null : error);
+      setReady(true);
     }
 
     void bootstrap();
@@ -43,8 +50,9 @@ export function AnonymousAuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!bootstrapDoneRef.current) return;
       setUser(session?.user ?? null);
-      setReady(true);
+      if (session?.user) setAuthError(null);
     });
 
     return () => {
@@ -59,6 +67,7 @@ export function AnonymousAuthProvider({ children }: { children: ReactNode }) {
         user,
         ready,
         isAnonymous: isAnonymousUser(user),
+        authError,
       }}
     >
       {children}
