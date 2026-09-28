@@ -84,7 +84,7 @@ function mapPublicPostRow(row: Record<string, unknown>): VibePost {
   };
 }
 
-export async function fetchPublicGuestPosts(userId: string, limit = 30): Promise<{
+export async function fetchPublicGuestPosts(userId: string, limit = 60): Promise<{
   data: VibePost[];
   error: string | null;
 }> {

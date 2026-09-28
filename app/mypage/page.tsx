@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -31,7 +31,9 @@ import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import FavoriteShopCard from "@/components/favorites/FavoriteShopCard";
 import TonightInterestCard from "@/components/interests/TonightInterestCard";
-import MyGuestPostCard from "@/components/mypage/MyGuestPostCard";
+import GuestPostHistorySection from "@/components/profile/GuestPostHistorySection";
+import GuestPostInsightsPanel from "@/components/profile/GuestPostInsightsPanel";
+import { computeGuestPostInsights } from "@/lib/profile/postInsights";
 import type { GuestProfile } from "@/lib/mypage/types";
 import type { User } from "@supabase/supabase-js";
 
@@ -55,6 +57,10 @@ export default function MyPage() {
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const postInsights = useMemo(
+    () => computeGuestPostInsights(myPosts),
+    [myPosts],
+  );
 
   useEffect(() => {
     async function load() {
@@ -281,35 +287,19 @@ export default function MyPage() {
         </div>
       </section>
 
-      <section id="my-posts" className="mt-8 md:max-w-2xl">
-        <div className="flex items-end justify-between gap-3">
-          <h2 className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">
-            あなたの投稿
-          </h2>
-          <Link
-            href="/post"
-            className="text-xs font-semibold text-[#ff3d00] hover:underline"
-          >
-            投稿する →
-          </Link>
-        </div>
-
+      <div id="my-posts" className="mt-8 md:max-w-2xl">
         {myPostsError && (
-          <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <p className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {myPostsError}
           </p>
         )}
-
-        <div className="mt-3 space-y-2">
-          {myPosts.length === 0 ? (
-            <p className="rounded-[14px] border border-white/[0.07] bg-[#111118] p-4 text-sm text-[#9994a8]">
-              まだ投稿がありません。今夜のお店をシェアしてみましょう。
-            </p>
-          ) : (
-            myPosts.map((post) => <MyGuestPostCard key={post.id} post={post} />)
-          )}
-        </div>
-      </section>
+        <GuestPostInsightsPanel insights={postInsights} />
+        <GuestPostHistorySection
+          posts={myPosts}
+          showPostLink
+          emptyMessage="まだ投稿がありません。今夜のお店をシェアしてみましょう。"
+        />
+      </div>
 
       <section id="favorite-shops" className="mt-8 md:max-w-3xl">
         <div className="flex items-end justify-between gap-3">

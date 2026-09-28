@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
-import MyGuestPostCard from "@/components/mypage/MyGuestPostCard";
+import GuestPostHistorySection from "@/components/profile/GuestPostHistorySection";
 import {
   fetchPublicGuestPosts,
   fetchPublicGuestProfile,
   type PublicGuestProfile,
 } from "@/lib/profile/publicProfile";
+import { computeGuestPostInsights } from "@/lib/profile/postInsights";
+import GuestPostInsightsPanel from "@/components/profile/GuestPostInsightsPanel";
 import type { VibePost } from "@/lib/home/types";
 
 type PublicProfileClientProps = {
@@ -25,6 +27,7 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
   const [posts, setPosts] = useState<VibePost[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
+  const insights = useMemo(() => computeGuestPostInsights(posts), [posts]);
 
   useEffect(() => {
     async function load() {
@@ -110,26 +113,15 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
           )}
         </section>
 
+        <GuestPostInsightsPanel insights={insights} />
+
         {error && (
           <p className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {error}
           </p>
         )}
 
-        <section className="mt-8">
-          <h2 className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">
-            投稿
-          </h2>
-          <div className="mt-3 space-y-2">
-            {posts.length === 0 ? (
-              <p className="rounded-[14px] border border-white/[0.07] bg-[#111118] p-4 text-sm text-[#9994a8]">
-                公開中の投稿はまだありません
-              </p>
-            ) : (
-              posts.map((post) => <MyGuestPostCard key={post.id} post={post} />)
-            )}
-          </div>
-        </section>
+        <GuestPostHistorySection posts={posts} />
       </div>
     </GuestLayout>
   );
