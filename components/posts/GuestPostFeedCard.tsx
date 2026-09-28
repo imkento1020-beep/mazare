@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { VibePost } from "@/lib/home/types";
 import { formatPostedAt } from "@/lib/home/types";
@@ -30,17 +31,22 @@ function authorInitial(name: string | null | undefined) {
   return trimmed.charAt(0).toUpperCase();
 }
 
-function MediaLayer({ post }: { post: VibePost }) {
-  const isVideo = post.media_type === "video" && post.video_url;
+function postMediaSources(post: VibePost) {
+  const isVideo = post.media_type === "video" && Boolean(post.video_url);
   const images = (post.images ?? []).filter(
     (src) => src.startsWith("http") || src.startsWith("data:"),
   );
+  return { isVideo, videoUrl: post.video_url, images, hasMedia: isVideo || images.length > 0 };
+}
 
-  if (isVideo && post.video_url) {
+function MediaLayer({ post }: { post: VibePost }) {
+  const { isVideo, videoUrl, images } = postMediaSources(post);
+
+  if (isVideo && videoUrl) {
     return (
       <video
-        src={post.video_url}
-        className="absolute inset-0 h-full w-full object-cover"
+        src={videoUrl}
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         muted
         playsInline
         preload="metadata"
@@ -54,7 +60,7 @@ function MediaLayer({ post }: { post: VibePost }) {
       <img
         src={images[0]}
         alt=""
-        className="absolute inset-0 h-full w-full object-cover"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
       />
     );
   }
@@ -62,6 +68,65 @@ function MediaLayer({ post }: { post: VibePost }) {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1a0a00] via-[#120810] to-[#2d1200] text-5xl">
       🍻
+    </div>
+  );
+}
+
+function MediaExpandOverlay({
+  post,
+  onClose,
+}: {
+  post: VibePost;
+  onClose: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const { isVideo, videoUrl, images } = postMediaSources(post);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isVideo || !videoRef.current) return;
+    void videoRef.current.play().catch(() => {
+      // autoplay blocked
+    });
+  }, [isVideo]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#000000]"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="メディア拡大表示"
+    >
+      <div className="flex h-full w-full max-h-[100dvh] max-w-[100vw] items-center justify-center p-4">
+        {isVideo && videoUrl ? (
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            className="max-h-full max-w-full object-contain"
+            controls
+            playsInline
+            autoPlay
+          />
+        ) : images[0] ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={images[0]}
+            alt=""
+            className="max-h-full max-w-full object-contain"
+            style={{ touchAction: "pinch-zoom" }}
+          />
+        ) : null}
+      </div>
+      <p className="pointer-events-none absolute bottom-8 left-0 right-0 text-center text-xs text-white/50">
+        タップして戻る
+      </p>
     </div>
   );
 }
@@ -79,6 +144,7 @@ export default function GuestPostFeedCard({
   shopHref,
   className = "",
 }: GuestPostFeedCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const shop = post.shops;
   const visitOrder = getVisitOrder(post);
   const cupTotal = getTonightCupDisplay(post, tonightTotalCups);
@@ -86,7 +152,8 @@ export default function GuestPostFeedCard({
   const displayName = post.author_display_name?.trim() || "ゲスト";
   const area = shop?.address ? extractAreaFromAddress(shop.address) : "—";
   const distance = shop ? getDistanceLabel(userLocation, shop) : null;
-  const href = shopHref ?? (shop?.id ? `/shop/${shop.id}` : undefined);
+  const shopLink = shopHref ?? (shop?.id ? `/shop/${shop.id}` : undefined);
+  const { hasMedia } = postMediaSources(post);
 
   const amberPillParts: string[] = [];
   if (cupTotal != null) amberPillParts.push(`今夜${cupTotal}杯目`);
@@ -113,17 +180,28 @@ export default function GuestPostFeedCard({
     }
   }
 
-  const cardInner = (
-    <>
+  return (
+    <article
+      className={`overflow-hidden rounded-[12px] bg-[#080810] ${className}`}
+    >
       <div className="relative aspect-[4/5] w-full overflow-hidden">
         <MediaLayer post={post} />
 
+        {hasMedia && (
+          <button
+            type="button"
+            className="absolute inset-0 z-[1] cursor-zoom-in bg-transparent"
+            aria-label="写真または動画を拡大表示"
+            onClick={() => setIsExpanded(true)}
+          />
+        )}
+
         <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgba(8,8,16,0.95)] via-[rgba(8,8,16,0.35)] to-transparent"
+          className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-[rgba(8,8,16,0.95)] via-[rgba(8,8,16,0.35)] to-transparent"
           aria-hidden
         />
 
-        <div className="absolute left-3 top-3 z-[2] flex items-center gap-2">
+        <div className="absolute left-3 top-3 z-[3] flex items-center gap-2">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#ff3d00] text-[11px] font-extrabold text-white">
             {authorInitial(post.author_display_name)}
           </span>
@@ -131,7 +209,7 @@ export default function GuestPostFeedCard({
             <Link
               href={`/user/${post.author_id}`}
               onClick={(e) => e.stopPropagation()}
-              className="text-xs font-semibold text-[#eeeaf4] hover:underline"
+              className="pointer-events-auto text-xs font-semibold text-[#eeeaf4] hover:underline"
             >
               {displayName}
             </Link>
@@ -143,12 +221,11 @@ export default function GuestPostFeedCard({
         </div>
 
         {showActions && (
-          <div className="absolute right-3 top-1/2 z-[2] flex -translate-y-1/2 flex-col gap-2">
+          <div className="absolute right-3 top-1/2 z-[3] flex -translate-y-1/2 flex-col gap-2">
             <button
               type="button"
               disabled={!onInterest || interestLoading}
               onClick={(e) => {
-                e.preventDefault();
                 e.stopPropagation();
                 onInterest?.();
               }}
@@ -164,6 +241,7 @@ export default function GuestPostFeedCard({
             </button>
             <button
               type="button"
+              onClick={(e) => e.stopPropagation()}
               className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-white/10 text-[10px] leading-none backdrop-blur-sm"
               aria-label="コメント"
             >
@@ -177,7 +255,6 @@ export default function GuestPostFeedCard({
             <button
               type="button"
               onClick={(e) => {
-                e.preventDefault();
                 e.stopPropagation();
                 void handleShare();
               }}
@@ -189,7 +266,7 @@ export default function GuestPostFeedCard({
           </div>
         )}
 
-        <div className="absolute inset-x-0 bottom-0 z-[2] space-y-2 p-3 pr-14">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] space-y-2 p-3 pr-14">
           <div className="flex flex-wrap gap-1.5">
             {amberPill && (
               <span className="inline-flex items-center rounded-[20px] border border-[rgba(255,170,0,0.3)] bg-[rgba(255,170,0,0.15)] px-2 py-0.5 text-[9px] font-bold leading-snug text-[#ffaa00]">
@@ -204,14 +281,26 @@ export default function GuestPostFeedCard({
           </div>
 
           {shop && (
-            <div className="space-y-0.5">
+            <div className="pointer-events-auto space-y-0.5">
               <div className="flex flex-wrap items-center gap-2">
                 {visitOrder != null && (
                   <span className="rounded bg-[rgba(255,61,0,0.9)] px-1.5 py-0.5 text-[9px] font-extrabold text-white">
                     {visitOrder}軒目
                   </span>
                 )}
-                <p className="text-[13px] font-bold text-[#eeeaf4]">{shop.name}</p>
+                {shopLink ? (
+                  <Link
+                    href={shopLink}
+                    onClick={(e) => e.stopPropagation()}
+                    className="cursor-pointer border-b border-white/30 text-[13px] font-bold text-[#eeeaf4] transition hover:border-[#ff3d00]/60 hover:text-[#ff3d00]"
+                  >
+                    {shop.name}
+                  </Link>
+                ) : (
+                  <p className="text-[13px] font-bold text-[#eeeaf4]">
+                    {shop.name}
+                  </p>
+                )}
               </div>
               <p className="text-[11px] text-[#9994a8]">
                 📍 {area}
@@ -228,7 +317,7 @@ export default function GuestPostFeedCard({
         </div>
 
         {interested && showActions && (
-          <div className="absolute right-3 top-3 z-[2] rounded-full bg-[#00e87a]/20 px-2 py-0.5 text-[9px] font-bold text-[#00e87a]">
+          <div className="pointer-events-none absolute right-3 top-3 z-[3] rounded-full bg-[#00e87a]/20 px-2 py-0.5 text-[9px] font-bold text-[#00e87a]">
             行くかも ✓
           </div>
         )}
@@ -239,19 +328,9 @@ export default function GuestPostFeedCard({
           {formatPostedAt(post.posted_at)}
         </p>
       )}
-    </>
-  );
 
-  return (
-    <article
-      className={`overflow-hidden rounded-[12px] bg-[#080810] ${className}`}
-    >
-      {href ? (
-        <Link href={href} className="block">
-          {cardInner}
-        </Link>
-      ) : (
-        cardInner
+      {isExpanded && (
+        <MediaExpandOverlay post={post} onClose={() => setIsExpanded(false)} />
       )}
     </article>
   );
