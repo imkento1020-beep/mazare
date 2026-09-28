@@ -221,7 +221,7 @@ export default function GuestPostFeedCard({
         </div>
 
         {showActions && (
-          <div className="absolute right-3 top-1/2 z-[3] flex -translate-y-1/2 flex-col gap-2">
+          <div className="absolute bottom-4 right-3 z-[3] flex flex-col gap-2">
             <button
               type="button"
               disabled={!onInterest || interestLoading}
