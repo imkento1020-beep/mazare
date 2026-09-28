@@ -7,6 +7,7 @@ import {
   genreDisplayEmoji,
 } from "@/lib/home/genreDisplay";
 import PostSourceBadge from "@/components/posts/PostSourceBadge";
+import NightOutBadge from "@/components/posts/NightOutBadge";
 
 function mediaPreview(item: RecentShopFeedItem) {
   const post = item.latestPost;
@@ -56,6 +57,9 @@ export default function RecentShopCard({
       <Link href={`/shop/${item.shop.id}`} className="block">
         <div className="relative aspect-[16/10] bg-[#18181f]">
           {mediaPreview(item)}
+          <div className="absolute left-3 top-3 z-[1] max-w-[calc(100%-1.5rem)]">
+            <NightOutBadge post={item.latestPost} variant="overlay" />
+          </div>
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-3 pt-10">
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-black/55 px-3 py-1.5 backdrop-blur-sm">
               <span className="text-sm leading-none" aria-hidden>
@@ -82,18 +86,6 @@ export default function RecentShopCard({
                 </span>
               ))}
           </div>
-          {item.latestHashtags.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {item.latestHashtags.slice(0, 4).map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-white/10 bg-[#18181f] px-2.5 py-0.5 text-[10px] font-medium text-[#9994a8]"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
       </Link>
       {onInterest && (

@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { getTonightInterestWindowJST } from "@/lib/home/dates";
+import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
 import type { InterestRow, Shop, TodayInterestRow, VibePost } from "@/lib/home/types";
 import type { GuestProfile } from "./types";
 import type { User } from "@supabase/supabase-js";
@@ -171,6 +172,7 @@ function mapGuestPostRow(row: Record<string, unknown>): VibePost {
     is_guest_post: Boolean(row.is_guest_post),
     author_id: typeof row.author_id === "string" ? row.author_id : null,
     shops: shop,
+    ...parseNightOutFromRow(row),
   };
 }
 
@@ -193,6 +195,9 @@ export async function fetchUserGuestPosts(userId: string): Promise<{
       media_type,
       is_guest_post,
       author_id,
+      stop_number,
+      drink_name,
+      drink_cups,
       shops ( id, name, address, genre, open_hours )
     `,
     )

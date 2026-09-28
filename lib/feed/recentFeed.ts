@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { fetchShopsFromDb } from "@/lib/home/shops";
 import { getRecentPostsWindowStart, isWithinRecentPostsWindow } from "@/lib/home/recentWindow";
 import { getTrendingTagWindowJST } from "@/lib/home/recentWindow";
+import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
 import type { Shop, VibePost } from "@/lib/home/types";
 
 export type RecentShopFeedItem = {
@@ -18,7 +19,7 @@ export type TrendingTag = {
 };
 
 const POST_SELECT =
-  "id, shop_id, comment, moods, images, video_url, posted_at, hashtags, media_type, is_guest_post, author_id";
+  "id, shop_id, comment, moods, images, video_url, posted_at, hashtags, media_type, is_guest_post, author_id, stop_number, drink_name, drink_cups";
 
 function normalizeHashtags(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
@@ -77,6 +78,7 @@ function mapPostRow(row: Record<string, unknown>, shop: Shop | null): VibePost {
     is_guest_post: Boolean(row.is_guest_post),
     author_id: typeof row.author_id === "string" ? row.author_id : null,
     shops: shop,
+    ...parseNightOutFromRow(row),
   };
 }
 

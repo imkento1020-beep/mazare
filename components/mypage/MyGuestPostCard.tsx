@@ -3,6 +3,8 @@
 import Link from "next/link";
 import type { VibePost } from "@/lib/home/types";
 import { formatPostedAt } from "@/lib/home/types";
+import NightOutBadge from "@/components/posts/NightOutBadge";
+import { hasNightOutInfo } from "@/lib/guest-post/nightOut";
 
 function mediaPreview(post: VibePost) {
   if (post.media_type === "video" && post.video_url) {
@@ -36,7 +38,7 @@ type MyGuestPostCardProps = {
 
 export default function MyGuestPostCard({ post }: MyGuestPostCardProps) {
   const shopName = post.shops?.name ?? "お店";
-  const tags = post.hashtags ?? [];
+  const showNightOut = hasNightOutInfo(post);
 
   return (
     <Link
@@ -53,19 +55,12 @@ export default function MyGuestPostCard({ post }: MyGuestPostCardProps) {
             {formatPostedAt(post.posted_at)}
           </span>
         </div>
-        {post.comment ? (
+        {showNightOut ? (
+          <NightOutBadge post={post} className="mt-1 text-xs" />
+        ) : post.comment ? (
           <p className="mt-1 line-clamp-2 text-sm text-[#9994a8]">{post.comment}</p>
-        ) : tags.length > 0 ? (
-          <p className="mt-1 line-clamp-2 text-sm text-[#9994a8]">
-            {tags.join(" ")}
-          </p>
         ) : (
           <p className="mt-1 text-sm text-[#5a5668]">写真・動画投稿</p>
-        )}
-        {tags.length > 0 && post.comment && (
-          <p className="mt-1 line-clamp-1 text-xs text-[#ff3d00]/80">
-            {tags.join(" ")}
-          </p>
         )}
       </div>
     </Link>

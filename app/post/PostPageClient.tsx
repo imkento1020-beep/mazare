@@ -6,7 +6,9 @@ import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import GoogleAttribution from "@/components/places/GoogleAttribution";
 import HashtagInput from "@/components/guest-post/HashtagInput";
+import TonightDrinkInput from "@/components/guest-post/TonightDrinkInput";
 import { createGuestVibePost } from "@/lib/guest-post/createPost";
+import type { NightOutInput } from "@/lib/guest-post/nightOut";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { ensureAnonymousSession } from "@/lib/auth/anonymous";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
@@ -34,6 +36,11 @@ export default function PostPageClient({
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [nightOut, setNightOut] = useState<NightOutInput>({
+    stopNumber: null,
+    drinkName: "",
+    drinkCups: null,
+  });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [loadingPlaces, setLoadingPlaces] = useState(false);
@@ -138,6 +145,7 @@ export default function PostPageClient({
       userId: activeUser.id,
       shopId: selectedShopId,
       hashtags: tags,
+      nightOut,
       imageFiles: videoFile ? undefined : imageFiles,
       videoFile,
     });
@@ -151,6 +159,7 @@ export default function PostPageClient({
 
     setSuccessShopName(selectedPlace.name);
     setTags([]);
+    setNightOut({ stopNumber: null, drinkName: "", drinkCups: null });
     setImageFiles([]);
     setVideoFile(null);
 
@@ -253,8 +262,14 @@ export default function PostPageClient({
           <section className="mt-8 space-y-6 rounded-[16px] border border-white/10 bg-[#111118] p-5">
             <h2 className="text-lg font-black">投稿内容</h2>
 
+            <TonightDrinkInput
+              userId={user?.id ?? null}
+              value={nightOut}
+              onChange={setNightOut}
+            />
+
             <div className="space-y-3">
-              <p className="text-sm font-bold">写真または動画（任意）</p>
+              <p className="text-sm font-bold text-[#9994a8]">写真または動画（任意）</p>
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
@@ -281,7 +296,14 @@ export default function PostPageClient({
               </p>
             </div>
 
-            <HashtagInput tags={tags} onChange={setTags} />
+            <details className="rounded-[12px] border border-white/10 bg-[#111118] px-4 py-3">
+              <summary className="cursor-pointer text-xs font-semibold text-[#5a5668]">
+                ハッシュタグ（任意・詳細向け）
+              </summary>
+              <div className="mt-4">
+                <HashtagInput tags={tags} onChange={setTags} />
+              </div>
+            </details>
 
             <button
               type="button"

@@ -30,6 +30,9 @@ export type VibePost = {
   is_guest_post?: boolean;
   author_id?: string | null;
   posted_at?: string | null;
+  stop_number?: number | null;
+  drink_name?: string | null;
+  drink_cups?: number | null;
   shops: Shop | null;
 };
 

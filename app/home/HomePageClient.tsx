@@ -5,7 +5,6 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
   buildRecentShopFeed,
-  countTrendingTags,
   fetchRecentVibePosts,
   type RecentShopFeedItem,
 } from "@/lib/feed/recentFeed";
@@ -15,7 +14,6 @@ import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { fetchTonightInterests, cancelInterest } from "@/lib/mypage/api";
 import type { TodayInterestRow, VibePost } from "@/lib/home/types";
 import RecentShopCard from "@/components/home/RecentShopCard";
-import TrendingTagsSection from "@/components/home/TrendingTagsSection";
 import TonightInterestsSection from "@/components/home/TonightInterestsSection";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
@@ -121,11 +119,6 @@ export default function HomePageClient({
     };
   }, [reloadFeed]);
 
-  const trendingTags = useMemo(
-    () => countTrendingTags(recentPosts, 5),
-    [recentPosts],
-  );
-
   const filteredFeed = useMemo(() => {
     const q = search.trim().toLowerCase();
     return feedItems.filter((item) => {
@@ -221,8 +214,6 @@ export default function HomePageClient({
           {error}
         </p>
       )}
-
-      <TrendingTagsSection tags={trendingTags} />
 
       <div className="mb-4 flex items-center justify-between">
         <p className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">

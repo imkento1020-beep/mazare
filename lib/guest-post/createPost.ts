@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { normalizeNightOutInput, type NightOutInput } from "@/lib/guest-post/nightOut";
 import { uploadGuestPostImages, uploadGuestPostVideo } from "@/lib/guest-post/uploadMedia";
 
 export const DEFAULT_HASHTAG_SUGGESTIONS = [
@@ -58,10 +59,12 @@ export async function createGuestVibePost(input: {
   userId: string;
   shopId: string;
   hashtags: string[];
+  nightOut: NightOutInput;
   imageFiles?: File[];
   videoFile?: File | null;
 }): Promise<{ postId: string | null; error: string | null }> {
   const hashtags = [...new Set(input.hashtags.map(normalizeHashtagInput).filter(Boolean))];
+  const nightOut = normalizeNightOutInput(input.nightOut);
 
   let mediaType: "image" | "video" | null = null;
   let images: string[] = [];
@@ -104,6 +107,9 @@ export async function createGuestVibePost(input: {
       images,
       video_url: videoUrl,
       posted_at: new Date().toISOString(),
+      stop_number: nightOut.stop_number,
+      drink_name: nightOut.drink_name,
+      drink_cups: nightOut.drink_cups,
     })
     .select("id")
     .single();
