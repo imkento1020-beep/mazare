@@ -1,29 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import GuestPostMedia, {
-  GUEST_POST_IMAGE_ASPECT,
-  GUEST_POST_VIDEO_ASPECT,
-} from "@/components/posts/GuestPostMedia";
-import GuestPostFooter from "@/components/posts/GuestPostFooter";
+import GuestPostFeedCard from "@/components/posts/GuestPostFeedCard";
 import type { NightOutInput } from "@/lib/guest-post/nightOut";
-import { fetchTonightCupSumForUser } from "@/lib/guest-post/fetchTonightCupSum";
-import { projectedTonightTotalCups } from "@/lib/guest-post/tonightCups";
-import type { VibePost } from "@/lib/home/types";
+import { normalizeNightOutInput } from "@/lib/guest-post/nightOut";
+import type { Shop, VibePost } from "@/lib/home/types";
 
 type GuestPostComposePreviewProps = {
-  userId: string | null;
-  excludePostId?: string;
   imageFiles: File[];
   videoFile: File | null;
   nightOut: NightOutInput;
   comment: string;
-  hashtags: string[];
-  /** 編集時：新しいファイル未選択なら既存メディアを表示 */
-  existingPost?: Pick<
-    VibePost,
-    "media_type" | "images" | "video_url"
-  > | null;
+  shop?: Shop | null;
+  existingPost?: VibePost | null;
 };
 
 function useObjectUrls(files: File[]) {
@@ -42,18 +31,15 @@ function useObjectUrls(files: File[]) {
 }
 
 export default function GuestPostComposePreview({
-  userId,
-  excludePostId,
   imageFiles,
   videoFile,
   nightOut,
   comment,
-  hashtags,
+  shop = null,
   existingPost = null,
 }: GuestPostComposePreviewProps) {
   const imageUrls = useObjectUrls(imageFiles);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
-  const [priorTonightCups, setPriorTonightCups] = useState(0);
 
   useEffect(() => {
     if (!videoFile) {
@@ -65,92 +51,43 @@ export default function GuestPostComposePreview({
     return () => URL.revokeObjectURL(url);
   }, [videoFile]);
 
-  useEffect(() => {
-    if (!userId) {
-      setPriorTonightCups(0);
-      return;
-    }
-    let cancelled = false;
-    void fetchTonightCupSumForUser(userId, { excludePostId }).then((sum) => {
-      if (!cancelled) setPriorTonightCups(sum);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, excludePostId]);
-
+  const normalized = normalizeNightOutInput(nightOut);
   const draftFromFiles = {
-    media_type: videoPreviewUrl ? ("video" as const) : imageUrls.length > 0 ? ("image" as const) : null,
+    media_type: videoPreviewUrl
+      ? ("video" as const)
+      : imageUrls.length > 0
+        ? ("image" as const)
+        : null,
     images: imageUrls,
     video_url: videoPreviewUrl,
   };
 
-  const useExistingMedia =
+  const useExisting =
     !draftFromFiles.media_type && existingPost?.media_type;
 
-  const draftPost: Pick<
-    VibePost,
-    | "stop_number"
-    | "drink_name"
-    | "drink_cups"
-    | "comment"
-    | "hashtags"
-    | "media_type"
-    | "images"
-    | "video_url"
-  > = {
-    stop_number: nightOut.stopNumber,
-    drink_name: nightOut.drinkName.trim() || null,
-    drink_cups: nightOut.drinkCups,
+  const draftPost: VibePost = {
+    id: existingPost?.id ?? "preview",
+    shop_id: shop?.id ?? existingPost?.shop_id ?? "",
     comment,
-    hashtags,
-    media_type: useExistingMedia
-      ? existingPost!.media_type
-      : draftFromFiles.media_type,
-    images: useExistingMedia ? existingPost!.images : draftFromFiles.images,
-    video_url: useExistingMedia
-      ? existingPost!.video_url
-      : draftFromFiles.video_url,
+    moods: [],
+    hashtags: existingPost?.hashtags ?? [],
+    media_type: useExisting ? existingPost!.media_type : draftFromFiles.media_type,
+    images: useExisting ? existingPost!.images : draftFromFiles.images,
+    video_url: useExisting ? existingPost!.video_url : draftFromFiles.video_url,
+    is_guest_post: true,
+    author_id: existingPost?.author_id ?? null,
+    author_display_name: existingPost?.author_display_name ?? "あなた",
+    posted_at: existingPost?.posted_at ?? new Date().toISOString(),
+    shops: shop ?? existingPost?.shops ?? null,
+    ...normalized,
   };
 
-  const tonightTotal = projectedTonightTotalCups(priorTonightCups, draftPost);
-  const hasMedia =
-    Boolean(draftPost.media_type) ||
-    (draftPost.images?.length ?? 0) > 0 ||
-    Boolean(draftPost.video_url);
-  const aspectHint = videoPreviewUrl ? GUEST_POST_VIDEO_ASPECT : GUEST_POST_IMAGE_ASPECT;
-
   return (
-    <div className="overflow-hidden rounded-[16px] border border-white/10 bg-[#0a0a12]">
-      <p className="border-b border-white/[0.06] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#5a5668]">
-        プレビュー
-        <span className="ml-2 font-normal normal-case tracking-normal text-[#5a5668]/80">
-          {videoPreviewUrl ? "動画 9:16" : "写真 4:5"}
-        </span>
+    <div>
+      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#5a5668]">
+        カードプレビュー（4:5）
       </p>
-
-      {hasMedia ? (
-        <GuestPostMedia
-          mediaType={draftPost.media_type}
-          images={draftPost.images}
-          videoUrl={draftPost.video_url}
-        />
-      ) : (
-        <div
-          className={`flex flex-col items-center justify-center gap-2 bg-[#111118] px-6 py-16 ${aspectHint} max-h-[320px]`}
-        >
-          <span className="text-4xl">📷</span>
-          <p className="text-center text-sm font-semibold text-[#9994a8]">
-            写真または動画を選ぶと
-            <br />
-            ここに表示されます
-          </p>
-        </div>
-      )}
-
-      <div className="border-t border-white/[0.06] px-4 py-4">
-        <GuestPostFooter post={draftPost} tonightTotalCups={tonightTotal} />
-      </div>
+      <GuestPostFeedCard post={draftPost} showActions={false} />
     </div>
   );
 }

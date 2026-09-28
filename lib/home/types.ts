@@ -31,8 +31,11 @@ export type VibePost = {
   author_id?: string | null;
   posted_at?: string | null;
   stop_number?: number | null;
+  visit_order?: number | null;
   drink_name?: string | null;
   drink_cups?: number | null;
+  drink_count?: number | null;
+  party_size?: number | null;
   author_display_name?: string | null;
   shops: Shop | null;
 };

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import HashtagInput from "@/components/guest-post/HashtagInput";
-import TonightDrinkInput from "@/components/guest-post/TonightDrinkInput";
+import GuestPostMetaFields from "@/components/guest-post/GuestPostMetaFields";
 import GuestPostComposePreview from "@/components/guest-post/GuestPostComposePreview";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
@@ -34,7 +34,8 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
   const [nightOut, setNightOut] = useState<NightOutInput>({
     stopNumber: null,
     drinkName: "",
-    drinkCups: null,
+    tonightTotalCups: null,
+    partySize: null,
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -76,6 +77,10 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
 
   async function handleSave() {
     if (!post) return;
+    if (nightOut.stopNumber == null) {
+      setError("今夜何軒目かを選んでください");
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
@@ -155,7 +160,7 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
 
         <section className="mt-8 space-y-6">
           <div className="space-y-3 rounded-[16px] border border-white/10 bg-[#111118] p-5">
-            <p className="text-sm font-bold text-[#9994a8]">写真・動画を差し替え</p>
+            <p className="text-sm font-bold text-[#9994a8]">写真・動画を差し替え（任意）</p>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
@@ -179,37 +184,35 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
             />
           </div>
 
-          <GuestPostComposePreview
-            userId={user?.id ?? null}
-            excludePostId={post.id}
-            imageFiles={imageFiles}
-            videoFile={videoFile}
-            nightOut={nightOut}
-            comment={comment}
-            hashtags={tags}
-            existingPost={post}
-          />
-
-          <div className="space-y-3 rounded-[16px] border border-white/10 bg-[#111118] p-5">
-            <label htmlFor="edit-guest-comment" className="text-sm font-black">
-              コメント
-            </label>
-            <textarea
-              id="edit-guest-comment"
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
-              maxLength={500}
-              rows={3}
-              className="w-full resize-none rounded-[12px] border border-white/10 bg-[#080810] px-4 py-3 text-sm leading-relaxed outline-none focus:border-[#ff3d00]/40"
-            />
-          </div>
-
-          <TonightDrinkInput
+          <GuestPostMetaFields
             userId={user?.id ?? null}
             value={nightOut}
             onChange={setNightOut}
             suggestStopNumber={false}
             excludePostId={post.id}
+          />
+
+          <div className="space-y-3 rounded-[16px] border border-white/10 bg-[#111118] p-5">
+            <label htmlFor="edit-guest-comment" className="text-sm font-black">
+              一言コメント（140文字）
+            </label>
+            <textarea
+              id="edit-guest-comment"
+              value={comment}
+              onChange={(event) => setComment(event.target.value)}
+              maxLength={140}
+              rows={3}
+              className="w-full resize-none rounded-[12px] border border-white/10 bg-[#080810] px-4 py-3 text-sm leading-relaxed outline-none focus:border-[#ff3d00]/40"
+            />
+          </div>
+
+          <GuestPostComposePreview
+            imageFiles={imageFiles}
+            videoFile={videoFile}
+            nightOut={nightOut}
+            comment={comment}
+            shop={post.shops}
+            existingPost={post}
           />
 
           <details className="rounded-[12px] border border-white/10 bg-[#111118] px-4 py-3" open>

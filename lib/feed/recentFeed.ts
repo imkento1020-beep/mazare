@@ -20,7 +20,7 @@ export type TrendingTag = {
 };
 
 const POST_SELECT =
-  "id, shop_id, comment, moods, images, video_url, posted_at, hashtags, media_type, is_guest_post, author_id, stop_number, drink_name, drink_cups";
+  "id, shop_id, comment, moods, images, video_url, posted_at, hashtags, media_type, is_guest_post, author_id, stop_number, visit_order, drink_name, drink_cups, drink_count, party_size";
 
 function normalizeHashtags(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];

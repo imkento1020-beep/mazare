@@ -55,8 +55,14 @@ export function buildTonightCumulativeCupTotals(
 
 export function projectedTonightTotalCups(
   priorTonightCupSum: number,
-  draft: Pick<VibePost, "drink_name" | "drink_cups">,
+  draft: Pick<VibePost, "drink_name" | "drink_cups" | "drink_count">,
 ): number | null {
+  if (draft.drink_count != null && draft.drink_count >= 1) {
+    return draft.drink_count;
+  }
+  if (draft.drink_cups != null && draft.drink_cups >= 1) {
+    return draft.drink_cups;
+  }
   const add = cupsContributed(draft);
   if (add === 0) return priorTonightCupSum > 0 ? priorTonightCupSum : null;
   return priorTonightCupSum + add;

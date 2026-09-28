@@ -1,16 +1,19 @@
 "use client";
 
-import type { ReactNode, Ref } from "react";
+import type { Ref } from "react";
 import type { VibePost } from "@/lib/home/types";
-import GuestPostMedia from "@/components/posts/GuestPostMedia";
-import GuestPostFooter from "@/components/posts/GuestPostFooter";
+import type { GeoPoint } from "@/lib/geo/haversine";
+import GuestPostFeedCard from "@/components/posts/GuestPostFeedCard";
 
 type GuestPostCardProps = {
   post: VibePost;
   tonightTotalCups?: number | null;
-  compact?: boolean;
-  header?: ReactNode;
-  footerActions?: ReactNode;
+  interestCount?: number;
+  userLocation?: GeoPoint | null;
+  onInterest?: () => void;
+  interestLoading?: boolean;
+  interested?: boolean;
+  showActions?: boolean;
   className?: string;
   trackRef?: Ref<HTMLElement>;
 };
@@ -18,30 +21,27 @@ type GuestPostCardProps = {
 export default function GuestPostCard({
   post,
   tonightTotalCups = null,
-  compact = false,
-  header,
-  footerActions,
+  interestCount = 0,
+  userLocation = null,
+  onInterest,
+  interestLoading = false,
+  interested = false,
+  showActions = false,
   className = "",
   trackRef,
 }: GuestPostCardProps) {
   return (
-    <article
-      ref={trackRef}
-      className={`overflow-hidden rounded-[14px] border border-white/[0.07] bg-[#111118] ${className}`}
-    >
-      {header && <div className="border-b border-white/[0.06] px-3 py-2.5">{header}</div>}
-
-      <GuestPostMedia
-        mediaType={post.media_type}
-        images={post.images}
-        videoUrl={post.video_url}
-        compact={compact}
+    <div ref={trackRef as Ref<HTMLDivElement>} className={className}>
+      <GuestPostFeedCard
+        post={post}
+        tonightTotalCups={tonightTotalCups}
+        interestCount={interestCount}
+        userLocation={userLocation}
+        onInterest={onInterest}
+        interestLoading={interestLoading}
+        interested={interested}
+        showActions={showActions}
       />
-
-      <div className="space-y-3 px-3 py-3.5 sm:px-4">
-        <GuestPostFooter post={post} tonightTotalCups={tonightTotalCups} />
-        {footerActions}
-      </div>
-    </article>
+    </div>
   );
 }

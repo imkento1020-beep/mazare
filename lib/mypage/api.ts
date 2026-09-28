@@ -198,9 +198,12 @@ export async function fetchUserGuestPosts(userId: string): Promise<{
       is_guest_post,
       author_id,
       stop_number,
+      visit_order,
       drink_name,
       drink_cups,
-      shops ( id, name, address, genre, open_hours )
+      drink_count,
+      party_size,
+      shops ( id, name, address, genre, open_hours, latitude, longitude )
     `,
     )
     .eq("author_id", userId)

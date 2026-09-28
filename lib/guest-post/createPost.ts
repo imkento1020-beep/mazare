@@ -66,7 +66,7 @@ export async function createGuestVibePost(input: {
 }): Promise<{ postId: string | null; error: string | null }> {
   const hashtags = [...new Set(input.hashtags.map(normalizeHashtagInput).filter(Boolean))];
   const nightOut = normalizeNightOutInput(input.nightOut);
-  const comment = (input.comment ?? "").trim().slice(0, 500);
+  const comment = (input.comment ?? "").trim().slice(0, 140);
 
   let mediaType: "image" | "video" | null = null;
   let images: string[] = [];
@@ -110,8 +110,11 @@ export async function createGuestVibePost(input: {
       video_url: videoUrl,
       posted_at: new Date().toISOString(),
       stop_number: nightOut.stop_number,
+      visit_order: nightOut.visit_order,
       drink_name: nightOut.drink_name,
       drink_cups: nightOut.drink_cups,
+      drink_count: nightOut.drink_count,
+      party_size: nightOut.party_size,
     })
     .select("id")
     .single();

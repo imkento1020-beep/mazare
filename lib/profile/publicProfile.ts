@@ -23,9 +23,12 @@ const GUEST_POST_SELECT = `
   is_guest_post,
   author_id,
   stop_number,
+  visit_order,
   drink_name,
   drink_cups,
-  shops ( id, name, address, genre, open_hours )
+  drink_count,
+  party_size,
+  shops ( id, name, address, genre, open_hours, latitude, longitude )
 `;
 
 export async function fetchPublicGuestProfile(userId: string): Promise<{

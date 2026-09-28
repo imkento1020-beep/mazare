@@ -4,42 +4,40 @@ import { formatPostedAt, type VibePost } from "@/lib/home/types";
 import { moodEmoji, moodTagClass } from "@/lib/home/moods";
 import { usePostViewTracking } from "@/lib/home/usePostViewTracking";
 import PostImageCarousel from "./PostImageCarousel";
-import GuestPostCard from "@/components/posts/GuestPostCard";
-import PostAuthorBadge from "@/components/posts/PostAuthorBadge";
+import GuestPostFeedCard from "@/components/posts/GuestPostFeedCard";
+import type { GeoPoint } from "@/lib/geo/haversine";
 import Link from "next/link";
 
 type ShopVibePostItemProps = {
   post: VibePost;
   compact?: boolean;
   tonightTotalCups?: number | null;
+  interestCount?: number;
+  userLocation?: GeoPoint | null;
 };
 
 export default function ShopVibePostItem({
   post,
   compact = false,
   tonightTotalCups = null,
+  interestCount = 0,
+  userLocation = null,
 }: ShopVibePostItemProps) {
   const viewRef = usePostViewTracking(post.id);
   const isGuest = post.is_guest_post !== false;
 
   if (isGuest) {
     return (
-        <GuestPostCard
-          trackRef={viewRef}
+      <div ref={viewRef as React.Ref<HTMLDivElement>}>
+        <GuestPostFeedCard
           post={post}
           tonightTotalCups={tonightTotalCups}
-          compact={compact}
-          header={
-            <div className="flex items-center justify-between gap-2">
-              <PostAuthorBadge post={post} />
-              {post.posted_at && (
-                <span className="shrink-0 text-[10px] text-[#5a5668]">
-                  {formatPostedAt(post.posted_at)}
-                </span>
-              )}
-            </div>
-          }
+          interestCount={interestCount}
+          userLocation={userLocation}
+          showActions={false}
+          shopHref={`/shop/${post.shop_id}`}
         />
+      </div>
     );
   }
 
@@ -48,7 +46,7 @@ export default function ShopVibePostItem({
   return (
     <article
       ref={viewRef}
-      className="overflow-hidden rounded-[14px] border border-white/7 bg-[#111118]"
+      className="overflow-hidden rounded-[12px] border border-white/7 bg-[#080810]"
     >
       <PostImageCarousel
         images={images}

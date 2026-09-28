@@ -21,9 +21,12 @@ const GUEST_POST_EDIT_SELECT = `
   hashtags,
   media_type,
   stop_number,
+  visit_order,
   drink_name,
   drink_cups,
-  shops ( id, name, address )
+  drink_count,
+  party_size,
+  shops ( id, name, address, latitude, longitude )
 `;
 
 function mapEditPostRow(row: Record<string, unknown>): VibePost {
@@ -53,12 +56,16 @@ function mapEditPostRow(row: Record<string, unknown>): VibePost {
 }
 
 export function nightOutInputFromPost(
-  post: Pick<VibePost, "stop_number" | "drink_name" | "drink_cups">,
+  post: Pick<
+    VibePost,
+    "stop_number" | "drink_name" | "drink_cups" | "drink_count" | "party_size"
+  >,
 ): NightOutInput {
   return {
     stopNumber: post.stop_number ?? null,
     drinkName: post.drink_name ?? "",
-    drinkCups: post.drink_cups ?? null,
+    tonightTotalCups: post.drink_cups ?? post.drink_count ?? null,
+    partySize: post.party_size ?? null,
   };
 }
 
@@ -100,7 +107,7 @@ export async function updateGuestVibePost(input: {
 
   const hashtags = [...new Set(input.hashtags.map(normalizeHashtagInput).filter(Boolean))];
   const nightOut = normalizeNightOutInput(input.nightOut);
-  const comment = (input.comment ?? "").trim().slice(0, 500);
+  const comment = (input.comment ?? "").trim().slice(0, 140);
 
   let mediaType = existing.data.media_type ?? null;
   let images = existing.data.images ?? [];
@@ -145,8 +152,11 @@ export async function updateGuestVibePost(input: {
       images,
       video_url: videoUrl,
       stop_number: nightOut.stop_number,
+      visit_order: nightOut.visit_order,
       drink_name: nightOut.drink_name,
       drink_cups: nightOut.drink_cups,
+      drink_count: nightOut.drink_count,
+      party_size: nightOut.party_size,
     })
     .eq("id", input.postId)
     .eq("author_id", input.userId)

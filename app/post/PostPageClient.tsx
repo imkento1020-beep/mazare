@@ -6,7 +6,7 @@ import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import GoogleAttribution from "@/components/places/GoogleAttribution";
 import HashtagInput from "@/components/guest-post/HashtagInput";
-import TonightDrinkInput from "@/components/guest-post/TonightDrinkInput";
+import GuestPostMetaFields from "@/components/guest-post/GuestPostMetaFields";
 import GuestPostComposePreview from "@/components/guest-post/GuestPostComposePreview";
 import { createGuestVibePost } from "@/lib/guest-post/createPost";
 import type { NightOutInput } from "@/lib/guest-post/nightOut";
@@ -41,7 +41,8 @@ export default function PostPageClient({
   const [nightOut, setNightOut] = useState<NightOutInput>({
     stopNumber: null,
     drinkName: "",
-    drinkCups: null,
+    tonightTotalCups: null,
+    partySize: null,
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -54,6 +55,17 @@ export default function PostPageClient({
     () => places.find((place) => place.shopId === selectedShopId) ?? null,
     [places, selectedShopId],
   );
+
+  const previewShop = useMemo(() => {
+    if (!selectedPlace?.shopId) return null;
+    return {
+      id: selectedPlace.shopId,
+      name: selectedPlace.name,
+      address: selectedPlace.address,
+      genre: null,
+      open_hours: null,
+    };
+  }, [selectedPlace]);
 
   const loadNearby = useCallback(async () => {
     if (!mapsApiKey) return;
@@ -116,8 +128,8 @@ export default function PostPageClient({
       setError("お店を選んでください");
       return;
     }
-    if (!videoFile && imageFiles.length === 0) {
-      setError("写真または動画を添付してください");
+    if (nightOut.stopNumber == null || nightOut.stopNumber < 1) {
+      setError("今夜何軒目かを選んでください");
       return;
     }
     if (!authReady) {
@@ -167,7 +179,12 @@ export default function PostPageClient({
     setSuccessShopName(selectedPlace.name);
     setTags([]);
     setComment("");
-    setNightOut({ stopNumber: null, drinkName: "", drinkCups: null });
+    setNightOut({
+      stopNumber: null,
+      drinkName: "",
+      tonightTotalCups: null,
+      partySize: null,
+    });
     setImageFiles([]);
     setVideoFile(null);
 
@@ -271,7 +288,7 @@ export default function PostPageClient({
             <div className="space-y-3 rounded-[16px] border border-[#ff3d00]/25 bg-[#111118] p-5">
               <h2 className="text-lg font-black">写真・動画</h2>
               <p className="text-[11px] text-[#9994a8]">
-                写真は Instagram 風 4:5、動画は TikTok 風 9:16 で表示されます
+                任意・どちらか一方。カード上は縦 4:5 で表示されます
               </p>
               <input
                 type="file"
@@ -299,34 +316,33 @@ export default function PostPageClient({
               </p>
             </div>
 
-            <GuestPostComposePreview
+            <GuestPostMetaFields
               userId={user?.id ?? null}
-              imageFiles={imageFiles}
-              videoFile={videoFile}
-              nightOut={nightOut}
-              comment={comment}
-              hashtags={tags}
+              value={nightOut}
+              onChange={setNightOut}
             />
 
             <div className="space-y-3 rounded-[16px] border border-white/10 bg-[#111118] p-5">
               <label htmlFor="guest-post-comment" className="text-sm font-black">
-                コメント（任意）
+                一言コメント（任意・140文字）
               </label>
               <textarea
                 id="guest-post-comment"
                 value={comment}
                 onChange={(event) => setComment(event.target.value)}
-                maxLength={500}
+                maxLength={140}
                 rows={3}
                 placeholder="今夜のひとこと…"
                 className="w-full resize-none rounded-[12px] border border-white/10 bg-[#080810] px-4 py-3 text-sm leading-relaxed outline-none focus:border-[#ff3d00]/40"
               />
             </div>
 
-            <TonightDrinkInput
-              userId={user?.id ?? null}
-              value={nightOut}
-              onChange={setNightOut}
+            <GuestPostComposePreview
+              imageFiles={imageFiles}
+              videoFile={videoFile}
+              nightOut={nightOut}
+              comment={comment}
+              shop={previewShop}
             />
 
             <details className="rounded-[12px] border border-white/10 bg-[#111118] px-4 py-3">

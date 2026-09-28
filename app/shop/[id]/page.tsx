@@ -45,6 +45,7 @@ import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import ShopVibePostItem from "@/components/home/ShopVibePostItem";
 import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
+import { fetchInterestCountsByPostIds } from "@/lib/interests/postInterestCounts";
 import type { User } from "@supabase/supabase-js";
 
 function genreEmoji(genre: string) {
@@ -110,6 +111,9 @@ export default function ShopDetailPage() {
     () => buildTonightCumulativeCupTotals(posts),
     [posts],
   );
+  const [postInterestCounts, setPostInterestCounts] = useState<
+    Map<string, number>
+  >(new Map());
 
   useEffect(() => {
     async function load() {
@@ -134,9 +138,17 @@ export default function ShopDetailPage() {
       }
 
       setShop(shopResult.data);
-      setPosts(postsResult.data ?? []);
+      const postList = (postsResult.data ?? []).map((post) => ({
+        ...post,
+        shops: post.shops ?? shopResult.data,
+      }));
+      setPosts(postList);
       setSidebarPosts(allPostsResult.data ?? []);
       setInterestCount(count);
+      const interestByPost = await fetchInterestCountsByPostIds(
+        postList.map((post) => post.id),
+      );
+      setPostInterestCounts(interestByPost);
 
       const firstPost = postsResult.data?.[0];
       if (currentUser && firstPost) {
@@ -399,6 +411,8 @@ export default function ShopDetailPage() {
                   key={post.id}
                   post={post}
                   tonightTotalCups={tonightCupTotals.get(post.id) ?? null}
+                  interestCount={postInterestCounts.get(post.id) ?? 0}
+                  userLocation={userLocation}
                 />
               ))
             )}

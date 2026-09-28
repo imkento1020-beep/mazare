@@ -14,6 +14,8 @@ import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { fetchTonightInterests, cancelInterest } from "@/lib/mypage/api";
 import type { TodayInterestRow, VibePost } from "@/lib/home/types";
 import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
+import { fetchInterestCountsByPostIds } from "@/lib/interests/postInterestCounts";
+import { useUserLocation } from "@/hooks/useUserLocation";
 import RecentShopCard from "@/components/home/RecentShopCard";
 import TonightInterestsSection from "@/components/home/TonightInterestsSection";
 import GuestLayout from "@/components/layout/GuestLayout";
@@ -45,12 +47,18 @@ export default function HomePageClient({
   const [newShopsOnly, setNewShopsOnly] = useState(false);
   const [tonightInterests, setTonightInterests] = useState<TodayInterestRow[]>([]);
   const [cancelingTonightId, setCancelingTonightId] = useState<string | null>(null);
+  const [interestCounts, setInterestCounts] = useState<Map<string, number>>(
+    new Map(),
+  );
+  const { location: userLocation } = useUserLocation();
 
   const reloadFeed = useCallback(async (activeUser: User | null) => {
     const { data, error: feedError } = await fetchRecentVibePosts();
     if (feedError) setError(feedError);
     setRecentPosts(data);
     setFeedItems(buildRecentShopFeed(data));
+    const counts = await fetchInterestCountsByPostIds(data.map((p) => p.id));
+    setInterestCounts(counts);
 
     if (activeUser) {
       const { data: myInterests } = await supabase
@@ -257,6 +265,8 @@ export default function HomePageClient({
               tonightTotalCups={
                 tonightCupTotals.get(item.latestPost.id) ?? null
               }
+              interestCount={interestCounts.get(item.latestPost.id) ?? 0}
+              userLocation={userLocation}
             />
           ))}
         </div>
