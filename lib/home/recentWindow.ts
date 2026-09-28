@@ -1,7 +1,7 @@
-const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+export const RECENT_POSTS_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export function getRecentPostsWindowStart(now = new Date()): Date {
-  return new Date(now.getTime() - TWO_HOURS_MS);
+  return new Date(now.getTime() - RECENT_POSTS_WINDOW_MS);
 }
 
 export function isWithinRecentPostsWindow(

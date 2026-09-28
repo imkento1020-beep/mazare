@@ -4,6 +4,7 @@ import { importLibrary } from "@googlemaps/js-api-loader";
 import { configureGoogleMapsLoader } from "@/lib/map/google";
 import { ensureShopsFromPlacesClient } from "@/lib/places/cacheShopClient";
 import type { PlaceSummary } from "@/lib/places/types";
+import { labelsFromGooglePlaceTypes } from "@/lib/home/genreDisplay";
 
 const PLACE_FIELDS: Array<keyof google.maps.places.Place> = [
   "id",
@@ -22,15 +23,6 @@ function displayNameText(place: google.maps.places.Place) {
     return String((name as { text?: string }).text ?? "");
   }
   return "名称未設定";
-}
-
-function mapTypesToGenre(types: string[] | undefined): string[] {
-  if (!types?.length) return ["飲食店"];
-  const foodish = types.filter((t) =>
-    /restaurant|bar|cafe|night_club|food|meal/i.test(t),
-  );
-  if (foodish.length === 0) return ["飲食店"];
-  return foodish.slice(0, 3).map((t) => t.replace(/_/g, " "));
 }
 
 async function getPlacesLibrary(apiKey: string) {
@@ -71,7 +63,7 @@ async function toPlaceSummary(
     address: place.formattedAddress ?? "",
     latitude: location.lat(),
     longitude: location.lng(),
-    types: mapTypesToGenre(place.types ?? undefined),
+    types: labelsFromGooglePlaceTypes(place.types ?? undefined, 3),
     openHoursText: hours?.length ? hours.join("\n") : null,
     photoUrl,
     shopId: null,

@@ -57,28 +57,15 @@ export default function RecentShopCard({
         <div className="relative aspect-[16/10] bg-[#18181f]">
           {mediaPreview(item)}
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-3 pt-10">
-            <div className="flex flex-wrap items-end justify-between gap-2">
-              <div className="flex min-w-0 flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-black/50 px-2.5 py-1.5 backdrop-blur-sm">
-                  <span className="text-sm leading-none" aria-hidden>
-                    📝
-                  </span>
-                  <span className="text-sm font-black tabular-nums text-white">
-                    {item.postCount}
-                  </span>
-                  <span className="text-[11px] font-medium text-white/85">件</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-black/50 px-2.5 py-1.5 backdrop-blur-sm">
-                  <span className="text-sm leading-none" aria-hidden>
-                    👥
-                  </span>
-                  <span className="text-sm font-black tabular-nums text-white">
-                    {item.uniquePosterCount}
-                  </span>
-                  <span className="text-[11px] font-medium text-white/85">人がシェア</span>
-                </span>
-              </div>
-            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-black/55 px-3 py-1.5 backdrop-blur-sm">
+              <span className="text-sm leading-none" aria-hidden>
+                📝
+              </span>
+              <span className="text-sm font-black tabular-nums text-white">
+                {item.postCount}
+              </span>
+              <span className="text-[11px] font-semibold text-white/90">件の投稿</span>
+            </span>
           </div>
         </div>
         <div className="p-4">

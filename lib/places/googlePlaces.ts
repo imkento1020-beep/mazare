@@ -10,6 +10,7 @@ import {
   searchPlacesByTextLegacy,
 } from "@/lib/places/legacyPlaces";
 import type { PlaceSummary } from "@/lib/places/types";
+import { labelsFromGooglePlaceTypes } from "@/lib/home/genreDisplay";
 
 type GooglePlace = {
   id?: string;
@@ -20,15 +21,6 @@ type GooglePlace = {
   regularOpeningHours?: { weekdayDescriptions?: string[] };
   photos?: Array<{ name?: string }>;
 };
-
-function mapTypesToGenre(types: string[] | undefined): string[] {
-  if (!types?.length) return ["飲食店"];
-  const foodish = types.filter((t) =>
-    /restaurant|bar|cafe|night_club|food|meal/i.test(t),
-  );
-  if (foodish.length === 0) return ["飲食店"];
-  return foodish.slice(0, 3).map((t) => t.replace(/_/g, " "));
-}
 
 function photoUrlFromReference(apiKey: string, photoName: string | undefined) {
   if (!photoName || !apiKey) return null;
@@ -58,7 +50,7 @@ export function mapGooglePlaceToSummary(
     address: place.formattedAddress ?? "",
     latitude: lat,
     longitude: lng,
-    types: mapTypesToGenre(place.types),
+    types: labelsFromGooglePlaceTypes(place.types, 3),
     openHoursText: formatHours(place),
     photoUrl: photoUrlFromReference(apiKey, place.photos?.[0]?.name),
     shopId: null,

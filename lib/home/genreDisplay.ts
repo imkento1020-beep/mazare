@@ -44,18 +44,46 @@ const GOOGLE_PLACE_TYPE_LABELS: Record<string, string> = {
   event_venue: "イベント会場",
   bowling_alley: "ボウリング",
   amusement_center: "アミューズメント",
+  diner: "ダイナー",
+  brunch_restaurant: "ブランチ",
+  buffet_restaurant: "ビュッフェ",
+  vegan_restaurant: "ヴィーガン",
+  vegetarian_restaurant: "ベジタリアン",
+  coffee_shop: "コーヒーショップ",
+  tea_house: "茶房",
+  dessert_shop: "デザート",
+  ice_cream_shop: "アイス",
+  food_court: "フードコート",
+  cafeteria: "食堂",
+  fine_dining_restaurant: "ファインダイニング",
+  tapas_restaurant: "タパス",
+  greek_restaurant: "ギリシャ料理",
+  mexican_restaurant: "メキシコ料理",
+  spanish_restaurant: "スペイン料理",
+  american_restaurant: "アメリカ料理",
+  asian_restaurant: "アジア料理",
 };
 
-function isGooglePlaceType(token: string) {
-  return /^[a-z0-9_]+$/.test(token);
+function normalizeTypeKey(token: string) {
+  return token.trim().toLowerCase().replace(/[\s-]+/g, "_");
 }
 
 function translateToken(token: string): string | null {
   const trimmed = token.trim();
-  if (!trimmed || IGNORED_PLACE_TYPES.has(trimmed)) return null;
+  if (!trimmed) return null;
 
-  if (isGooglePlaceType(trimmed)) {
-    return GOOGLE_PLACE_TYPE_LABELS[trimmed] ?? null;
+  const key = normalizeTypeKey(trimmed);
+  if (IGNORED_PLACE_TYPES.has(key)) return null;
+
+  const mapped = GOOGLE_PLACE_TYPE_LABELS[key];
+  if (mapped) return mapped;
+
+  if (/[\u3040-\u30ff\u4e00-\u9fff]/.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (/^[a-z0-9_\s-]+$/i.test(trimmed)) {
+    return null;
   }
 
   return trimmed;
@@ -95,6 +123,15 @@ export function formatShopGenreDisplay(
   const labels = formatShopGenreLabels(genre, 2);
   if (labels.length === 0) return "飲食店";
   return labels.join(" · ");
+}
+
+/** Google Places の types 配列 → 日本語ジャンル（キャッシュ保存用） */
+export function labelsFromGooglePlaceTypes(
+  types: string[] | undefined,
+  max = 3,
+): string[] {
+  const labels = formatShopGenreLabels(types, max);
+  return labels.length > 0 ? labels : ["飲食店"];
 }
 
 export function genreDisplayEmoji(label: string): string {

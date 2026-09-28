@@ -226,7 +226,7 @@ export default function HomePageClient({
 
       <div className="mb-4 flex items-center justify-between">
         <p className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">
-          直近2時間の盛り上がり
+          直近24時間の盛り上がり
         </p>
         <Link href="/post" className="text-xs font-bold text-[#ff3d00]">
           投稿する →
@@ -236,7 +236,7 @@ export default function HomePageClient({
       {filteredFeed.length === 0 ? (
         <div className="rounded-2xl border border-[#ffaa00]/20 bg-[#ffaa00]/10 px-4 py-8 text-center">
           <p className="text-sm font-medium text-[#ffaa00]">
-            直近2時間の投稿はまだありません
+            直近24時間の投稿はまだありません
           </p>
           <p className="mt-2 text-xs text-[#9994a8]">
             最初の投稿者になって、このお店を mazare に登録しましょう。

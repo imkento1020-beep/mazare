@@ -29,7 +29,7 @@ export default function MapActivitySheet({
           <div>
             <h3 className="text-lg font-black">{activity.shop.name}</h3>
             <p className="mt-1 text-xs text-[#9994a8]">
-              直近2時間 · 投稿 {activity.postCount}件 · ユニーク{" "}
+              直近24時間 · 投稿 {activity.postCount}件 · ユニーク{" "}
               {activity.uniquePosterCount}人
             </p>
           </div>

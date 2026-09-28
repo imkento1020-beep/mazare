@@ -1,5 +1,6 @@
 import { getGooglePlacesApiKey } from "@/lib/places/config";
 import type { PlaceSummary } from "@/lib/places/types";
+import { labelsFromGooglePlaceTypes } from "@/lib/home/genreDisplay";
 
 type LegacyPlace = {
   place_id?: string;
@@ -10,15 +11,6 @@ type LegacyPlace = {
   photos?: Array<{ photo_reference?: string }>;
   opening_hours?: { weekday_text?: string[] };
 };
-
-function mapTypesToGenre(types: string[] | undefined): string[] {
-  if (!types?.length) return ["飲食店"];
-  const foodish = types.filter((t) =>
-    /restaurant|bar|cafe|night_club|food|meal/i.test(t),
-  );
-  if (foodish.length === 0) return ["飲食店"];
-  return foodish.slice(0, 3).map((t) => t.replace(/_/g, " "));
-}
 
 function legacyPhotoUrl(apiKey: string, photoReference: string | undefined) {
   if (!photoReference) return null;
@@ -43,7 +35,7 @@ function mapLegacyPlace(place: LegacyPlace, apiKey: string): PlaceSummary | null
     address: place.formatted_address ?? "",
     latitude: lat,
     longitude: lng,
-    types: mapTypesToGenre(place.types),
+    types: labelsFromGooglePlaceTypes(place.types, 3),
     openHoursText: hours?.length ? hours.join("\n") : null,
     photoUrl: legacyPhotoUrl(apiKey, place.photos?.[0]?.photo_reference),
     shopId: null,
