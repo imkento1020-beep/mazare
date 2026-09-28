@@ -39,7 +39,7 @@ import { getDistanceLabel } from "@/lib/geo/haversine";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import CheckinAvatarStack from "@/components/checkins/CheckinAvatarStack";
 import BackButton from "@/components/layout/BackButton";
-import PostSourceBadge from "@/components/posts/PostSourceBadge";
+import PostAuthorBadge from "@/components/posts/PostAuthorBadge";
 import FavoriteButton from "@/components/favorites/FavoriteButton";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
@@ -309,7 +309,7 @@ export default function ShopDetailPage() {
           <div className="min-w-0">
             <h1 className="text-2xl font-black">{shop.name}</h1>
             {latestPost && (
-              <PostSourceBadge post={latestPost} className="mt-2" />
+              <PostAuthorBadge post={latestPost} className="mt-2" />
             )}
             <p className="mt-1 text-sm text-[#ff3d00]">{formatGenre(shop.genre)}</p>
           </div>

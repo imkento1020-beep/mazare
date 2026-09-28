@@ -6,7 +6,7 @@ import {
   formatShopGenreLabels,
   genreDisplayEmoji,
 } from "@/lib/home/genreDisplay";
-import PostSourceBadge from "@/components/posts/PostSourceBadge";
+import PostAuthorBadge from "@/components/posts/PostAuthorBadge";
 import NightOutBadge from "@/components/posts/NightOutBadge";
 
 function mediaPreview(item: RecentShopFeedItem) {
@@ -73,7 +73,7 @@ export default function RecentShopCard({
           </div>
         </div>
         <div className="p-4">
-          <PostSourceBadge post={item.latestPost} className="mb-2" />
+          <PostAuthorBadge post={item.latestPost} className="mb-2" />
           <h3 className="text-lg font-black leading-tight">{item.shop.name}</h3>
           <div className="mt-2 flex flex-wrap gap-1.5">
               {displayGenres.map((label) => (

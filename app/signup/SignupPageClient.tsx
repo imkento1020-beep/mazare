@@ -14,6 +14,7 @@ import {
   DISPLAY_NAME_MAX_LENGTH,
   validateDisplayName,
 } from "@/lib/auth/displayName";
+import { syncProfileAfterAuth } from "@/lib/auth/syncProfileAfterAuth";
 
 type UserType = "guest" | "owner";
 
@@ -131,12 +132,11 @@ export default function SignupPageClient() {
       return;
     }
 
-    const isUpgrade = searchParams.get("upgrade") === "1";
     const {
       data: { user: currentUser },
     } = await supabase.auth.getUser();
 
-    if (isUpgrade && isAnonymousUser(currentUser)) {
+    if (isAnonymousUser(currentUser)) {
       const { error: upgradeError } = await supabase.auth.updateUser({
         email,
         password,
@@ -148,6 +148,13 @@ export default function SignupPageClient() {
       if (upgradeError) {
         setError(upgradeError.message);
         return;
+      }
+
+      const {
+        data: { user: upgradedUser },
+      } = await supabase.auth.getUser();
+      if (upgradedUser) {
+        await syncProfileAfterAuth(upgradedUser);
       }
 
       setEmailSent(true);

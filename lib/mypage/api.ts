@@ -35,7 +35,7 @@ export async function fetchGuestProfile(user: User): Promise<{
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, user_type, profile_image, created_at")
+    .select("id, user_type, profile_image, created_at, display_name")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -59,7 +59,9 @@ export async function fetchGuestProfile(user: User): Promise<{
       user_type: data?.user_type ?? "guest",
       profile_image: data?.profile_image ?? null,
       created_at: data?.created_at ?? null,
-      display_name: getDisplayName(user),
+      display_name:
+        (typeof data?.display_name === "string" && data.display_name.trim()) ||
+        getDisplayName(user),
       email: user.email ?? "",
     },
     error: null,

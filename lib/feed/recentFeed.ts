@@ -3,6 +3,7 @@ import { fetchShopsFromDb } from "@/lib/home/shops";
 import { getRecentPostsWindowStart, isWithinRecentPostsWindow } from "@/lib/home/recentWindow";
 import { getTrendingTagWindowJST } from "@/lib/home/recentWindow";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
+import { attachAuthorDisplayNames } from "@/lib/profile/publicProfile";
 import type { Shop, VibePost } from "@/lib/home/types";
 
 export type RecentShopFeedItem = {
@@ -58,7 +59,8 @@ export async function fetchRecentVibePosts(): Promise<{
   const rows = (postsResult.data ?? []).map((row) =>
     mapPostRow(row as Record<string, unknown>, shopsMap.get(String(row.shop_id)) ?? null),
   );
-  return { data: rows, error: null };
+  const withAuthors = await attachAuthorDisplayNames(rows);
+  return { data: withAuthors, error: null };
 }
 
 function mapPostRow(row: Record<string, unknown>, shop: Shop | null): VibePost {

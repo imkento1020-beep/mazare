@@ -7,6 +7,7 @@ import {
   type VibePost,
 } from "@/lib/home/types";
 import { fetchShopByIdFromDb } from "@/lib/home/shops";
+import { attachAuthorDisplayNames } from "@/lib/profile/publicProfile";
 
 export async function fetchShopById(id: string): Promise<{
   data: Shop | null;
@@ -22,7 +23,7 @@ export async function fetchShopPosts(shopId: string): Promise<{
   const { data, error } = await supabase
     .from("vibe_posts")
     .select(
-      "id, shop_id, comment, moods, images, posted_at, is_guest_post, hashtags, media_type, video_url",
+      "id, shop_id, comment, moods, images, posted_at, is_guest_post, hashtags, media_type, video_url, author_id, stop_number, drink_name, drink_cups",
     )
     .eq("shop_id", shopId)
     .lte("posted_at", new Date().toISOString())
@@ -46,12 +47,20 @@ export async function fetchShopPosts(shopId: string): Promise<{
             ? post.media_type
             : null,
         video_url: typeof post.video_url === "string" ? post.video_url : null,
+        author_id: typeof post.author_id === "string" ? post.author_id : null,
+        stop_number:
+          typeof post.stop_number === "number" ? post.stop_number : null,
+        drink_name:
+          typeof post.drink_name === "string" ? post.drink_name : null,
+        drink_cups:
+          typeof post.drink_cups === "number" ? post.drink_cups : null,
         shops: null,
       })),
     ),
   );
 
-  return { data: posts as VibePost[], error: null };
+  const withAuthors = await attachAuthorDisplayNames(posts as VibePost[]);
+  return { data: withAuthors, error: null };
 }
 
 export async function fetchShopInterestCount(shopId: string): Promise<number> {
