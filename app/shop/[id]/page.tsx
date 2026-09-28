@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -44,6 +44,7 @@ import FavoriteButton from "@/components/favorites/FavoriteButton";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import ShopVibePostItem from "@/components/home/ShopVibePostItem";
+import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
 import type { User } from "@supabase/supabase-js";
 
 function genreEmoji(genre: string) {
@@ -105,6 +106,10 @@ export default function ShopDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   const latestPost = posts[0] ?? null;
+  const tonightCupTotals = useMemo(
+    () => buildTonightCumulativeCupTotals(posts),
+    [posts],
+  );
 
   useEffect(() => {
     async function load() {
@@ -389,7 +394,13 @@ export default function ShopDetailPage() {
                 今夜の発信はまだありません
               </p>
             ) : (
-              posts.map((post) => <ShopVibePostItem key={post.id} post={post} />)
+              posts.map((post) => (
+                <ShopVibePostItem
+                  key={post.id}
+                  post={post}
+                  tonightTotalCups={tonightCupTotals.get(post.id) ?? null}
+                />
+              ))
             )}
           </div>
         </section>

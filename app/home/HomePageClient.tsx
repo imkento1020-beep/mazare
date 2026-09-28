@@ -13,6 +13,7 @@ import { ensureFreshSession } from "@/lib/auth/session";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { fetchTonightInterests, cancelInterest } from "@/lib/mypage/api";
 import type { TodayInterestRow, VibePost } from "@/lib/home/types";
+import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
 import RecentShopCard from "@/components/home/RecentShopCard";
 import TonightInterestsSection from "@/components/home/TonightInterestsSection";
 import GuestLayout from "@/components/layout/GuestLayout";
@@ -118,6 +119,11 @@ export default function HomePageClient({
       void supabase.removeChannel(channel);
     };
   }, [reloadFeed]);
+
+  const tonightCupTotals = useMemo(
+    () => buildTonightCumulativeCupTotals(recentPosts),
+    [recentPosts],
+  );
 
   const filteredFeed = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -248,6 +254,9 @@ export default function HomePageClient({
               onInterest={() => void handleInterest(item)}
               interested={interestedPostIds.has(item.latestPost.id)}
               interestLoading={submittingId === item.latestPost.id}
+              tonightTotalCups={
+                tonightCupTotals.get(item.latestPost.id) ?? null
+              }
             />
           ))}
         </div>

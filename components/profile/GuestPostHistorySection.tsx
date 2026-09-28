@@ -8,11 +8,14 @@ import {
   computeGuestPostAllTimeInsights,
   groupGuestPostsByNight,
 } from "@/lib/profile/postInsights";
+import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
 
 type GuestPostHistorySectionProps = {
   posts: VibePost[];
   emptyMessage?: string;
   showPostLink?: boolean;
+  /** 自分のプロフィール / マイページでは true */
+  allowEdit?: boolean;
 };
 
 function ChipRow({ label, items }: { label: string; items: string[] }) {
@@ -41,12 +44,17 @@ export default function GuestPostHistorySection({
   posts,
   emptyMessage = "公開中の投稿はまだありません",
   showPostLink = false,
+  allowEdit = false,
 }: GuestPostHistorySectionProps) {
   const allTime = useMemo(
     () => computeGuestPostAllTimeInsights(posts),
     [posts],
   );
   const nightGroups = useMemo(() => groupGuestPostsByNight(posts), [posts]);
+  const tonightCupTotals = useMemo(
+    () => buildTonightCumulativeCupTotals(posts),
+    [posts],
+  );
 
   return (
     <section className="mt-8">
@@ -102,7 +110,12 @@ export default function GuestPostHistorySection({
                 </div>
                 <div className="mt-2 space-y-2">
                   {group.posts.map((post) => (
-                    <MyGuestPostCard key={post.id} post={post} />
+                    <MyGuestPostCard
+                      key={post.id}
+                      post={post}
+                      showEdit={allowEdit}
+                      tonightTotalCups={tonightCupTotals.get(post.id) ?? null}
+                    />
                   ))}
                 </div>
               </div>

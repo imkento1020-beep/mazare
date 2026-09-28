@@ -121,7 +121,7 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
           </p>
         )}
 
-        <GuestPostHistorySection posts={posts} />
+        <GuestPostHistorySection posts={posts} allowEdit={isSelf} />
       </div>
     </GuestLayout>
   );

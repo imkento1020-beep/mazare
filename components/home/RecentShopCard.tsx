@@ -7,40 +7,15 @@ import {
   genreDisplayEmoji,
 } from "@/lib/home/genreDisplay";
 import PostAuthorBadge from "@/components/posts/PostAuthorBadge";
-import NightOutBadge from "@/components/posts/NightOutBadge";
-
-function mediaPreview(item: RecentShopFeedItem) {
-  const post = item.latestPost;
-  if (post.media_type === "video" && post.video_url) {
-    return (
-      <video
-        src={post.video_url}
-        className="h-full w-full object-cover"
-        muted
-        playsInline
-        preload="metadata"
-      />
-    );
-  }
-  const image = post.images?.[0];
-  if (image) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={image} alt="" className="h-full w-full object-cover" />
-    );
-  }
-  return (
-    <div className="flex h-full items-center justify-center bg-[#18181f] text-3xl">
-      🍻
-    </div>
-  );
-}
+import GuestPostMedia from "@/components/posts/GuestPostMedia";
+import GuestPostFooter from "@/components/posts/GuestPostFooter";
 
 type RecentShopCardProps = {
   item: RecentShopFeedItem;
   onInterest?: () => void;
   interestLoading?: boolean;
   interested?: boolean;
+  tonightTotalCups?: number | null;
 };
 
 export default function RecentShopCard({
@@ -48,43 +23,43 @@ export default function RecentShopCard({
   onInterest,
   interestLoading,
   interested,
+  tonightTotalCups = null,
 }: RecentShopCardProps) {
+  const post = item.latestPost;
   const genreLabels = formatShopGenreLabels(item.shop.genre, 2);
   const displayGenres = genreLabels.length > 0 ? genreLabels : ["飲食店"];
 
   return (
     <article className="overflow-hidden rounded-[14px] border border-white/7 bg-[#111118]">
       <Link href={`/shop/${item.shop.id}`} className="block">
-        <div className="relative aspect-[16/10] bg-[#18181f]">
-          {mediaPreview(item)}
-          <div className="absolute left-3 top-3 z-[1] max-w-[calc(100%-1.5rem)]">
-            <NightOutBadge post={item.latestPost} variant="overlay" />
-          </div>
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-3 pt-10">
-            <span className="inline-flex items-center gap-1.5 rounded-lg bg-black/55 px-3 py-1.5 backdrop-blur-sm">
-              <span className="text-sm leading-none" aria-hidden>
-                📝
-              </span>
-              <span className="text-sm font-black tabular-nums text-white">
-                {item.postCount}
-              </span>
-              <span className="text-[11px] font-semibold text-white/90">件の投稿</span>
+        <div className="relative">
+          <GuestPostMedia
+            mediaType={post.media_type}
+            images={post.images}
+            videoUrl={post.video_url}
+            compact
+          />
+          <div className="pointer-events-none absolute left-3 top-3">
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
+              <span className="tabular-nums">{item.postCount}</span>
+              件
             </span>
           </div>
         </div>
-        <div className="p-4">
-          <PostAuthorBadge post={item.latestPost} className="mb-2" />
+        <div className="space-y-3 px-3 py-3">
+          <PostAuthorBadge post={post} />
           <h3 className="text-lg font-black leading-tight">{item.shop.name}</h3>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-              {displayGenres.map((label) => (
-                <span
-                  key={label}
-                  className="inline-flex items-center gap-1 rounded-full border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-2.5 py-1 text-[11px] font-bold text-[#ffcc66]"
-                >
-                  <span aria-hidden>{genreDisplayEmoji(label)}</span>
-                  {label}
-                </span>
-              ))}
+          <GuestPostFooter post={post} tonightTotalCups={tonightTotalCups} />
+          <div className="flex flex-wrap gap-1.5">
+            {displayGenres.map((label) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1 rounded-full border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-2.5 py-1 text-[11px] font-bold text-[#ffcc66]"
+              >
+                <span aria-hidden>{genreDisplayEmoji(label)}</span>
+                {label}
+              </span>
+            ))}
           </div>
         </div>
       </Link>

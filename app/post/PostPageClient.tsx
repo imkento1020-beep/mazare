@@ -7,6 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import GoogleAttribution from "@/components/places/GoogleAttribution";
 import HashtagInput from "@/components/guest-post/HashtagInput";
 import TonightDrinkInput from "@/components/guest-post/TonightDrinkInput";
+import GuestPostComposePreview from "@/components/guest-post/GuestPostComposePreview";
 import { createGuestVibePost } from "@/lib/guest-post/createPost";
 import type { NightOutInput } from "@/lib/guest-post/nightOut";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
@@ -36,6 +37,7 @@ export default function PostPageClient({
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [comment, setComment] = useState("");
   const [nightOut, setNightOut] = useState<NightOutInput>({
     stopNumber: null,
     drinkName: "",
@@ -114,6 +116,10 @@ export default function PostPageClient({
       setError("お店を選んでください");
       return;
     }
+    if (!videoFile && imageFiles.length === 0) {
+      setError("写真または動画を添付してください");
+      return;
+    }
     if (!authReady) {
       setError("接続を準備しています。少し待ってから再度お試しください。");
       return;
@@ -146,6 +152,7 @@ export default function PostPageClient({
       shopId: selectedShopId,
       hashtags: tags,
       nightOut,
+      comment,
       imageFiles: videoFile ? undefined : imageFiles,
       videoFile,
     });
@@ -159,6 +166,7 @@ export default function PostPageClient({
 
     setSuccessShopName(selectedPlace.name);
     setTags([]);
+    setComment("");
     setNightOut({ stopNumber: null, drinkName: "", drinkCups: null });
     setImageFiles([]);
     setVideoFile(null);
@@ -205,7 +213,7 @@ export default function PostPageClient({
       <main className="mx-auto w-full max-w-lg flex-1 px-4 py-6">
         <h1 className="text-2xl font-black">今夜のお店をシェア</h1>
         <p className="mt-2 text-sm text-[#9994a8]">
-          お店を選んで、写真・動画・タグだけで投稿できます。
+          写真か動画がメイン。軒数やドリンクはその下に載せます。
         </p>
         {!mapsKeyLoading && !mapsApiKey && (
           <p className="mt-3 rounded-lg border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
@@ -259,17 +267,12 @@ export default function PostPageClient({
         </div>
 
         {selectedShopId && (
-          <section className="mt-8 space-y-6 rounded-[16px] border border-white/10 bg-[#111118] p-5">
-            <h2 className="text-lg font-black">投稿内容</h2>
-
-            <TonightDrinkInput
-              userId={user?.id ?? null}
-              value={nightOut}
-              onChange={setNightOut}
-            />
-
-            <div className="space-y-3">
-              <p className="text-sm font-bold text-[#9994a8]">写真または動画（任意）</p>
+          <section className="mt-8 space-y-6">
+            <div className="space-y-3 rounded-[16px] border border-[#ff3d00]/25 bg-[#111118] p-5">
+              <h2 className="text-lg font-black">写真・動画</h2>
+              <p className="text-[11px] text-[#9994a8]">
+                写真は Instagram 風 4:5、動画は TikTok 風 9:16 で表示されます
+              </p>
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
@@ -296,9 +299,39 @@ export default function PostPageClient({
               </p>
             </div>
 
+            <GuestPostComposePreview
+              userId={user?.id ?? null}
+              imageFiles={imageFiles}
+              videoFile={videoFile}
+              nightOut={nightOut}
+              comment={comment}
+              hashtags={tags}
+            />
+
+            <div className="space-y-3 rounded-[16px] border border-white/10 bg-[#111118] p-5">
+              <label htmlFor="guest-post-comment" className="text-sm font-black">
+                コメント（任意）
+              </label>
+              <textarea
+                id="guest-post-comment"
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                maxLength={500}
+                rows={3}
+                placeholder="今夜のひとこと…"
+                className="w-full resize-none rounded-[12px] border border-white/10 bg-[#080810] px-4 py-3 text-sm leading-relaxed outline-none focus:border-[#ff3d00]/40"
+              />
+            </div>
+
+            <TonightDrinkInput
+              userId={user?.id ?? null}
+              value={nightOut}
+              onChange={setNightOut}
+            />
+
             <details className="rounded-[12px] border border-white/10 bg-[#111118] px-4 py-3">
               <summary className="cursor-pointer text-xs font-semibold text-[#5a5668]">
-                ハッシュタグ（任意・詳細向け）
+                ハッシュタグ（任意）
               </summary>
               <div className="mt-4">
                 <HashtagInput tags={tags} onChange={setTags} />

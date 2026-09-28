@@ -4,26 +4,34 @@ import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 
 import { supabase } from "@/lib/supabase";
 import { getTonightWindowJST } from "@/lib/home/dates";
 import { DRINK_PRESETS, type NightOutInput } from "@/lib/guest-post/nightOut";
+import { fetchTonightCupSumForUser } from "@/lib/guest-post/fetchTonightCupSum";
+import { projectedTonightTotalCups } from "@/lib/guest-post/tonightCups";
 
 type TonightDrinkInputProps = {
   userId: string | null;
   value: NightOutInput;
   onChange: Dispatch<SetStateAction<NightOutInput>>;
+  /** 編集画面など、軒数の自動提案を出さない */
+  suggestStopNumber?: boolean;
+  excludePostId?: string;
 };
 
 export default function TonightDrinkInput({
   userId,
   value,
   onChange,
+  suggestStopNumber = true,
+  excludePostId,
 }: TonightDrinkInputProps) {
   const [customDrink, setCustomDrink] = useState("");
+  const [priorTonightCups, setPriorTonightCups] = useState(0);
   const suggestedStopRef = useRef(false);
   const showCustom =
     value.drinkName !== "" &&
     !DRINK_PRESETS.includes(value.drinkName as (typeof DRINK_PRESETS)[number]);
 
   useEffect(() => {
-    if (!userId || suggestedStopRef.current) return;
+    if (!suggestStopNumber || !userId || suggestedStopRef.current) return;
 
     let cancelled = false;
 
@@ -51,7 +59,26 @@ export default function TonightDrinkInput({
     return () => {
       cancelled = true;
     };
-  }, [userId, onChange]);
+  }, [suggestStopNumber, userId, onChange]);
+
+  useEffect(() => {
+    if (!userId) {
+      setPriorTonightCups(0);
+      return;
+    }
+    let cancelled = false;
+    void fetchTonightCupSumForUser(userId, { excludePostId }).then((sum) => {
+      if (!cancelled) setPriorTonightCups(sum);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, excludePostId]);
+
+  const projectedTotal = projectedTonightTotalCups(priorTonightCups, {
+    drink_name: value.drinkName.trim() || null,
+    drink_cups: value.drinkCups,
+  });
 
   function setStop(n: number | null) {
     onChange({ ...value, stopNumber: n });
@@ -147,7 +174,10 @@ export default function TonightDrinkInput({
 
       {value.drinkName && (
         <div>
-          <p className="text-sm font-black text-[#eeeaf4]">だいたい何杯目？</p>
+          <p className="text-sm font-black text-[#eeeaf4]">この一杯は何杯目？</p>
+          <p className="mt-1 text-[11px] text-[#9994a8]">
+            このお店・このお酒の杯数（今夜トータルは下に表示）
+          </p>
           <div className="mt-3 flex items-center gap-3">
             <button
               type="button"
@@ -170,6 +200,11 @@ export default function TonightDrinkInput({
               +
             </button>
           </div>
+          {projectedTotal != null && projectedTotal > 0 && (
+            <p className="mt-3 rounded-[10px] border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-3 py-2 text-center text-sm font-black text-[#ffcc66]">
+              今夜トータル {projectedTotal}杯目
+            </p>
+          )}
         </div>
       )}
     </div>

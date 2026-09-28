@@ -3,66 +3,57 @@
 import Link from "next/link";
 import type { VibePost } from "@/lib/home/types";
 import { formatPostedAt } from "@/lib/home/types";
-import NightOutBadge from "@/components/posts/NightOutBadge";
-import { hasNightOutInfo } from "@/lib/guest-post/nightOut";
-
-function mediaPreview(post: VibePost) {
-  if (post.media_type === "video" && post.video_url) {
-    return (
-      <video
-        src={post.video_url}
-        className="h-full w-full object-cover"
-        muted
-        playsInline
-        preload="metadata"
-      />
-    );
-  }
-  const image = post.images?.[0];
-  if (image) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={image} alt="" className="h-full w-full object-cover" />
-    );
-  }
-  return (
-    <div className="flex h-full items-center justify-center bg-[#18181f] text-2xl">
-      🍻
-    </div>
-  );
-}
+import GuestPostCard from "@/components/posts/GuestPostCard";
+import PostAuthorBadge from "@/components/posts/PostAuthorBadge";
 
 type MyGuestPostCardProps = {
   post: VibePost;
+  showEdit?: boolean;
+  tonightTotalCups?: number | null;
+  showAuthor?: boolean;
 };
 
-export default function MyGuestPostCard({ post }: MyGuestPostCardProps) {
+export default function MyGuestPostCard({
+  post,
+  showEdit = false,
+  tonightTotalCups = null,
+  showAuthor = false,
+}: MyGuestPostCardProps) {
   const shopName = post.shops?.name ?? "お店";
-  const showNightOut = hasNightOutInfo(post);
 
   return (
-    <Link
-      href={`/shop/${post.shop_id}`}
-      className="flex gap-3 overflow-hidden rounded-[14px] border border-white/[0.07] bg-[#111118] p-3 transition hover:border-[#ff3d00]/30"
-    >
-      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-[10px] bg-[#18181f]">
-        {mediaPreview(post)}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <p className="truncate font-bold text-[#eeeaf4]">{shopName}</p>
-          <span className="shrink-0 text-[10px] text-[#5a5668]">
-            {formatPostedAt(post.posted_at)}
-          </span>
-        </div>
-        {showNightOut ? (
-          <NightOutBadge post={post} className="mt-1 text-xs" />
-        ) : post.comment ? (
-          <p className="mt-1 line-clamp-2 text-sm text-[#9994a8]">{post.comment}</p>
-        ) : (
-          <p className="mt-1 text-sm text-[#5a5668]">写真・動画投稿</p>
-        )}
-      </div>
-    </Link>
+    <div className="space-y-2">
+      <GuestPostCard
+        post={post}
+        tonightTotalCups={tonightTotalCups}
+        compact
+        header={
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              {showAuthor && <PostAuthorBadge post={post} className="mb-1" />}
+              <Link
+                href={`/shop/${post.shop_id}`}
+                className="block truncate text-sm font-bold text-[#eeeaf4] hover:text-[#ff3d00]"
+              >
+                {shopName}
+              </Link>
+              {post.posted_at && (
+                <p className="text-[10px] text-[#5a5668]">
+                  {formatPostedAt(post.posted_at)}
+                </p>
+              )}
+            </div>
+            {showEdit && (
+              <Link
+                href={`/post/edit/${post.id}`}
+                className="shrink-0 rounded-[10px] border border-white/10 px-3 py-2 text-[11px] font-bold text-[#9994a8] transition hover:border-[#ff3d00]/40 hover:text-[#ff3d00]"
+              >
+                編集
+              </Link>
+            )}
+          </div>
+        }
+      />
+    </div>
   );
 }

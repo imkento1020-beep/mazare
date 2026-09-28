@@ -297,6 +297,7 @@ export default function MyPage() {
         <GuestPostHistorySection
           posts={myPosts}
           showPostLink
+          allowEdit
           emptyMessage="まだ投稿がありません。今夜のお店をシェアしてみましょう。"
         />
       </div>
