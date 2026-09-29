@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
@@ -59,11 +59,6 @@ export default function NearbyPageClient({
       setLoadingPlaces(false);
     }
   }, [mapsApiKey]);
-
-  useEffect(() => {
-    if (mapsKeyLoading || !mapsApiKey) return;
-    void loadNearby();
-  }, [mapsKeyLoading, mapsApiKey, loadNearby]);
 
   async function handleSearch(event: React.FormEvent) {
     event.preventDefault();
@@ -130,18 +125,30 @@ export default function NearbyPageClient({
           </button>
         </form>
 
+        <button
+          type="button"
+          disabled={loadingPlaces || !mapsApiKey || mapsKeyLoading}
+          onClick={() => void loadNearby()}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] border border-[#ff3d00]/35 bg-[#ff3d00]/10 py-3.5 text-sm font-bold text-[#eeeaf4] transition hover:bg-[#ff3d00]/15 disabled:opacity-50"
+        >
+          <span aria-hidden>📍</span>
+          現在地から近くのお店を表示
+        </button>
+
         <div className="mt-4 flex items-center justify-between">
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#5a5668]">
             一覧
           </p>
-          <button
-            type="button"
-            onClick={() => void loadNearby()}
-            disabled={loadingPlaces || !mapsApiKey}
-            className="text-[11px] font-semibold text-[#ff3d00] disabled:opacity-50"
-          >
-            現在地で更新
-          </button>
+          {places.length > 0 && (
+            <button
+              type="button"
+              onClick={() => void loadNearby()}
+              disabled={loadingPlaces || !mapsApiKey}
+              className="text-[11px] font-semibold text-[#ff3d00] disabled:opacity-50"
+            >
+              現在地で更新
+            </button>
+          )}
         </div>
 
         {loadingPlaces && (

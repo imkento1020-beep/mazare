@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
@@ -91,11 +91,6 @@ export default function PostPageClient({
       setLoadingPlaces(false);
     }
   }, [mapsApiKey]);
-
-  useEffect(() => {
-    if (mapsKeyLoading || !mapsApiKey) return;
-    void loadNearby();
-  }, [loadNearby, mapsApiKey, mapsKeyLoading]);
 
   async function handleSearch(event: React.FormEvent) {
     event.preventDefault();
@@ -256,6 +251,16 @@ export default function PostPageClient({
             検索
           </button>
         </form>
+
+        <button
+          type="button"
+          disabled={loadingPlaces || !mapsApiKey || mapsKeyLoading}
+          onClick={() => void loadNearby()}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] border border-[#ff3d00]/35 bg-[#ff3d00]/10 py-3.5 text-sm font-bold text-[#eeeaf4] transition hover:bg-[#ff3d00]/15 disabled:opacity-50"
+        >
+          <span aria-hidden>📍</span>
+          現在地から近くのお店を表示
+        </button>
 
         <div className="mt-4 space-y-2">
           {loadingPlaces && (

@@ -6,7 +6,7 @@ export type DeviceCoords = {
 function geolocationFailureMessage(error: GeolocationPositionError): string {
   switch (error.code) {
     case error.PERMISSION_DENIED:
-      return "位置情報の利用が拒否されています。ブラウザ設定で mazare.app を許可するか、検索でお店を選んでください。";
+      return "位置情報を使えません。下の「現在地から表示」をタップして許可するか、以前ブロックした場合はブラウザのサイト設定（mazare.app の位置情報）を「許可」に変更してください。検索からお店を選ぶこともできます。";
     case error.POSITION_UNAVAILABLE:
       return "位置情報を取得できませんでした。電波状況を確認するか、検索でお店を選んでください。";
     case error.TIMEOUT:
