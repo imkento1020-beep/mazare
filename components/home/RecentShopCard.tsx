@@ -11,6 +11,7 @@ type RecentShopCardProps = {
   interested?: boolean;
   tonightTotalCups?: number | null;
   interestCount?: number;
+  commentCount?: number;
   userLocation?: GeoPoint | null;
 };
 
@@ -21,6 +22,7 @@ export default function RecentShopCard({
   interested,
   tonightTotalCups = null,
   interestCount = 0,
+  commentCount = 0,
   userLocation = null,
 }: RecentShopCardProps) {
   const post = {
@@ -33,6 +35,7 @@ export default function RecentShopCard({
       post={post}
       tonightTotalCups={tonightTotalCups}
       interestCount={interestCount}
+      commentCount={commentCount}
       userLocation={userLocation}
       onInterest={onInterest}
       interestLoading={interestLoading}

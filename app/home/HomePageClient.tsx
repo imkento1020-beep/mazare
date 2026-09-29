@@ -15,6 +15,7 @@ import { fetchTonightInterests, cancelInterest } from "@/lib/mypage/api";
 import type { TodayInterestRow, VibePost } from "@/lib/home/types";
 import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
 import { fetchInterestCountsByPostIds } from "@/lib/interests/postInterestCounts";
+import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import RecentShopCard from "@/components/home/RecentShopCard";
 import TonightInterestsSection from "@/components/home/TonightInterestsSection";
@@ -50,6 +51,9 @@ export default function HomePageClient({
   const [interestCounts, setInterestCounts] = useState<Map<string, number>>(
     new Map(),
   );
+  const [commentCounts, setCommentCounts] = useState<Map<string, number>>(
+    new Map(),
+  );
   const { location: userLocation } = useUserLocation();
 
   const reloadFeed = useCallback(async (activeUser: User | null) => {
@@ -57,8 +61,13 @@ export default function HomePageClient({
     if (feedError) setError(feedError);
     setRecentPosts(data);
     setFeedItems(buildRecentShopFeed(data));
-    const counts = await fetchInterestCountsByPostIds(data.map((p) => p.id));
+    const postIds = data.map((p) => p.id);
+    const [counts, commentMap] = await Promise.all([
+      fetchInterestCountsByPostIds(postIds),
+      fetchCommentCountsByPostIds(postIds),
+    ]);
     setInterestCounts(counts);
+    setCommentCounts(commentMap);
 
     if (activeUser) {
       const { data: myInterests } = await supabase
@@ -266,6 +275,7 @@ export default function HomePageClient({
                 tonightCupTotals.get(item.latestPost.id) ?? null
               }
               interestCount={interestCounts.get(item.latestPost.id) ?? 0}
+              commentCount={commentCounts.get(item.latestPost.id) ?? 0}
               userLocation={userLocation}
             />
           ))}

@@ -11,6 +11,9 @@ import {
   getTonightCupDisplay,
   getVisitOrder,
 } from "@/lib/guest-post/nightOut";
+import VibePostCommentSheet from "@/components/comments/VibePostCommentSheet";
+import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
+import { supabase } from "@/lib/supabase";
 
 type GuestPostFeedCardProps = {
   post: VibePost;
@@ -145,6 +148,36 @@ export default function GuestPostFeedCard({
   className = "",
 }: GuestPostFeedCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [liveCommentCount, setLiveCommentCount] = useState(commentCount);
+
+  useEffect(() => {
+    setLiveCommentCount(commentCount);
+  }, [commentCount]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`post-comment-count-${post.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "comments",
+          filter: `vibe_post_id=eq.${post.id}`,
+        },
+        () => {
+          void fetchCommentCountsByPostIds([post.id]).then((map) => {
+            setLiveCommentCount(map.get(post.id) ?? 0);
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [post.id]);
   const shop = post.shops;
   const visitOrder = getVisitOrder(post);
   const cupTotal = getTonightCupDisplay(post, tonightTotalCups);
@@ -241,14 +274,17 @@ export default function GuestPostFeedCard({
             </button>
             <button
               type="button"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCommentsOpen(true);
+              }}
               className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-white/10 text-[10px] leading-none backdrop-blur-sm"
               aria-label="コメント"
             >
               <span>💬</span>
-              {commentCount > 0 && (
+              {liveCommentCount > 0 && (
                 <span className="mt-0.5 text-[8px] font-bold text-[#9994a8]">
-                  {commentCount}
+                  {liveCommentCount}
                 </span>
               )}
             </button>
@@ -332,6 +368,13 @@ export default function GuestPostFeedCard({
       {isExpanded && (
         <MediaExpandOverlay post={post} onClose={() => setIsExpanded(false)} />
       )}
+
+      <VibePostCommentSheet
+        vibePostId={post.id}
+        open={commentsOpen}
+        onClose={() => setCommentsOpen(false)}
+        onCountChange={setLiveCommentCount}
+      />
     </article>
   );
 }

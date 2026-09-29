@@ -13,6 +13,7 @@ type ShopVibePostItemProps = {
   compact?: boolean;
   tonightTotalCups?: number | null;
   interestCount?: number;
+  commentCount?: number;
   userLocation?: GeoPoint | null;
 };
 
@@ -21,6 +22,7 @@ export default function ShopVibePostItem({
   compact = false,
   tonightTotalCups = null,
   interestCount = 0,
+  commentCount = 0,
   userLocation = null,
 }: ShopVibePostItemProps) {
   const viewRef = usePostViewTracking(post.id);
@@ -33,8 +35,9 @@ export default function ShopVibePostItem({
           post={post}
           tonightTotalCups={tonightTotalCups}
           interestCount={interestCount}
+          commentCount={commentCount}
           userLocation={userLocation}
-          showActions={false}
+          showActions
           shopHref={`/shop/${post.shop_id}`}
         />
       </div>

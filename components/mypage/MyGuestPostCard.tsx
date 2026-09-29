@@ -20,7 +20,7 @@ export default function MyGuestPostCard({
       <GuestPostFeedCard
         post={post}
         tonightTotalCups={tonightTotalCups}
-        showActions={false}
+        showActions
         shopHref={`/shop/${post.shop_id}`}
       />
       {showEdit && (
