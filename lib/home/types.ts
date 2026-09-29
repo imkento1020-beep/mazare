@@ -1,4 +1,5 @@
 import { formatShopGenreDisplay } from "@/lib/home/genreDisplay";
+import { formatOpenHoursSummary } from "@/lib/shop/openHoursDisplay";
 
 export type Shop = {
   id: string;
@@ -61,8 +62,7 @@ export function formatGenre(genre: string | string[] | null | undefined) {
 }
 
 export function formatOpenHours(hours: unknown) {
-  if (typeof hours === "string") return hours;
-  return "—";
+  return formatOpenHoursSummary(hours);
 }
 
 export function normalizeMoods(moods: unknown): string[] {

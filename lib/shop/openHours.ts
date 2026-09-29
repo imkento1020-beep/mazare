@@ -1,4 +1,4 @@
-const OPEN_HOURS_PATTERN = /^(\d{2}:\d{2})\s*[-–]\s*(\d{2}:\d{2})$/;
+export const OPEN_HOURS_PATTERN = /^(\d{2}:\d{2})\s*[-–]\s*(\d{2}:\d{2})$/;
 
 export type OpenHoursRange = {
   start: string;

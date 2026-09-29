@@ -19,11 +19,11 @@ import {
 import { notifyPostInterestCreated } from "@/lib/notifications/api";
 import {
   formatGenre,
-  formatOpenHours,
   getShopCoverImages,
   type Shop,
   type VibePost,
 } from "@/lib/home/types";
+import ShopOpenHours from "@/components/shop/ShopOpenHours";
 import {
   createCheckin,
   checkout,
@@ -350,9 +350,7 @@ export default function ShopDetailPage() {
           📍 {shop.address}
           {distance ? ` · ${distance}` : ""}
         </p>
-        <p className="mt-1 text-sm text-[#9994a8]">
-          🕙 {formatOpenHours(shop.open_hours)}
-        </p>
+        <ShopOpenHours hours={shop.open_hours} className="mt-3" />
 
         <CheckinAvatarStack users={checkinUsers} className="mt-4" />
 
