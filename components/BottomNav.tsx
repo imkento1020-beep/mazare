@@ -73,7 +73,7 @@ export default function BottomNav() {
   if (!items) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[100] border-t border-white/[0.07] bg-[rgba(8,8,16,0.92)] pb-5 backdrop-blur-[20px] md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-[100] border-t border-white/[0.07] bg-[rgba(8,8,16,0.92)] pb-[max(0.375rem,env(safe-area-inset-bottom,0px))] backdrop-blur-[20px] md:hidden">
       <div
         className={`mx-auto grid h-16 max-w-[480px] px-1 ${
           items.length === 4 ? "grid-cols-4" : "grid-cols-5"
