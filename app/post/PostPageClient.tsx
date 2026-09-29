@@ -8,6 +8,7 @@ import GoogleAttribution from "@/components/places/GoogleAttribution";
 import HashtagInput from "@/components/guest-post/HashtagInput";
 import GuestPostMetaFields from "@/components/guest-post/GuestPostMetaFields";
 import GuestPostComposePreview from "@/components/guest-post/GuestPostComposePreview";
+import GuestPostMediaUpload from "@/components/guest-post/GuestPostMediaUpload";
 import { createGuestVibePost } from "@/lib/guest-post/createPost";
 import type { NightOutInput } from "@/lib/guest-post/nightOut";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
@@ -283,36 +284,14 @@ export default function PostPageClient({
 
         {selectedShopId && (
           <section className="mt-8 space-y-6">
-            <div className="space-y-3 rounded-[16px] border border-[#ff3d00]/25 bg-[#111118] p-5">
-              <h2 className="text-lg font-black">写真・動画</h2>
-              <p className="text-[11px] text-[#9994a8]">
-                任意・どちらか一方。カード上は縦 4:5 で表示されます
-              </p>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                disabled={Boolean(videoFile)}
-                onChange={(event) => {
-                  setVideoFile(null);
-                  setImageFiles(Array.from(event.target.files ?? []).slice(0, 3));
-                }}
-                className="block w-full text-xs text-[#9994a8]"
-              />
-              <input
-                type="file"
-                accept="video/mp4,video/quicktime"
-                disabled={imageFiles.length > 0}
-                onChange={(event) => {
-                  setImageFiles([]);
-                  setVideoFile(event.target.files?.[0] ?? null);
-                }}
-                className="block w-full text-xs text-[#9994a8]"
-              />
-              <p className="text-[11px] text-[#5a5668]">
-                写真最大3枚（jpg/png/webp）または動画1本（30秒以内・mp4/mov）
-              </p>
-            </div>
+            <GuestPostMediaUpload
+              imageFiles={imageFiles}
+              videoFile={videoFile}
+              onChange={(images, video) => {
+                setImageFiles(images);
+                setVideoFile(video);
+              }}
+            />
 
             <GuestPostMetaFields
               userId={user?.id ?? null}
