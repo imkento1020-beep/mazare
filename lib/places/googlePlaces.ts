@@ -179,6 +179,7 @@ export async function searchNearbyPlaces(input: {
   latitude: number;
   longitude: number;
   radiusMeters?: number;
+  limit?: number;
 }): Promise<PlaceSummary[]> {
   return withLegacyFallback(
     () => searchNearbyPlacesNew(input),

@@ -8,6 +8,7 @@ export async function POST(request: Request) {
       latitude?: number;
       longitude?: number;
       radiusMeters?: number;
+      limit?: number;
     };
 
     if (body.latitude == null || body.longitude == null) {
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
       latitude: body.latitude,
       longitude: body.longitude,
       radiusMeters: body.radiusMeters,
+      limit: body.limit,
     });
 
     const withShops = await ensureShopsFromPlaces(places);

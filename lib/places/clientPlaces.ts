@@ -54,6 +54,21 @@ async function getPlacesLibrary(apiKey: string) {
   return importLibrary("places");
 }
 
+async function summariesFromPlaces(
+  places: google.maps.places.Place[],
+): Promise<PlaceSummary[]> {
+  const settled = await Promise.allSettled(
+    places.map((place) => toPlaceSummary(place)),
+  );
+  return settled
+    .filter(
+      (result): result is PromiseFulfilledResult<PlaceSummary | null> =>
+        result.status === "fulfilled",
+    )
+    .map((result) => result.value)
+    .filter((place): place is PlaceSummary => place !== null);
+}
+
 async function toPlaceSummary(
   place: google.maps.places.Place,
 ): Promise<PlaceSummary | null> {
@@ -147,6 +162,23 @@ async function runNearbySearch(
     }
   }
 
+  if (byId.size === 0) {
+    try {
+      const { places } = await Place.searchNearby({
+        ...base,
+        includedPrimaryTypes: ["restaurant", "bar", "night_club", "cafe", "pub"],
+      });
+      for (const place of places) {
+        const id = placeIdKey(place);
+        if (!id) continue;
+        if (!byId.has(id)) byId.set(id, place);
+        mergeGoogleTypes(googleTypesByPlaceId, id, rawGoogleTypes(place));
+      }
+    } catch {
+      // ignore — caller handles empty
+    }
+  }
+
   return {
     places: [...byId.values()],
     googleTypesByPlaceId,
@@ -171,8 +203,7 @@ export async function searchNearbyPlacesClient(
       maxResultCount: Math.min(Math.max(limit, 5), 10),
     });
 
-    const summaries = await Promise.all(places.map((place) => toPlaceSummary(place)));
-    const filtered = summaries.filter((place): place is PlaceSummary => place !== null);
+    const filtered = await summariesFromPlaces(places);
     const ranked = rankPlacesByNightlifeThenDistance(
       filtered,
       { latitude: input.latitude, longitude: input.longitude },
@@ -225,8 +256,7 @@ export async function searchPlacesByTextClient(
       if (id) mergeGoogleTypes(googleTypesByPlaceId, id, rawGoogleTypes(place));
     }
 
-    const summaries = await Promise.all(places.map((place) => toPlaceSummary(place)));
-    const filtered = summaries.filter((place): place is PlaceSummary => place !== null);
+    const filtered = await summariesFromPlaces(places);
 
     return rankPlacesByNightlifeThenDistance(
       filtered,

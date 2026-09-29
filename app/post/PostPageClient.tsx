@@ -15,11 +15,9 @@ import { ensureAnonymousSession } from "@/lib/auth/anonymous";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { countGuestPostsByUser } from "@/lib/auth/anonymous";
 import type { PlaceSummary } from "@/lib/places/types";
-import {
-  cachePlacesForPost,
-  searchNearbyPlacesClient,
-  searchPlacesByTextClient,
-} from "@/lib/places/clientPlaces";
+import { cachePlacesForPost, searchPlacesByTextClient } from "@/lib/places/clientPlaces";
+import { getDevicePosition } from "@/lib/geo/getDevicePosition";
+import { loadNearbyShopCandidates } from "@/lib/places/loadNearbyShops";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 
 type PostPageClientProps = {
@@ -77,25 +75,16 @@ export default function PostPageClient({
     setLoadingPlaces(true);
     setError(null);
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 12000,
-        });
-      });
-
-      const coords = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      };
+      const coords = await getDevicePosition();
       setUserCoords(coords);
 
-      const found = await searchNearbyPlacesClient(mapsApiKey, coords);
-      const cached = await cachePlacesForPost(found);
+      const cached = await loadNearbyShopCandidates(mapsApiKey, coords);
       setPlaces(cached);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "位置情報またはお店の取得に失敗しました",
+        err instanceof Error
+          ? err.message
+          : "位置情報またはお店の取得に失敗しました",
       );
     } finally {
       setLoadingPlaces(false);
