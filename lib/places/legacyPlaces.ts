@@ -1,6 +1,10 @@
 import { getGooglePlacesApiKey } from "@/lib/places/config";
 import type { PlaceSummary } from "@/lib/places/types";
 import { labelsFromGooglePlaceTypes } from "@/lib/home/genreDisplay";
+import {
+  NEARBY_ALL_PRIMARY_TYPES,
+  rankPlacesByNightlifeThenDistance,
+} from "@/lib/places/nightlifeRank";
 
 type LegacyPlace = {
   place_id?: string;
@@ -67,37 +71,51 @@ async function legacyGet<T>(path: string, params: Record<string, string>) {
   return data;
 }
 
-const NEARBY_TYPES = ["restaurant", "bar", "cafe"] as const;
-
 export async function searchNearbyPlacesLegacy(input: {
   latitude: number;
   longitude: number;
   radiusMeters?: number;
+  limit?: number;
 }): Promise<PlaceSummary[]> {
   const apiKey = getGooglePlacesApiKey();
   const location = `${input.latitude},${input.longitude}`;
   const radius = String(input.radiusMeters ?? 1200);
+  const limit = input.limit ?? 20;
 
   const responses = await Promise.all(
-    NEARBY_TYPES.map((type) =>
+    NEARBY_ALL_PRIMARY_TYPES.map((type) =>
       legacyGet<{ results?: LegacyPlace[] }>(
         "https://maps.googleapis.com/maps/api/place/nearbysearch/json",
         { location, radius, type },
-      ),
+      ).catch(() => ({ results: [] as LegacyPlace[] })),
     ),
   );
 
   const byId = new Map<string, PlaceSummary>();
+  const googleTypesByPlaceId = new Map<string, string[]>();
+
   for (const response of responses) {
     for (const place of response.results ?? []) {
       const summary = mapLegacyPlace(place, apiKey);
-      if (summary && !byId.has(summary.googlePlaceId)) {
+      if (!summary) continue;
+
+      if (!byId.has(summary.googlePlaceId)) {
         byId.set(summary.googlePlaceId, summary);
       }
+
+      const prev = googleTypesByPlaceId.get(summary.googlePlaceId) ?? [];
+      googleTypesByPlaceId.set(summary.googlePlaceId, [
+        ...new Set([...prev, ...(place.types ?? [])]),
+      ]);
     }
   }
 
-  return [...byId.values()].slice(0, 20);
+  return rankPlacesByNightlifeThenDistance(
+    [...byId.values()],
+    { latitude: input.latitude, longitude: input.longitude },
+    googleTypesByPlaceId,
+    limit,
+  );
 }
 
 export async function searchPlacesByTextLegacy(query: string): Promise<PlaceSummary[]> {

@@ -89,6 +89,7 @@ export default function NearbyPageClient({
         mapsApiKey,
         query,
         POST_PAGE_SEARCH_LIMIT,
+        userCoords ?? undefined,
       );
       const cached = await cachePlacesForPost(found);
       setPlaces(cached);
@@ -99,23 +100,19 @@ export default function NearbyPageClient({
     }
   }
 
-  const placesWithDistance = useMemo(() => {
-    if (!userCoords) return places.map((place) => ({ place, distanceKm: null as number | null }));
-
-    return [...places]
-      .map((place) => ({
+  const placesWithDistance = useMemo(
+    () =>
+      places.map((place) => ({
         place,
-        distanceKm: haversineDistanceKm(userCoords, {
-          latitude: place.latitude,
-          longitude: place.longitude,
-        }),
-      }))
-      .sort((a, b) => {
-        if (a.distanceKm == null) return 1;
-        if (b.distanceKm == null) return -1;
-        return a.distanceKm - b.distanceKm;
-      });
-  }, [places, userCoords]);
+        distanceKm: userCoords
+          ? haversineDistanceKm(userCoords, {
+              latitude: place.latitude,
+              longitude: place.longitude,
+            })
+          : null,
+      })),
+    [places, userCoords],
+  );
 
   return (
     <div className="flex min-h-dvh flex-col bg-[#080810] pb-24 text-[#eeeaf4]">
@@ -124,7 +121,8 @@ export default function NearbyPageClient({
       <main className="mx-auto w-full max-w-lg flex-1 px-4 py-6">
         <h1 className="text-2xl font-black">近くのお店</h1>
         <p className="mt-2 text-sm text-[#9994a8]">
-          現在地から近い順に最大{POST_PAGE_NEARBY_LIMIT}件。ほかのお店は検索してください。
+          居酒屋・バーなどを優先し、同じ優先度内では近い順に最大
+          {POST_PAGE_NEARBY_LIMIT}件。ほかのお店は検索してください。
         </p>
 
         {!mapsKeyLoading && !mapsApiKey && (

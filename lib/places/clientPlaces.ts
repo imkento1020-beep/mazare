@@ -5,7 +5,10 @@ import { configureGoogleMapsLoader } from "@/lib/map/google";
 import { ensureShopsFromPlacesClient } from "@/lib/places/cacheShopClient";
 import type { PlaceSummary } from "@/lib/places/types";
 import { labelsFromGooglePlaceTypes } from "@/lib/home/genreDisplay";
-import { haversineDistanceKm } from "@/lib/geo/haversine";
+import {
+  NEARBY_ALL_PRIMARY_TYPES,
+  rankPlacesByNightlifeThenDistance,
+} from "@/lib/places/nightlifeRank";
 
 /** 投稿画面の近くのお店候補（GPS） */
 export const POST_PAGE_NEARBY_LIMIT = 8;
@@ -31,6 +34,15 @@ function displayNameText(place: google.maps.places.Place) {
   return "名称未設定";
 }
 
+function placeIdKey(place: google.maps.places.Place) {
+  const id = place.id?.replace(/^places\//, "") ?? place.id;
+  return id ?? null;
+}
+
+function rawGoogleTypes(place: google.maps.places.Place): string[] {
+  return (place.types ?? []).map(String);
+}
+
 async function getPlacesLibrary(apiKey: string) {
   const trimmed = apiKey.trim();
   if (!trimmed) {
@@ -49,7 +61,7 @@ async function toPlaceSummary(
     await place.fetchFields({ fields: PLACE_FIELDS });
   }
 
-  const id = place.id?.replace(/^places\//, "") ?? place.id;
+  const id = placeIdKey(place);
   const location = place.location;
   if (!id || !location) return null;
 
@@ -76,22 +88,13 @@ async function toPlaceSummary(
   };
 }
 
-function sortPlacesByDistance(
-  places: PlaceSummary[],
-  latitude: number,
-  longitude: number,
-): PlaceSummary[] {
-  return [...places].sort((a, b) => {
-    const da = haversineDistanceKm(
-      { latitude, longitude },
-      { latitude: a.latitude, longitude: a.longitude },
-    );
-    const db = haversineDistanceKm(
-      { latitude, longitude },
-      { latitude: b.latitude, longitude: b.longitude },
-    );
-    return da - db;
-  });
+function mergeGoogleTypes(
+  target: Map<string, string[]>,
+  placeId: string,
+  types: string[],
+) {
+  const prev = target.get(placeId) ?? [];
+  target.set(placeId, [...new Set([...prev, ...types])]);
 }
 
 async function runNearbySearch(
@@ -102,32 +105,52 @@ async function runNearbySearch(
     radiusMeters?: number;
     maxResultCount?: number;
   },
-) {
+): Promise<{
+  places: google.maps.places.Place[];
+  googleTypesByPlaceId: Map<string, string[]>;
+}> {
+  const perTypeLimit = Math.min(Math.max(input.maxResultCount ?? POST_PAGE_NEARBY_LIMIT, 5), 10);
   const base = {
     fields: PLACE_FIELDS,
     locationRestriction: {
       center: { lat: input.latitude, lng: input.longitude },
       radius: input.radiusMeters ?? 1200,
     },
-    maxResultCount: input.maxResultCount ?? POST_PAGE_NEARBY_LIMIT,
+    maxResultCount: perTypeLimit,
     language: "ja",
     region: "jp",
   };
 
-  const primaryTypes = ["restaurant", "bar", "cafe", "night_club"] as const;
-  for (const type of primaryTypes) {
-    const { places } = await Place.searchNearby({
-      ...base,
-      includedPrimaryTypes: [type],
-    });
-    if (places.length > 0) return places;
+  const batches = await Promise.all(
+    NEARBY_ALL_PRIMARY_TYPES.map(async (primaryType) => {
+      try {
+        const { places } = await Place.searchNearby({
+          ...base,
+          includedPrimaryTypes: [primaryType],
+        });
+        return places;
+      } catch {
+        return [] as google.maps.places.Place[];
+      }
+    }),
+  );
+
+  const byId = new Map<string, google.maps.places.Place>();
+  const googleTypesByPlaceId = new Map<string, string[]>();
+
+  for (const places of batches) {
+    for (const place of places) {
+      const id = placeIdKey(place);
+      if (!id) continue;
+      if (!byId.has(id)) byId.set(id, place);
+      mergeGoogleTypes(googleTypesByPlaceId, id, rawGoogleTypes(place));
+    }
   }
 
-  const { places } = await Place.searchNearby({
-    ...base,
-    includedPrimaryTypes: ["restaurant"],
-  });
-  return places;
+  return {
+    places: [...byId.values()],
+    googleTypesByPlaceId,
+  };
 }
 
 export async function searchNearbyPlacesClient(
@@ -143,18 +166,19 @@ export async function searchNearbyPlacesClient(
 
   try {
     const { Place } = (await getPlacesLibrary(apiKey)) as google.maps.PlacesLibrary;
-    const places = await runNearbySearch(Place, {
+    const { places, googleTypesByPlaceId } = await runNearbySearch(Place, {
       ...input,
       maxResultCount: Math.min(Math.max(limit, 5), 10),
     });
 
     const summaries = await Promise.all(places.map((place) => toPlaceSummary(place)));
     const filtered = summaries.filter((place): place is PlaceSummary => place !== null);
-    const ranked = sortPlacesByDistance(
+    const ranked = rankPlacesByNightlifeThenDistance(
       filtered,
-      input.latitude,
-      input.longitude,
-    ).slice(0, limit);
+      { latitude: input.latitude, longitude: input.longitude },
+      googleTypesByPlaceId,
+      limit,
+    );
 
     if (ranked.length === 0) {
       throw new Error(
@@ -178,23 +202,38 @@ export async function searchPlacesByTextClient(
   apiKey: string,
   query: string,
   limit = POST_PAGE_SEARCH_LIMIT,
+  origin?: { latitude: number; longitude: number },
 ): Promise<PlaceSummary[]> {
   const capped = Math.min(Math.max(limit, 5), 10);
+  const nightlifeQuery = query.includes("飲食")
+    ? query
+    : `${query} 居酒屋 バー`;
 
   try {
     const { Place } = (await getPlacesLibrary(apiKey)) as google.maps.PlacesLibrary;
     const { places } = await Place.searchByText({
       fields: PLACE_FIELDS,
-      textQuery: query.includes("飲食") ? query : `${query} 飲食店`,
+      textQuery: nightlifeQuery,
       maxResultCount: capped,
       language: "ja",
       region: "jp",
     });
 
+    const googleTypesByPlaceId = new Map<string, string[]>();
+    for (const place of places) {
+      const id = placeIdKey(place);
+      if (id) mergeGoogleTypes(googleTypesByPlaceId, id, rawGoogleTypes(place));
+    }
+
     const summaries = await Promise.all(places.map((place) => toPlaceSummary(place)));
-    return summaries
-      .filter((place): place is PlaceSummary => place !== null)
-      .slice(0, capped);
+    const filtered = summaries.filter((place): place is PlaceSummary => place !== null);
+
+    return rankPlacesByNightlifeThenDistance(
+      filtered,
+      origin ?? null,
+      googleTypesByPlaceId,
+      capped,
+    );
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     throw new Error(

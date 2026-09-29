@@ -34,6 +34,10 @@ export default function PostPageClient({
   const { apiKey: mapsApiKey, loading: mapsKeyLoading } =
     useGoogleMapsApiKey(googleMapsApiKey);
   const [places, setPlaces] = useState<PlaceSummary[]>([]);
+  const [userCoords, setUserCoords] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [tags, setTags] = useState<string[]>([]);
@@ -80,10 +84,13 @@ export default function PostPageClient({
         });
       });
 
-      const found = await searchNearbyPlacesClient(mapsApiKey, {
+      const coords = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
-      });
+      };
+      setUserCoords(coords);
+
+      const found = await searchNearbyPlacesClient(mapsApiKey, coords);
       const cached = await cachePlacesForPost(found);
       setPlaces(cached);
     } catch (err) {
@@ -113,7 +120,12 @@ export default function PostPageClient({
     setLoadingPlaces(true);
     setError(null);
     try {
-      const found = await searchPlacesByTextClient(mapsApiKey, query);
+      const found = await searchPlacesByTextClient(
+        mapsApiKey,
+        query,
+        undefined,
+        userCoords ?? undefined,
+      );
       const cached = await cachePlacesForPost(found);
       setPlaces(cached);
     } catch (err) {
@@ -230,7 +242,7 @@ export default function PostPageClient({
       <main className="mx-auto w-full max-w-lg flex-1 px-4 py-6">
         <h1 className="text-2xl font-black">今夜のお店をシェア</h1>
         <p className="mt-2 text-sm text-[#9994a8]">
-          写真か動画がメイン。近くのお店は距離が近い順に最大8件、ほかは検索で選べます。
+          写真か動画がメイン。近くのお店は居酒屋・バーなどを優先し、同程度なら近い順に最大8件です。
         </p>
         {!mapsKeyLoading && !mapsApiKey && (
           <p className="mt-3 rounded-lg border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">

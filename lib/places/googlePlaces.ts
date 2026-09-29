@@ -11,6 +11,10 @@ import {
 } from "@/lib/places/legacyPlaces";
 import type { PlaceSummary } from "@/lib/places/types";
 import { labelsFromGooglePlaceTypes } from "@/lib/home/genreDisplay";
+import {
+  NEARBY_ALL_PRIMARY_TYPES,
+  rankPlacesByNightlifeThenDistance,
+} from "@/lib/places/nightlifeRank";
 
 type GooglePlace = {
   id?: string;
@@ -109,30 +113,66 @@ async function searchNearbyPlacesNew(input: {
   latitude: number;
   longitude: number;
   radiusMeters?: number;
+  limit?: number;
 }): Promise<PlaceSummary[]> {
   const apiKey = getGooglePlacesApiKey();
-  const data = await placesRequest<{ places?: GooglePlace[] }>(
-    "places:searchNearby",
-    {
-      locationRestriction: {
-        circle: {
-          center: {
-            latitude: input.latitude,
-            longitude: input.longitude,
-          },
-          radius: input.radiusMeters ?? 1200,
-        },
-      },
-      includedPrimaryTypes: ["restaurant", "bar", "cafe", "night_club"],
-      maxResultCount: 20,
-      languageCode: "ja",
-      regionCode: "JP",
+  const limit = input.limit ?? 20;
+  const radius = input.radiusMeters ?? 1200;
+  const circle = {
+    center: {
+      latitude: input.latitude,
+      longitude: input.longitude,
     },
+    radius,
+  };
+
+  const batches = await Promise.all(
+    NEARBY_ALL_PRIMARY_TYPES.map(async (primaryType) => {
+      try {
+        const data = await placesRequest<{ places?: GooglePlace[] }>(
+          "places:searchNearby",
+          {
+            locationRestriction: { circle },
+            includedPrimaryTypes: [primaryType],
+            maxResultCount: 10,
+            languageCode: "ja",
+            regionCode: "JP",
+          },
+        );
+        return data.places ?? [];
+      } catch {
+        return [] as GooglePlace[];
+      }
+    }),
   );
 
-  return (data.places ?? [])
+  const googleTypesByPlaceId = new Map<string, string[]>();
+  const byId = new Map<string, GooglePlace>();
+
+  for (const places of batches) {
+    for (const place of places) {
+      const googlePlaceId =
+        place.id?.replace(/^places\//, "") ?? place.id ?? "";
+      if (!googlePlaceId) continue;
+
+      if (!byId.has(googlePlaceId)) byId.set(googlePlaceId, place);
+      const prev = googleTypesByPlaceId.get(googlePlaceId) ?? [];
+      googleTypesByPlaceId.set(googlePlaceId, [
+        ...new Set([...prev, ...(place.types ?? [])]),
+      ]);
+    }
+  }
+
+  const summaries = [...byId.values()]
     .map((place) => mapGooglePlaceToSummary(place, apiKey))
     .filter((place): place is PlaceSummary => place !== null);
+
+  return rankPlacesByNightlifeThenDistance(
+    summaries,
+    { latitude: input.latitude, longitude: input.longitude },
+    googleTypesByPlaceId,
+    limit,
+  );
 }
 
 export async function searchNearbyPlaces(input: {
