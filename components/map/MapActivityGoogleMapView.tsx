@@ -28,9 +28,18 @@ type MapActivityGoogleMapViewProps = {
   onSelectShop?: (shopId: string) => void;
 };
 
+/** Tier-1 pins use brand amber at ~40% opacity (#ffaa0066) so they read as active, not closed. */
+const TIER1_FILL_OPACITY = 0.4;
+
 function pinStyle(tier: 1 | 2 | 3, selected: boolean) {
   if (tier === 1) {
-    return { scale: 12, fill: "#5a5668", stroke: selected ? "#ffffff" : "#9994a8", z: 1 };
+    return {
+      scale: 12,
+      fill: "#ffaa00",
+      fillOpacity: TIER1_FILL_OPACITY,
+      stroke: selected ? "#ffffff" : "#ffaa00",
+      z: 1,
+    };
   }
   if (tier === 2) {
     return { scale: 18, fill: "#ffaa00", stroke: "#ffffff", z: 2 };
@@ -43,7 +52,7 @@ function createIcon(options: ReturnType<typeof pinStyle>) {
     path: google.maps.SymbolPath.CIRCLE,
     scale: options.scale,
     fillColor: options.fill,
-    fillOpacity: 1,
+    fillOpacity: "fillOpacity" in options ? options.fillOpacity : 1,
     strokeColor: options.stroke,
     strokeWeight: options.z === 3 ? 3 : 2,
   };

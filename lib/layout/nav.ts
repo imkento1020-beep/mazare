@@ -2,7 +2,7 @@ export const GUEST_BOTTOM_NAV = [
   { label: "ホーム", href: "/home", icon: "🏠" },
   { label: "地図", href: "/map", icon: "🗺️" },
   { label: "投稿", href: "/post", icon: "📸" },
-  { label: "タグ", href: "/trending", icon: "🔥" },
+  { label: "近く", href: "/nearby", icon: "📍" },
   { label: "マイページ", href: "/mypage", icon: "👤" },
 ] as const;
 
@@ -34,6 +34,7 @@ export function isActivePath(pathname: string, href: string) {
   if (href === "/tonight") return pathname.startsWith("/tonight");
   if (href === "/post") return pathname.startsWith("/post");
   if (href === "/trending") return pathname.startsWith("/trending");
+  if (href === "/nearby") return pathname.startsWith("/nearby");
   if (href === "/favorites") return pathname.startsWith("/favorites");
   if (href === "/owner/dashboard") {
     return pathname === "/owner/dashboard" || pathname === "/owner";

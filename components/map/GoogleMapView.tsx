@@ -34,6 +34,9 @@ type GoogleMapViewProps = {
   onSelectShop?: (shopId: string) => void;
 };
 
+const INACTIVE_SHOP_FILL = "#ffaa00";
+const INACTIVE_SHOP_FILL_OPACITY = 0.4;
+
 function createMarkerIcon(options: {
   live: boolean;
   selected: boolean;
@@ -41,16 +44,22 @@ function createMarkerIcon(options: {
 }): google.maps.Symbol {
   const { live, selected, preview } = options;
 
-  let fillColor = "#5a5668";
-  if (selected) fillColor = "#ffaa00";
-  else if (live) fillColor = "#ff3d00";
+  let fillColor = INACTIVE_SHOP_FILL;
+  let fillOpacity = INACTIVE_SHOP_FILL_OPACITY;
+  if (selected) {
+    fillColor = "#ffaa00";
+    fillOpacity = 1;
+  } else if (live) {
+    fillColor = "#ff3d00";
+    fillOpacity = 1;
+  }
 
   return {
     path: google.maps.SymbolPath.CIRCLE,
     scale: selected ? 14 : preview ? 8 : live ? 11 : 9,
     fillColor,
-    fillOpacity: 1,
-    strokeColor: selected ? "#ffffff" : live ? "#ffffff" : "#9994a8",
+    fillOpacity,
+    strokeColor: selected ? "#ffffff" : live ? "#ffffff" : "#ffaa00",
     strokeWeight: selected ? 3 : preview ? 1.5 : 2,
   };
 }
