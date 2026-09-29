@@ -230,7 +230,7 @@ export default function PostPageClient({
       <main className="mx-auto w-full max-w-lg flex-1 px-4 py-6">
         <h1 className="text-2xl font-black">今夜のお店をシェア</h1>
         <p className="mt-2 text-sm text-[#9994a8]">
-          写真か動画がメイン。軒数やドリンクはその下に載せます。
+          写真か動画がメイン。近くのお店は距離が近い順に最大8件、ほかは検索で選べます。
         </p>
         {!mapsKeyLoading && !mapsApiKey && (
           <p className="mt-3 rounded-lg border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
