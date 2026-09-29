@@ -2,7 +2,7 @@ export const GUEST_BOTTOM_NAV = [
   { label: "ホーム", href: "/home", icon: "🏠" },
   { label: "地図", href: "/map", icon: "🗺️" },
   { label: "投稿", href: "/post", icon: "📸" },
-  { label: "近く", href: "/nearby", icon: "📍" },
+  { label: "お店", href: "/nearby", icon: "🏪" },
   { label: "マイページ", href: "/mypage", icon: "👤" },
 ] as const;
 

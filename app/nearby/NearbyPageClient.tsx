@@ -120,10 +120,6 @@ export default function NearbyPageClient({
 
       <main className="mx-auto w-full max-w-lg flex-1 px-4 py-6">
         <h1 className="text-2xl font-black">近くのお店</h1>
-        <p className="mt-2 text-sm text-[#9994a8]">
-          居酒屋・バーなどを優先し、同じ優先度内では近い順に最大
-          {POST_PAGE_NEARBY_LIMIT}件。ほかのお店は検索してください。
-        </p>
 
         {!mapsKeyLoading && !mapsApiKey && (
           <p className="mt-3 rounded-lg border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
