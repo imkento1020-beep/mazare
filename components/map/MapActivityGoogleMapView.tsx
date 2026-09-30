@@ -58,6 +58,15 @@ function createIcon(options: ReturnType<typeof pinStyle>) {
   };
 }
 
+const USER_LOCATION_ICON: google.maps.Symbol = {
+  path: google.maps.SymbolPath.CIRCLE,
+  scale: 9,
+  fillColor: "#4285F4",
+  fillOpacity: 1,
+  strokeColor: "#ffffff",
+  strokeWeight: 2.5,
+};
+
 export default function MapActivityGoogleMapView({
   apiKey: apiKeyProp,
   shops,
@@ -70,6 +79,7 @@ export default function MapActivityGoogleMapView({
   const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
   const pulseRef = useRef<Map<string, google.maps.Marker>>(new Map());
   const prevTierRef = useRef<Map<string, number>>(new Map());
+  const userMarkerRef = useRef<google.maps.Marker | null>(null);
   const onSelectShopRef = useRef(onSelectShop);
   const [mapReady, setMapReady] = useState(false);
 
@@ -104,6 +114,8 @@ export default function MapActivityGoogleMapView({
       for (const marker of pulseRef.current.values()) marker.setMap(null);
       markersRef.current.clear();
       pulseRef.current.clear();
+      userMarkerRef.current?.setMap(null);
+      userMarkerRef.current = null;
       mapRef.current = null;
       setMapReady(false);
     };
@@ -203,6 +215,30 @@ export default function MapActivityGoogleMapView({
       map.fitBounds(bounds, 64);
     }
   }, [mapReady, shops, selectedId]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map) return;
+
+    if (!focusLocation) {
+      userMarkerRef.current?.setMap(null);
+      return;
+    }
+
+    if (!userMarkerRef.current) {
+      userMarkerRef.current = new google.maps.Marker({
+        map,
+        position: focusLocation,
+        title: "現在地",
+        clickable: false,
+        icon: USER_LOCATION_ICON,
+        zIndex: 5,
+      });
+    } else {
+      userMarkerRef.current.setPosition(focusLocation);
+      userMarkerRef.current.setMap(map);
+    }
+  }, [focusLocation, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;

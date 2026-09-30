@@ -11,6 +11,7 @@ import {
   parseGuestPostBody,
 } from "@/lib/guest-post/composeBody";
 import GuestPostMetaFields from "@/components/guest-post/GuestPostMetaFields";
+import GuestPostBodyHashtagSuggestions from "@/components/guest-post/GuestPostBodyHashtagSuggestions";
 import GuestPostComposePreview from "@/components/guest-post/GuestPostComposePreview";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
@@ -216,9 +217,10 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
               placeholder="今夜のひとこと… #タグもこの欄に"
               className="w-full resize-none rounded-[12px] border border-white/10 bg-[#080810] px-4 py-3 text-sm leading-relaxed outline-none focus:border-[#ff3d00]/40"
             />
-            <p className="text-[10px] text-[#5a5668]">
-              #から始まるタグは自動でハッシュタグとして保存されます
-            </p>
+            <GuestPostBodyHashtagSuggestions
+              bodyText={bodyText}
+              onBodyTextChange={setBodyText}
+            />
           </div>
 
           <GuestPostComposePreview

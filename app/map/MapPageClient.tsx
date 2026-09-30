@@ -15,6 +15,8 @@ import {
 } from "@/lib/feed/recentFeed";
 import { notifyPostInterestCreated } from "@/lib/notifications/api";
 import type { User } from "@supabase/supabase-js";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { getDevicePositionOnUserGesture } from "@/lib/geo/getDevicePosition";
 
 type MapPageClientProps = {
   googleMapsApiKey: string;
@@ -38,6 +40,7 @@ export default function MapPageClient({
   const [loadError, setLoadError] = useState<string | null>(null);
   const { apiKey: resolvedMapsApiKey, loading: mapsKeyLoading } =
     useGoogleMapsApiKey(googleMapsApiKey);
+  const { location: deviceLocation } = useUserLocation();
 
   const reload = useCallback(async () => {
     const { data, error } = await fetchRecentVibePosts();
@@ -75,6 +78,14 @@ export default function MapPageClient({
       void supabase.removeChannel(channel);
     };
   }, [reload]);
+
+  useEffect(() => {
+    if (!deviceLocation) return;
+    setUserLocation({
+      lat: deviceLocation.latitude,
+      lng: deviceLocation.longitude,
+    });
+  }, [deviceLocation]);
 
   const mapShops = useMemo(
     () =>
@@ -170,12 +181,16 @@ export default function MapPageClient({
         <button
           type="button"
           onClick={() => {
-            navigator.geolocation.getCurrentPosition((position) => {
-              setUserLocation({
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
+            void getDevicePositionOnUserGesture()
+              .then((coords) => {
+                setUserLocation({
+                  lat: coords.latitude,
+                  lng: coords.longitude,
+                });
+              })
+              .catch(() => {
+                // 許可ダイアログまたは設定変更が必要
               });
-            });
           }}
           className="absolute right-4 top-4 z-10 rounded-full border border-white/10 bg-[#111118] px-4 py-2 text-xs font-bold"
         >

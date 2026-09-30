@@ -48,3 +48,17 @@ export function parseGuestPostBody(raw: string): {
     hashtags: extractHashtagsFromBody(comment),
   };
 }
+
+/** コメント本文の末尾にタグを追加（重複・140文字超過を避ける） */
+export function appendHashtagToBody(current: string, tag: string): string {
+  const normalized = normalizeHashtagInput(tag);
+  if (!normalized) return current;
+
+  if (extractHashtagsFromBody(current).includes(normalized)) {
+    return current;
+  }
+
+  const base = current.trim();
+  const next = base ? `${base} ${normalized}` : normalized;
+  return next.slice(0, GUEST_POST_BODY_MAX_LENGTH);
+}

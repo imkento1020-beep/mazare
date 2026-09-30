@@ -88,7 +88,7 @@ export default function GuestPostComposePreview({
   return (
     <div>
       <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#5a5668]">
-        カードプレビュー（4:5）
+        プレビュー
       </p>
       <GuestPostFeedCard post={draftPost} showActions={false} />
     </div>
