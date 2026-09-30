@@ -10,9 +10,14 @@ import {
 type HashtagInputProps = {
   tags: string[];
   onChange: (tags: string[]) => void;
+  showLabel?: boolean;
 };
 
-export default function HashtagInput({ tags, onChange }: HashtagInputProps) {
+export default function HashtagInput({
+  tags,
+  onChange,
+  showLabel = true,
+}: HashtagInputProps) {
   const [draft, setDraft] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([
     ...DEFAULT_HASHTAG_SUGGESTIONS,
@@ -43,7 +48,9 @@ export default function HashtagInput({ tags, onChange }: HashtagInputProps) {
 
   return (
     <div className="space-y-3">
-      <label className="text-sm font-bold text-[#eeeaf4]">ハッシュタグ（任意）</label>
+      {showLabel && (
+        <label className="text-sm font-bold text-[#eeeaf4]">ハッシュタグ（任意）</label>
+      )}
       <div className="flex flex-wrap gap-2">
         {tags.map((tag) => (
           <button

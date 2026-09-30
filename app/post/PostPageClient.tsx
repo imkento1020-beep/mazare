@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
@@ -17,8 +17,8 @@ import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { countGuestPostsByUser } from "@/lib/auth/anonymous";
 import type { PlaceSummary } from "@/lib/places/types";
 import { cachePlacesForPost, searchPlacesByTextClient } from "@/lib/places/clientPlaces";
-import { getDevicePosition } from "@/lib/geo/getDevicePosition";
-import { loadNearbyShopCandidates } from "@/lib/places/loadNearbyShops";
+import GeolocationPermissionHelp from "@/components/geo/GeolocationPermissionHelp";
+import { loadNearbyFromUserGesture } from "@/lib/places/loadNearbyFromUserGesture";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 
 type PostPageClientProps = {
@@ -52,6 +52,7 @@ export default function PostPageClient({
   const [loadingPlaces, setLoadingPlaces] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locationDenied, setLocationDenied] = useState(false);
   const [successShopName, setSuccessShopName] = useState<string | null>(null);
 
   const selectedPlace = useMemo(
@@ -70,27 +71,25 @@ export default function PostPageClient({
     };
   }, [selectedPlace]);
 
-  const loadNearby = useCallback(async () => {
+  function handleLoadNearbyClick() {
     if (!mapsApiKey) return;
 
     setLoadingPlaces(true);
     setError(null);
-    try {
-      const coords = await getDevicePosition();
-      setUserCoords(coords);
+    setLocationDenied(false);
 
-      const cached = await loadNearbyShopCandidates(mapsApiKey, coords);
-      setPlaces(cached);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "位置情報またはお店の取得に失敗しました",
-      );
-    } finally {
+    void loadNearbyFromUserGesture(mapsApiKey).then((result) => {
+      if (result.ok) {
+        setUserCoords(result.coords);
+        setPlaces(result.places);
+      } else if (result.kind === "denied") {
+        setLocationDenied(true);
+      } else {
+        setError(result.message);
+      }
       setLoadingPlaces(false);
-    }
-  }, [mapsApiKey]);
+    });
+  }
 
   async function handleSearch(event: React.FormEvent) {
     event.preventDefault();
@@ -255,12 +254,14 @@ export default function PostPageClient({
         <button
           type="button"
           disabled={loadingPlaces || !mapsApiKey || mapsKeyLoading}
-          onClick={() => void loadNearby()}
+          onClick={handleLoadNearbyClick}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] border border-[#ff3d00]/35 bg-[#ff3d00]/10 py-3.5 text-sm font-bold text-[#eeeaf4] transition hover:bg-[#ff3d00]/15 disabled:opacity-50"
         >
           <span aria-hidden>📍</span>
           現在地から近くのお店を表示
         </button>
+
+        {locationDenied && <GeolocationPermissionHelp className="mt-3" />}
 
         <div className="mt-4 space-y-2">
           {loadingPlaces && (
@@ -317,6 +318,21 @@ export default function PostPageClient({
                 placeholder="今夜のひとこと…"
                 className="w-full resize-none rounded-[12px] border border-white/10 bg-[#080810] px-4 py-3 text-sm leading-relaxed outline-none focus:border-[#ff3d00]/40"
               />
+              <details className="rounded-[12px] border border-white/10 bg-[#080810] px-3 py-2">
+                <summary className="cursor-pointer list-none text-xs font-semibold text-[#5a5668] [&::-webkit-details-marker]:hidden">
+                  ハッシュタグを追加（任意）
+                  {tags.length > 0 && (
+                    <span className="ml-2 text-[#ff3d00]">{tags.length}件</span>
+                  )}
+                </summary>
+                <div className="mt-3 border-t border-white/10 pt-3">
+                  <HashtagInput
+                    tags={tags}
+                    onChange={setTags}
+                    showLabel={false}
+                  />
+                </div>
+              </details>
             </div>
 
             <GuestPostComposePreview
@@ -326,15 +342,6 @@ export default function PostPageClient({
               comment={comment}
               shop={previewShop}
             />
-
-            <details className="rounded-[12px] border border-white/10 bg-[#111118] px-4 py-3">
-              <summary className="cursor-pointer text-xs font-semibold text-[#5a5668]">
-                ハッシュタグ（任意）
-              </summary>
-              <div className="mt-4">
-                <HashtagInput tags={tags} onChange={setTags} />
-              </div>
-            </details>
 
             <button
               type="button"

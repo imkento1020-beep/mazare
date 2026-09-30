@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
@@ -11,8 +11,8 @@ import {
   POST_PAGE_SEARCH_LIMIT,
   searchPlacesByTextClient,
 } from "@/lib/places/clientPlaces";
-import { getDevicePosition } from "@/lib/geo/getDevicePosition";
-import { loadNearbyShopCandidates } from "@/lib/places/loadNearbyShops";
+import GeolocationPermissionHelp from "@/components/geo/GeolocationPermissionHelp";
+import { loadNearbyFromUserGesture } from "@/lib/places/loadNearbyFromUserGesture";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 import {
   formatDistanceLabel,
@@ -37,28 +37,27 @@ export default function NearbyPageClient({
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingPlaces, setLoadingPlaces] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locationDenied, setLocationDenied] = useState(false);
 
-  const loadNearby = useCallback(async () => {
+  function handleLoadNearbyClick() {
     if (!mapsApiKey) return;
 
     setLoadingPlaces(true);
     setError(null);
-    try {
-      const coords = await getDevicePosition();
-      setUserCoords(coords);
+    setLocationDenied(false);
 
-      const cached = await loadNearbyShopCandidates(mapsApiKey, coords);
-      setPlaces(cached);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "位置情報またはお店の取得に失敗しました",
-      );
-    } finally {
+    void loadNearbyFromUserGesture(mapsApiKey).then((result) => {
+      if (result.ok) {
+        setUserCoords(result.coords);
+        setPlaces(result.places);
+      } else if (result.kind === "denied") {
+        setLocationDenied(true);
+      } else {
+        setError(result.message);
+      }
       setLoadingPlaces(false);
-    }
-  }, [mapsApiKey]);
+    });
+  }
 
   async function handleSearch(event: React.FormEvent) {
     event.preventDefault();
@@ -128,12 +127,14 @@ export default function NearbyPageClient({
         <button
           type="button"
           disabled={loadingPlaces || !mapsApiKey || mapsKeyLoading}
-          onClick={() => void loadNearby()}
+          onClick={handleLoadNearbyClick}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] border border-[#ff3d00]/35 bg-[#ff3d00]/10 py-3.5 text-sm font-bold text-[#eeeaf4] transition hover:bg-[#ff3d00]/15 disabled:opacity-50"
         >
           <span aria-hidden>📍</span>
           現在地から近くのお店を表示
         </button>
+
+        {locationDenied && <GeolocationPermissionHelp className="mt-3" />}
 
         <div className="mt-4 flex items-center justify-between">
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#5a5668]">
@@ -142,7 +143,7 @@ export default function NearbyPageClient({
           {places.length > 0 && (
             <button
               type="button"
-              onClick={() => void loadNearby()}
+              onClick={handleLoadNearbyClick}
               disabled={loadingPlaces || !mapsApiKey}
               className="text-[11px] font-semibold text-[#ff3d00] disabled:opacity-50"
             >
