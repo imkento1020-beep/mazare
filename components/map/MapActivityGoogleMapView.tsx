@@ -58,14 +58,16 @@ function createIcon(options: ReturnType<typeof pinStyle>) {
   };
 }
 
-const USER_LOCATION_ICON: google.maps.Symbol = {
-  path: google.maps.SymbolPath.CIRCLE,
-  scale: 9,
-  fillColor: "#4285F4",
-  fillOpacity: 1,
-  strokeColor: "#ffffff",
-  strokeWeight: 2.5,
-};
+function createUserLocationIcon(): google.maps.Symbol {
+  return {
+    path: google.maps.SymbolPath.CIRCLE,
+    scale: 9,
+    fillColor: "#4285F4",
+    fillOpacity: 1,
+    strokeColor: "#ffffff",
+    strokeWeight: 2.5,
+  };
+}
 
 export default function MapActivityGoogleMapView({
   apiKey: apiKeyProp,
@@ -231,7 +233,7 @@ export default function MapActivityGoogleMapView({
         position: focusLocation,
         title: "現在地",
         clickable: false,
-        icon: USER_LOCATION_ICON,
+        icon: createUserLocationIcon(),
         zIndex: 5,
       });
     } else {
