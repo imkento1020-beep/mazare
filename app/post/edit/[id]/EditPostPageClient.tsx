@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import HashtagInput from "@/components/guest-post/HashtagInput";
+import {
+  formatGuestPostBodyForDisplay,
+  GUEST_POST_BODY_MAX_LENGTH,
+  parseGuestPostBody,
+} from "@/lib/guest-post/composeBody";
 import GuestPostMetaFields from "@/components/guest-post/GuestPostMetaFields";
 import GuestPostComposePreview from "@/components/guest-post/GuestPostComposePreview";
 import LoadingScreen from "@/components/layout/LoadingScreen";
@@ -29,8 +33,7 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
   const { user, ready: authReady } = useAnonymousAuth();
   const [loading, setLoading] = useState(true);
   const [post, setPost] = useState<VibePost | null>(null);
-  const [tags, setTags] = useState<string[]>([]);
-  const [comment, setComment] = useState("");
+  const [bodyText, setBodyText] = useState("");
   const [nightOut, setNightOut] = useState<NightOutInput>({
     stopNumber: null,
     drinkName: "",
@@ -41,6 +44,8 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const parsedBody = useMemo(() => parseGuestPostBody(bodyText), [bodyText]);
 
   useEffect(() => {
     if (!authReady) return;
@@ -66,8 +71,12 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
       }
 
       setPost(result.data);
-      setTags(result.data.hashtags ?? []);
-      setComment(result.data.comment ?? "");
+      setBodyText(
+        formatGuestPostBodyForDisplay(
+          result.data.comment,
+          result.data.hashtags,
+        ),
+      );
       setNightOut(nightOutInputFromPost(result.data));
       setLoading(false);
     }
@@ -99,10 +108,12 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
 
     const replaceMedia = imageFiles.length > 0 || Boolean(videoFile);
 
+    const { comment, hashtags } = parseGuestPostBody(bodyText);
+
     const result = await updateGuestVibePost({
       postId: post.id,
       userId: activeUser.id,
-      hashtags: tags,
+      hashtags,
       nightOut,
       comment,
       imageFiles: videoFile ? undefined : imageFiles,
@@ -194,35 +205,31 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
 
           <div className="space-y-3 rounded-[16px] border border-white/10 bg-[#111118] p-5">
             <label htmlFor="edit-guest-comment" className="text-sm font-black">
-              一言コメント（140文字）
+              コメント（140文字）
             </label>
             <textarea
               id="edit-guest-comment"
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
-              maxLength={140}
-              rows={3}
+              value={bodyText}
+              onChange={(event) => setBodyText(event.target.value)}
+              maxLength={GUEST_POST_BODY_MAX_LENGTH}
+              rows={4}
+              placeholder="今夜のひとこと… #タグもこの欄に"
               className="w-full resize-none rounded-[12px] border border-white/10 bg-[#080810] px-4 py-3 text-sm leading-relaxed outline-none focus:border-[#ff3d00]/40"
             />
+            <p className="text-[10px] text-[#5a5668]">
+              #から始まるタグは自動でハッシュタグとして保存されます
+            </p>
           </div>
 
           <GuestPostComposePreview
             imageFiles={imageFiles}
             videoFile={videoFile}
             nightOut={nightOut}
-            comment={comment}
+            comment={parsedBody.comment}
+            hashtags={parsedBody.hashtags}
             shop={post.shops}
             existingPost={post}
           />
-
-          <details className="rounded-[12px] border border-white/10 bg-[#111118] px-4 py-3" open>
-            <summary className="cursor-pointer text-xs font-semibold text-[#5a5668]">
-              ハッシュタグ
-            </summary>
-            <div className="mt-4">
-              <HashtagInput tags={tags} onChange={setTags} />
-            </div>
-          </details>
 
           <button
             type="button"

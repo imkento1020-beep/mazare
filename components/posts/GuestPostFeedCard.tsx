@@ -6,7 +6,7 @@ import type { VibePost } from "@/lib/home/types";
 import { formatPostedAt } from "@/lib/home/types";
 import { extractAreaFromAddress } from "@/lib/geo/area";
 import { getDistanceLabel, type GeoPoint } from "@/lib/geo/haversine";
-import { guestPostCommentText } from "@/lib/guest-post/guestComment";
+import { formatGuestPostBodyForDisplay } from "@/lib/guest-post/composeBody";
 import {
   getTonightCupDisplay,
   getVisitOrder,
@@ -181,7 +181,7 @@ export default function GuestPostFeedCard({
   const shop = post.shops;
   const visitOrder = getVisitOrder(post);
   const cupTotal = getTonightCupDisplay(post, tonightTotalCups);
-  const comment = guestPostCommentText(post.comment);
+  const comment = formatGuestPostBodyForDisplay(post.comment, post.hashtags);
   const displayName = post.author_display_name?.trim() || "ゲスト";
   const area = shop?.address ? extractAreaFromAddress(shop.address) : "—";
   const distance = shop ? getDistanceLabel(userLocation, shop) : null;

@@ -1,7 +1,7 @@
 "use client";
 
 import type { VibePost } from "@/lib/home/types";
-import { guestPostCommentText } from "@/lib/guest-post/guestComment";
+import { formatGuestPostBodyForDisplay } from "@/lib/guest-post/composeBody";
 
 type GuestPostFooterProps = {
   post: Pick<
@@ -49,7 +49,7 @@ export default function GuestPostFooter({
   tonightTotalCups = null,
   className = "",
 }: GuestPostFooterProps) {
-  const comment = guestPostCommentText(post.comment);
+  const bodyText = formatGuestPostBodyForDisplay(post.comment, post.hashtags);
   const hasStop = post.stop_number != null && post.stop_number >= 1;
   const hasDrink = Boolean(post.drink_name);
   const hasMeta =
@@ -59,9 +59,7 @@ export default function GuestPostFooter({
 
   const drinkValue = hasDrink ? post.drink_name! : null;
 
-  const tags = (post.hashtags ?? []).filter(Boolean);
-
-  if (!hasMeta && !comment && tags.length === 0) return null;
+  if (!hasMeta && !bodyText) return null;
 
   return (
     <div className={`space-y-3 ${className}`}>
@@ -81,23 +79,10 @@ export default function GuestPostFooter({
         </div>
       )}
 
-      {comment && (
+      {bodyText && (
         <p className="text-[15px] font-medium leading-relaxed tracking-[0.01em] text-[#eeeaf4]">
-          {comment}
+          {bodyText}
         </p>
-      )}
-
-      {tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              className="text-xs font-semibold text-[#7a7590] hover:text-[#9994a8]"
-            >
-              {tag.startsWith("#") ? tag : `#${tag}`}
-            </span>
-          ))}
-        </div>
       )}
     </div>
   );

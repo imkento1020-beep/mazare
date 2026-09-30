@@ -11,6 +11,7 @@ type GuestPostComposePreviewProps = {
   videoFile: File | null;
   nightOut: NightOutInput;
   comment: string;
+  hashtags?: string[];
   shop?: Shop | null;
   existingPost?: VibePost | null;
 };
@@ -35,6 +36,7 @@ export default function GuestPostComposePreview({
   videoFile,
   nightOut,
   comment,
+  hashtags = [],
   shop = null,
   existingPost = null,
 }: GuestPostComposePreviewProps) {
@@ -70,7 +72,8 @@ export default function GuestPostComposePreview({
     shop_id: shop?.id ?? existingPost?.shop_id ?? "",
     comment,
     moods: [],
-    hashtags: existingPost?.hashtags ?? [],
+    hashtags:
+      hashtags.length > 0 ? hashtags : (existingPost?.hashtags ?? []),
     media_type: useExisting ? existingPost!.media_type : draftFromFiles.media_type,
     images: useExisting ? existingPost!.images : draftFromFiles.images,
     video_url: useExisting ? existingPost!.video_url : draftFromFiles.video_url,

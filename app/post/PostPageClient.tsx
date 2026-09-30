@@ -5,7 +5,10 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import GoogleAttribution from "@/components/places/GoogleAttribution";
-import HashtagInput from "@/components/guest-post/HashtagInput";
+import {
+  GUEST_POST_BODY_MAX_LENGTH,
+  parseGuestPostBody,
+} from "@/lib/guest-post/composeBody";
 import GuestPostMetaFields from "@/components/guest-post/GuestPostMetaFields";
 import GuestPostComposePreview from "@/components/guest-post/GuestPostComposePreview";
 import GuestPostMediaUpload from "@/components/guest-post/GuestPostMediaUpload";
@@ -39,8 +42,7 @@ export default function PostPageClient({
   } | null>(null);
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
-  const [comment, setComment] = useState("");
+  const [bodyText, setBodyText] = useState("");
   const [nightOut, setNightOut] = useState<NightOutInput>({
     stopNumber: null,
     drinkName: "",
@@ -59,6 +61,8 @@ export default function PostPageClient({
     () => places.find((place) => place.shopId === selectedShopId) ?? null,
     [places, selectedShopId],
   );
+
+  const parsedBody = useMemo(() => parseGuestPostBody(bodyText), [bodyText]);
 
   const previewShop = useMemo(() => {
     if (!selectedPlace?.shopId) return null;
@@ -155,10 +159,12 @@ export default function PostPageClient({
 
     const priorCount = await countGuestPostsByUser(activeUser.id);
 
+    const { comment, hashtags } = parseGuestPostBody(bodyText);
+
     const result = await createGuestVibePost({
       userId: activeUser.id,
       shopId: selectedShopId,
-      hashtags: tags,
+      hashtags,
       nightOut,
       comment,
       imageFiles: videoFile ? undefined : imageFiles,
@@ -173,8 +179,7 @@ export default function PostPageClient({
     }
 
     setSuccessShopName(selectedPlace.name);
-    setTags([]);
-    setComment("");
+    setBodyText("");
     setNightOut({
       stopNumber: null,
       drinkName: "",
@@ -307,39 +312,28 @@ export default function PostPageClient({
 
             <div className="space-y-3 rounded-[16px] border border-white/10 bg-[#111118] p-5">
               <label htmlFor="guest-post-comment" className="text-sm font-black">
-                一言コメント（任意・140文字）
+                コメント（任意・140文字）
               </label>
               <textarea
                 id="guest-post-comment"
-                value={comment}
-                onChange={(event) => setComment(event.target.value)}
-                maxLength={140}
-                rows={3}
-                placeholder="今夜のひとこと…"
+                value={bodyText}
+                onChange={(event) => setBodyText(event.target.value)}
+                maxLength={GUEST_POST_BODY_MAX_LENGTH}
+                rows={4}
+                placeholder="今夜のひとこと… #タグもこの欄に"
                 className="w-full resize-none rounded-[12px] border border-white/10 bg-[#080810] px-4 py-3 text-sm leading-relaxed outline-none focus:border-[#ff3d00]/40"
               />
-              <details className="rounded-[12px] border border-white/10 bg-[#080810] px-3 py-2">
-                <summary className="cursor-pointer list-none text-xs font-semibold text-[#5a5668] [&::-webkit-details-marker]:hidden">
-                  ハッシュタグを追加（任意）
-                  {tags.length > 0 && (
-                    <span className="ml-2 text-[#ff3d00]">{tags.length}件</span>
-                  )}
-                </summary>
-                <div className="mt-3 border-t border-white/10 pt-3">
-                  <HashtagInput
-                    tags={tags}
-                    onChange={setTags}
-                    showLabel={false}
-                  />
-                </div>
-              </details>
+              <p className="text-[10px] text-[#5a5668]">
+                #から始まるタグは自動でハッシュタグとして保存されます
+              </p>
             </div>
 
             <GuestPostComposePreview
               imageFiles={imageFiles}
               videoFile={videoFile}
               nightOut={nightOut}
-              comment={comment}
+              comment={parsedBody.comment}
+              hashtags={parsedBody.hashtags}
               shop={previewShop}
             />
 
