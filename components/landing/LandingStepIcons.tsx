@@ -61,9 +61,9 @@ export function PeopleGatherIcon() {
   );
 }
 
-export function CheckCircleIcon() {
+export function CheckCircleIcon({ size = 20 }: { size?: number }) {
   return (
-    <svg width={20} height={20} viewBox="0 0 28 28" fill="none" aria-hidden>
+    <svg width={size} height={size} viewBox="0 0 28 28" fill="none" aria-hidden>
       <circle cx="14" cy="14" r="11" stroke={stroke} strokeWidth={sw} />
       <path
         d="M8 14L12 18L20 10"
