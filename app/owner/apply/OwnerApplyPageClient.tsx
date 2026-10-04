@@ -87,7 +87,12 @@ export default function OwnerApplyPageClient() {
 
   return (
     <div className="mx-auto w-full max-w-[480px] px-6 py-10">
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <h1 className="text-xl font-black text-[#eeeaf4]">店舗登録の申請</h1>
+      <p className="mt-2 text-sm leading-relaxed text-[#9994a8]">
+        内容を確認のうえ、通常1〜2営業日以内にメールでご連絡します。
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-8 space-y-5">
         <div>
           <label htmlFor="shopName" className={labelClassName}>
             店舗名
@@ -140,7 +145,7 @@ export default function OwnerApplyPageClient() {
             required
             value={contactName}
             onChange={(e) => setContactName(e.target.value)}
-            placeholder="例：渡辺 健人"
+            placeholder="例：山田太郎"
             className={fieldClassName}
           />
         </div>
