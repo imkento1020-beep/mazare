@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Noto_Sans_JP, Outfit } from "next/font/google";
-import MazareWordmark from "@/components/landing/MazareWordmark";
+import MazareLogo from "@/components/MazareLogo";
 import {
   CheckCircleIcon,
   PeopleGatherIcon,
@@ -54,7 +54,7 @@ export default function LandingPage() {
     >
       <header className="landing-fade-in border-b border-white/[0.07]">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-6 py-5">
-          <MazareWordmark href="/" />
+          <MazareLogo href="/" size="md" />
           <div className="flex items-center gap-4 sm:gap-6">
             <Link
               href="#for-owners"
@@ -161,7 +161,7 @@ export default function LandingPage() {
               href="/owner/apply"
               className={`mt-12 inline-flex rounded-[14px] border border-[#ff3d00] px-8 py-3.5 text-base font-bold text-[#ff3d00] transition-colors hover:bg-[#ff3d00]/10 ${outfit.className}`}
             >
-              お店を登録する
+              店舗管理アカウントを申請する
             </Link>
           </div>
         </section>
@@ -169,7 +169,7 @@ export default function LandingPage() {
 
       <footer className="border-t border-white/[0.07] bg-[#0f0d0b] px-6 py-12">
         <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-8 text-center">
-          <MazareWordmark href="/" />
+          <MazareLogo href="/" size="md" />
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[#9994a8]">
             <Link href="/terms" className="hover:text-[#f5f0e8]">
               利用規約
