@@ -158,7 +158,7 @@ export default function LandingPage() {
               ))}
             </ul>
             <Link
-              href="/signup?type=owner"
+              href="/owner/apply"
               className={`mt-12 inline-flex rounded-[14px] border border-[#ff3d00] px-8 py-3.5 text-base font-bold text-[#ff3d00] transition-colors hover:bg-[#ff3d00]/10 ${outfit.className}`}
             >
               お店を登録する

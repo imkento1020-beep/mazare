@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
@@ -49,6 +49,7 @@ async function resendSignupConfirmation(input: {
 }
 
 export default function SignupPageClient() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -63,7 +64,8 @@ export default function SignupPageClient() {
 
   useEffect(() => {
     if (searchParams.get("type") === "owner") {
-      setUserType("owner");
+      router.replace("/owner/apply");
+      return;
     }
 
     const nextPath = searchParams.get("next");
@@ -81,7 +83,7 @@ export default function SignupPageClient() {
     if (invitedEmail) {
       setEmail(invitedEmail);
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   async function handleResend() {
     if (!email || !password) {
@@ -323,7 +325,13 @@ export default function SignupPageClient() {
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => setUserType(option.value)}
+                      onClick={() => {
+                        if (option.value === "owner") {
+                          router.push("/owner/apply");
+                          return;
+                        }
+                        setUserType(option.value);
+                      }}
                       className={`rounded-xl border p-4 text-left transition ${
                         selected
                           ? "border-[#ff3d00] bg-[#ff3d00]/10 ring-1 ring-[#ff3d00]/30"
@@ -353,7 +361,7 @@ export default function SignupPageClient() {
                   {searchParams.get("invite")
                     ? "スタッフ招待を承認し、店舗管理画面"
                     : userType === "owner"
-                      ? "お店の登録画面"
+                      ? "店舗申請画面"
                       : "ホーム画面"}
                   へ移動します。
                 </p>

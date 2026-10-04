@@ -20,6 +20,9 @@ import TonightVisitorsSection from "@/components/owner/TonightVisitorsSection";
 import OwnerPostHistorySection, {
   type OwnerPostHistoryItem,
 } from "@/components/owner/OwnerPostHistorySection";
+import OwnerApplicationStatusScreen from "@/components/owner/OwnerApplicationStatusScreen";
+import { fetchShopApplicationForUser } from "@/lib/owner/shopApplication";
+import type { ShopApplicationStatus } from "@/lib/owner/shopApplication";
 
 type RecentPost = OwnerPostHistoryItem;
 
@@ -34,6 +37,8 @@ export default function OwnerDashboardPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [applicationStatus, setApplicationStatus] =
+    useState<ShopApplicationStatus | "none" | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -47,7 +52,34 @@ export default function OwnerDashboardPage() {
       }
 
       const { data: managedShop } = await fetchManagedShop(user.id);
+
       if (!managedShop) {
+        const { data: application, error: applicationError } =
+          await fetchShopApplicationForUser(user.id, user.email);
+
+        if (applicationError) {
+          setActionError(applicationError);
+          setLoading(false);
+          return;
+        }
+
+        if (!application) {
+          router.replace("/owner/apply");
+          return;
+        }
+
+        if (application.status === "pending") {
+          setApplicationStatus("pending");
+          setLoading(false);
+          return;
+        }
+
+        if (application.status === "rejected") {
+          setApplicationStatus("rejected");
+          setLoading(false);
+          return;
+        }
+
         router.replace("/owner/onboarding");
         return;
       }
@@ -92,6 +124,14 @@ export default function OwnerDashboardPage() {
   }
 
   if (loading) return <LoadingScreen />;
+
+  if (applicationStatus === "pending" || applicationStatus === "rejected") {
+    return (
+      <OwnerLayout title="ダッシュボード">
+        <OwnerApplicationStatusScreen status={applicationStatus} />
+      </OwnerLayout>
+    );
+  }
 
   const coverImages = getShopCoverImages(shop ?? {});
 

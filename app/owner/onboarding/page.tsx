@@ -7,6 +7,7 @@ import {
   createOwnerShop,
   fetchManagedShop,
 } from "@/lib/owner/api";
+import { fetchShopApplicationForUser } from "@/lib/owner/shopApplication";
 import { uploadShopImages } from "@/lib/owner/uploadImages";
 import { GENRE_OPTIONS, MAX_IMAGES } from "@/lib/owner/constants";
 import { readFilesAsDataUrls } from "@/lib/files";
@@ -51,6 +52,21 @@ export default function OwnerOnboardingPage() {
 
       const { data: existingShop } = await fetchManagedShop(currentUser.id);
       if (existingShop || currentUser.user_metadata?.onboarding_completed) {
+        router.replace("/owner/dashboard");
+        return;
+      }
+
+      const { data: application } = await fetchShopApplicationForUser(
+        currentUser.id,
+        currentUser.email,
+      );
+
+      if (!application) {
+        router.replace("/owner/apply");
+        return;
+      }
+
+      if (application.status !== "approved") {
         router.replace("/owner/dashboard");
         return;
       }

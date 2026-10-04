@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { fetchManagedShop } from "@/lib/owner/api";
+import { fetchShopApplicationForUser } from "@/lib/owner/shopApplication";
 import { resolveAppMode, setStoredAppMode, type AppMode } from "@/lib/auth/mode";
 import { hasRole } from "@/lib/auth/roles";
 import { fetchPendingInvitesForEmail } from "@/lib/staff/api";
@@ -10,9 +11,22 @@ export async function resolvePostAuthPath(
 ): Promise<string> {
   if (hasRole(user, "owner")) {
     const { data: shop } = await fetchManagedShop(user.id);
-    if (!shop && !user.user_metadata?.onboarding_completed) {
-      setStoredAppMode("owner");
-      return "/owner/onboarding";
+
+    if (!shop) {
+      const { data: application } = await fetchShopApplicationForUser(
+        user.id,
+        user.email,
+      );
+
+      if (!application || application.status !== "approved") {
+        setStoredAppMode("owner");
+        return "/owner/apply";
+      }
+
+      if (!user.user_metadata?.onboarding_completed) {
+        setStoredAppMode("owner");
+        return "/owner/onboarding";
+      }
     }
   }
 
