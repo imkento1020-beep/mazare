@@ -145,9 +145,9 @@ export default function LandingPage() {
               お店を運営している方へ
             </h2>
             <p className="mx-auto mt-6 max-w-xl text-base leading-[1.8] text-[#9994a8]">
-              お客さんが勝手に発信してくれる。
+              来てくれたお客さんが、次のお客さんを呼んでくれる。
               <br />
-              あなたは何もしなくていい。
+              お客さんのリアルな投稿が、今夜の集客につながる。
             </p>
             <ul className="mx-auto mt-10 flex max-w-md flex-col gap-4 text-left">
               {ownerPoints.map((point) => (
