@@ -2,20 +2,13 @@ import Link from "next/link";
 
 type MazareWordmarkProps = {
   href?: string | null;
-  height?: number;
   className?: string;
 };
 
-export function MazareWordmarkSvg({
-  height = 36,
-  className = "",
-}: {
-  height?: number;
-  className?: string;
-}) {
+export function MazareWordmarkSvg({ className = "" }: { className?: string }) {
   return (
     <svg
-      height={height}
+      height={28}
       viewBox="0 0 200 40"
       fill="none"
       className={className}
@@ -59,10 +52,9 @@ export function MazareWordmarkSvg({
 
 export default function MazareWordmark({
   href = "/",
-  height = 36,
   className = "",
 }: MazareWordmarkProps) {
-  const svg = <MazareWordmarkSvg height={height} className={className} />;
+  const svg = <MazareWordmarkSvg className={className} />;
 
   if (href) {
     return (
