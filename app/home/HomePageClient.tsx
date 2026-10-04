@@ -253,7 +253,7 @@ export default function HomePageClient({
             直近24時間の投稿はまだありません
           </p>
           <p className="mt-2 text-xs text-[#9994a8]">
-            最初の投稿者になって、このお店を mazare に登録しましょう。
+            まだ投稿がありません。今夜の様子を、一番に投稿しよう。
           </p>
           <Link
             href="/post"
