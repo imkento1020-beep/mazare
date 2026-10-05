@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { LandingFeedPost } from "@/lib/landing/fetchLandingPosts";
+import type { LandingFeedPost } from "@/lib/landing/fetchLandingGuestFeed";
 
 type LandingPostCardProps = {
   post: LandingFeedPost;

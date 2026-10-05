@@ -1,17 +1,19 @@
+"use client";
+
 import Link from "next/link";
-import LandingPostCard from "@/components/landing/LandingPostCard";
-import type { LandingFeedPost } from "@/lib/landing/fetchLandingPosts";
+import GuestPostFeedCard from "@/components/posts/GuestPostFeedCard";
+import type { LandingGuestFeedItem } from "@/lib/landing/fetchLandingGuestFeed";
 
 type LandingLiveFeedProps = {
-  posts: LandingFeedPost[];
+  items: LandingGuestFeedItem[];
   outfitClassName: string;
 };
 
 export default function LandingLiveFeed({
-  posts,
+  items,
   outfitClassName,
 }: LandingLiveFeedProps) {
-  if (posts.length === 0) return null;
+  if (items.length === 0) return null;
 
   return (
     <section className="border-b border-white/[0.06] bg-[#0a0910] pt-20 pb-8 sm:pb-10">
@@ -35,13 +37,21 @@ export default function LandingLiveFeed({
           </Link>
         </div>
 
-        <div className="scrollbar-hidden -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 snap-x snap-mandatory sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 lg:gap-4">
-          {posts.map((post, index) => (
-            <LandingPostCard
-              key={post.id}
-              post={post}
-              priorityImage={index === 0}
-              className="w-[72vw] max-w-[280px] shrink-0 snap-center sm:w-auto sm:max-w-none"
+        <div className="scrollbar-hidden -mx-4 flex items-start gap-3 overflow-x-auto px-4 pb-1 snap-x snap-mandatory sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
+          {items.map((item) => (
+            <GuestPostFeedCard
+              key={item.post.id}
+              post={item.post}
+              tonightTotalCups={item.tonightTotalCups}
+              interestCount={item.interestCount}
+              commentCount={item.commentCount}
+              showActions
+              shopHref={
+                item.post.shops?.id
+                  ? `/shop/${item.post.shops.id}`
+                  : undefined
+              }
+              className="w-[85vw] max-w-[320px] shrink-0 snap-center sm:w-auto sm:max-w-none"
             />
           ))}
         </div>

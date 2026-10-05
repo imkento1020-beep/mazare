@@ -9,7 +9,7 @@ import {
 } from "@/components/landing/LandingFeatureIcons";
 import LandingLiveFeed from "@/components/landing/LandingLiveFeed";
 import { CheckCircleIcon } from "@/components/landing/LandingStepIcons";
-import { fetchLandingFeedPosts } from "@/lib/landing/fetchLandingPosts";
+import { fetchLandingGuestFeed } from "@/lib/landing/fetchLandingGuestFeed";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -55,7 +55,7 @@ const ownerBenefits = [
 export const revalidate = 60;
 
 export default async function LandingPage() {
-  const feedPosts = await fetchLandingFeedPosts();
+  const feedItems = await fetchLandingGuestFeed();
 
   return (
     <div
@@ -88,7 +88,7 @@ export default async function LandingPage() {
       </header>
 
       <main>
-        <LandingLiveFeed posts={feedPosts} outfitClassName={outfit.className} />
+        <LandingLiveFeed items={feedItems} outfitClassName={outfit.className} />
 
         <section className="mx-auto max-w-[1200px] px-4 pb-10 pt-10 sm:px-6 lg:pb-16 lg:pt-14">
           <div className="text-center lg:mx-auto lg:max-w-2xl">
