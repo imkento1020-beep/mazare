@@ -4,17 +4,21 @@ import type { LandingFeedPost } from "@/lib/landing/fetchLandingPosts";
 type LandingPostCardProps = {
   post: LandingFeedPost;
   className?: string;
+  href?: string;
+  priorityImage?: boolean;
 };
 
 export default function LandingPostCard({
   post,
   className = "",
+  href = "/home",
+  priorityImage = false,
 }: LandingPostCardProps) {
   const hasMedia = Boolean(post.videoUrl || post.imageUrl);
 
   return (
     <Link
-      href="/home"
+      href={href}
       className={`group relative block aspect-[4/5] overflow-hidden rounded-2xl border border-white/[0.06] bg-[#111118] transition duration-200 hover:border-[#ff3d00]/40 ${className}`}
     >
       {post.videoUrl ? (
@@ -33,7 +37,8 @@ export default function LandingPostCard({
           src={post.imageUrl}
           alt=""
           className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-          loading="lazy"
+          loading={priorityImage ? "eager" : "lazy"}
+          fetchPriority={priorityImage ? "high" : undefined}
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center px-4 text-center">

@@ -7,7 +7,7 @@ import {
   PostFeatureIcon,
   SparkFeatureIcon,
 } from "@/components/landing/LandingFeatureIcons";
-import LandingPostCard from "@/components/landing/LandingPostCard";
+import LandingLiveFeed from "@/components/landing/LandingLiveFeed";
 import { CheckCircleIcon } from "@/components/landing/LandingStepIcons";
 import { fetchLandingFeedPosts } from "@/lib/landing/fetchLandingPosts";
 
@@ -88,9 +88,11 @@ export default async function LandingPage() {
       </header>
 
       <main>
-        <section className="mx-auto max-w-[1200px] px-4 pb-10 pt-24 sm:px-6 lg:pb-16 lg:pt-28">
-          <div className="lg:grid lg:grid-cols-[1fr_minmax(0,420px)] lg:items-center lg:gap-14">
-            <div className="text-center lg:text-left">
+        <LandingLiveFeed posts={feedPosts} outfitClassName={outfit.className} />
+
+        <section className="mx-auto max-w-[1200px] px-4 pb-10 pt-10 sm:px-6 lg:pb-16 lg:pt-14">
+          <div className="text-center lg:mx-auto lg:max-w-2xl">
+            <div>
               <p className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#111118] px-3 py-1 text-[11px] font-semibold tracking-wide text-[#9994a8]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#ffaa00]" aria-hidden />
                 渋谷・新宿・恵比寿・新橋 — 今夜の飲み場
@@ -104,12 +106,12 @@ export default async function LandingPage() {
                 投稿しよう。
               </h1>
 
-              <p className="mx-auto mt-5 max-w-md text-[15px] leading-[1.85] text-[#9994a8] lg:mx-0">
+              <p className="mx-auto mt-5 max-w-md text-[15px] leading-[1.85] text-[#9994a8]">
                 今夜飲んでいる場所の写真や動画を投稿するだけ。
                 楽しそうと感じた人が、そのお店に集まってくる。
               </p>
 
-              <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:items-start">
+              <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                 <Link
                   href="/post"
                   className={`inline-flex w-full max-w-xs items-center justify-center rounded-[14px] bg-[#ff3d00] px-8 py-4 text-base font-extrabold text-white sm:w-auto ${outfit.className}`}
@@ -128,14 +130,6 @@ export default async function LandingPage() {
                 アカウント登録不要・無料で使えます
               </p>
             </div>
-
-            {feedPosts.length > 0 && (
-              <div className="mt-12 hidden gap-3 lg:mt-0 lg:grid lg:grid-cols-2">
-                {feedPosts.slice(0, 2).map((post) => (
-                  <LandingPostCard key={post.id} post={post} />
-                ))}
-              </div>
-            )}
           </div>
 
           <ul className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:mt-14">
@@ -158,41 +152,6 @@ export default async function LandingPage() {
             })}
           </ul>
         </section>
-
-        {feedPosts.length > 0 && (
-          <section className="border-t border-white/[0.06] bg-[#0a0910] py-12 sm:py-16">
-            <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
-              <div className="mb-6 flex items-end justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#ff3d00]">
-                    Tonight
-                  </p>
-                  <h2
-                    className={`mt-1 text-2xl font-black text-[#eeeaf4] ${outfit.className}`}
-                  >
-                    今夜のmazare
-                  </h2>
-                </div>
-                <Link
-                  href="/home"
-                  className="shrink-0 text-sm font-semibold text-[#9994a8] hover:text-[#eeeaf4]"
-                >
-                  もっと見る →
-                </Link>
-              </div>
-
-              <div className="scrollbar-hidden -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 snap-x snap-mandatory sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 lg:gap-4">
-                {feedPosts.map((post) => (
-                  <LandingPostCard
-                    key={post.id}
-                    post={post}
-                    className="w-[44vw] shrink-0 snap-start sm:w-auto"
-                  />
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
 
         <section className="mx-auto max-w-[1200px] px-4 py-16 text-center sm:px-6">
           <p className={`text-xl font-bold text-[#eeeaf4] sm:text-2xl ${outfit.className}`}>
