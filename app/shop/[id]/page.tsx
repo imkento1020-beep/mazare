@@ -44,6 +44,7 @@ import FavoriteButton from "@/components/favorites/FavoriteButton";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import ShopVibePostItem from "@/components/home/ShopVibePostItem";
+import PostInterestLabel from "@/components/posts/PostInterestLabel";
 import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
 import { fetchInterestCountsByPostIds } from "@/lib/interests/postInterestCounts";
 import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
@@ -365,11 +366,7 @@ export default function ShopDetailPage() {
                 : "bg-[#ff3d00] text-white hover:bg-[#e63600]"
             }`}
           >
-            {submitting
-              ? "送信中..."
-              : interested
-                ? "👋 行くかも ✓"
-                : "👋 行くかも"}
+            <PostInterestLabel interested={interested} loading={submitting} />
           </button>
           <p className="mt-2 text-center text-sm text-[#9994a8]">
             {interestCount}人が行くかも

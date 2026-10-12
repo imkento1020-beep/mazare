@@ -16,6 +16,8 @@ import type { CheckinUser } from "@/lib/checkins/api";
 import CheckinAvatarStack from "@/components/checkins/CheckinAvatarStack";
 import PostImageCarousel from "./PostImageCarousel";
 import PostAuthorBadge from "@/components/posts/PostAuthorBadge";
+import PostInterestLabel from "@/components/posts/PostInterestLabel";
+import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
 
 function genreEmoji(genre: string) {
   if (genre.includes("居酒屋")) return "🎵";
@@ -164,11 +166,7 @@ export default function VibePostCard({
                 : "bg-[#ff3d00] text-white shadow-[0_4px_16px_rgba(255,61,0,0.25)] hover:bg-[#e63600]"
             }`}
           >
-            {isSubmitting
-              ? "送信中..."
-              : interested
-                ? "👋 行くかも ✓"
-                : "👋 行くかも"}
+            <PostInterestLabel interested={interested} loading={isSubmitting} />
           </button>
         </div>
       </div>
@@ -199,8 +197,9 @@ function ShopMeta({
         </span>
       </div>
       <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[#9994a8]">
-        <span>
-          📍 {area}
+        <span className="inline-flex items-center gap-1">
+          <FeedPinIcon size={12} color="#9994a8" />
+          {area}
           {distance ? ` · ${distance}` : ""}
         </span>
         <span>🕙 {formatOpenHours(shop.open_hours)}</span>

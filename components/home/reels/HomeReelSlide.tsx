@@ -21,7 +21,7 @@ import {
   FeedPinIcon,
   FeedShareIcon,
   FeedWaveIcon,
-} from "@/components/home/reels/FeedActionIcons";
+} from "@/components/icons/FeedActionIcons";
 
 type HomeReelSlideProps = {
   post: HomeReelsPost;

@@ -16,6 +16,7 @@ import {
   getLoginPathWithReturn,
   getFormalSignupPathWithReturn,
 } from "@/lib/auth/authPaths";
+import { FeedCommentIcon } from "@/components/icons/FeedActionIcons";
 
 type VibePostCommentSheetProps = {
   vibePostId: string;
@@ -233,9 +234,10 @@ export default function VibePostCommentSheet({
         <header className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-4 py-3">
           <h2
             id="comment-sheet-title"
-            className="text-sm font-bold text-[#eeeaf4]"
+            className="flex items-center gap-2 text-sm font-bold text-[#eeeaf4]"
           >
-            💬 コメント
+            <FeedCommentIcon size={18} color="#eeeaf4" />
+            コメント
           </h2>
           <button
             type="button"

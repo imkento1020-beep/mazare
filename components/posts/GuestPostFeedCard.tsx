@@ -12,6 +12,14 @@ import {
   getVisitOrder,
 } from "@/lib/guest-post/nightOut";
 import VibePostCommentSheet from "@/components/comments/VibePostCommentSheet";
+import {
+  FeedCommentIcon,
+  FeedGlassIcon,
+  FeedPeopleIcon,
+  FeedPinIcon,
+  FeedShareIcon,
+  FeedWaveIcon,
+} from "@/components/icons/FeedActionIcons";
 import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
 import { supabase } from "@/lib/supabase";
 
@@ -69,8 +77,8 @@ function MediaLayer({ post }: { post: VibePost }) {
   }
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1a0a00] via-[#120810] to-[#2d1200] text-5xl">
-      🍻
+    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1a0a00] via-[#120810] to-[#2d1200]">
+      <FeedGlassIcon size={56} color="rgba(255,61,0,0.45)" />
     </div>
   );
 }
@@ -187,10 +195,11 @@ export default function GuestPostFeedCard({
   const distance = shop ? getDistanceLabel(userLocation, shop) : null;
   const shopLink = shopHref ?? (shop?.id ? `/shop/${shop.id}` : undefined);
   const { hasMedia } = postMediaSources(post);
+  const waveIconColor = interested ? "#ff3d00" : "#ffffff";
 
   const amberPillParts: string[] = [];
   if (cupTotal != null) amberPillParts.push(`今夜${cupTotal}杯目`);
-  if (post.drink_name) amberPillParts.push(`🍹 ${post.drink_name}`);
+  if (post.drink_name) amberPillParts.push(post.drink_name);
   const amberPill = amberPillParts.join(" · ");
 
   async function handleShare() {
@@ -262,12 +271,12 @@ export default function GuestPostFeedCard({
                 e.stopPropagation();
                 onInterest?.();
               }}
-              className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-white/10 text-[10px] leading-none backdrop-blur-sm disabled:opacity-50"
+              className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-black/35 text-[10px] leading-none backdrop-blur-sm disabled:opacity-50"
               aria-label="今夜行くかも"
             >
-              <span>👋</span>
+              <FeedWaveIcon size={20} color={waveIconColor} />
               {interestCount > 0 && (
-                <span className="mt-0.5 text-[8px] font-bold text-[#00e87a]">
+                <span className="mt-0.5 text-[8px] font-bold text-white">
                   {interestCount}
                 </span>
               )}
@@ -278,12 +287,12 @@ export default function GuestPostFeedCard({
                 e.stopPropagation();
                 setCommentsOpen(true);
               }}
-              className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-white/10 text-[10px] leading-none backdrop-blur-sm"
+              className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-black/35 text-[10px] leading-none backdrop-blur-sm"
               aria-label="コメント"
             >
-              <span>💬</span>
+              <FeedCommentIcon size={20} />
               {liveCommentCount > 0 && (
-                <span className="mt-0.5 text-[8px] font-bold text-[#9994a8]">
+                <span className="mt-0.5 text-[8px] font-bold text-white">
                   {liveCommentCount}
                 </span>
               )}
@@ -294,10 +303,10 @@ export default function GuestPostFeedCard({
                 e.stopPropagation();
                 void handleShare();
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm backdrop-blur-sm"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-black/35 backdrop-blur-sm"
               aria-label="シェア"
             >
-              ↗️
+              <FeedShareIcon size={20} />
             </button>
           </div>
         )}
@@ -310,8 +319,9 @@ export default function GuestPostFeedCard({
               </span>
             )}
             {post.party_size != null && post.party_size >= 1 && (
-              <span className="inline-flex items-center rounded-[20px] border border-[rgba(0,232,122,0.3)] bg-[rgba(0,232,122,0.1)] px-2 py-0.5 text-[9px] font-bold text-[#00e87a]">
-                👥 {post.party_size}人
+              <span className="inline-flex items-center gap-1 rounded-[20px] border border-[rgba(0,232,122,0.3)] bg-[rgba(0,232,122,0.1)] px-2 py-0.5 text-[9px] font-bold text-[#00e87a]">
+                <FeedPeopleIcon size={12} />
+                {post.party_size}人
               </span>
             )}
           </div>
@@ -338,8 +348,9 @@ export default function GuestPostFeedCard({
                   </p>
                 )}
               </div>
-              <p className="text-[11px] text-[#9994a8]">
-                📍 {area}
+              <p className="flex items-center gap-1 text-[11px] text-[#9994a8]">
+                <FeedPinIcon size={12} color="#9994a8" />
+                {area}
                 {distance ? ` · ${distance}` : ""}
               </p>
             </div>
