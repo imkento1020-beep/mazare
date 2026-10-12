@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { pageBgClassName, primaryButtonClassName } from "@/lib/ui/styles";
+import { OfflineIcon } from "@/components/icons/MazareIcons";
 
 export default function OfflinePage() {
   return (
     <div className={`${pageBgClassName} flex min-h-dvh items-center justify-center px-4`}>
       <div className="max-w-sm text-center">
-        <p className="text-4xl">📡</p>
+        <OfflineIcon size={48} color="#5a5668" />
         <h1 className="mt-4 text-xl font-black">オフラインです</h1>
         <p className="mt-3 text-sm leading-relaxed text-[#9994a8]">
           インターネット接続を確認して、もう一度お試しください。

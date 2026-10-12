@@ -16,6 +16,8 @@ import {
 } from "@/lib/auth/authPaths";
 import { startGoogleAuth } from "@/lib/auth/googleLink";
 import { primaryButtonClassName } from "@/lib/ui/styles";
+import { FeedPeopleIcon } from "@/components/icons/FeedActionIcons";
+import { SparkleIcon } from "@/components/icons/MazareIcons";
 
 export type AuthPromptOptions = {
   returnPath?: string;
@@ -139,7 +141,13 @@ export function AuthPromptProvider({ children }: { children: ReactNode }) {
             aria-labelledby="auth-prompt-title"
             className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#111118] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.55)]"
           >
-            <p className="text-3xl">{formal ? "✨" : "👋"}</p>
+            <p className="flex justify-center">
+              {formal ? (
+                <SparkleIcon size={36} color="#ff3d00" />
+              ) : (
+                <FeedPeopleIcon size={36} color="#00e87a" />
+              )}
+            </p>
             <h2
               id="auth-prompt-title"
               className="mt-4 text-lg font-black text-[#eeeaf4]"

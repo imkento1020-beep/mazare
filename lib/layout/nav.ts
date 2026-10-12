@@ -14,6 +14,15 @@ export type BottomNavItem = {
   center?: boolean;
 };
 
+export type GuestSidebarIconId =
+  | "home"
+  | "map"
+  | "wave"
+  | "heart"
+  | "history";
+
+export type OwnerNavIconId = "chart" | "broadcast" | "history" | "settings";
+
 export const GUEST_BOTTOM_NAV: BottomNavItem[] = [
   { label: "ホーム", href: "/home", icon: "home" },
   { label: "地図", href: "/map", icon: "map" },
@@ -22,20 +31,28 @@ export const GUEST_BOTTOM_NAV: BottomNavItem[] = [
   { label: "マイページ", href: "/mypage", icon: "user" },
 ];
 
-export const GUEST_SIDEBAR_NAV = [
-  { label: "ホーム", href: "/home", icon: "🏠" },
-  { label: "地図で探す", href: "/map", icon: "🗺️" },
-  { label: "今夜の行くかも", href: "/tonight", icon: "👋" },
-  { label: "お気に入り", href: "/favorites", icon: "❤️" },
-  { label: "履歴", href: "/mypage", icon: "🕙" },
-] as const;
+export const GUEST_SIDEBAR_NAV: {
+  label: string;
+  href: string;
+  icon: GuestSidebarIconId;
+}[] = [
+  { label: "ホーム", href: "/home", icon: "home" },
+  { label: "地図で探す", href: "/map", icon: "map" },
+  { label: "今夜の行くかも", href: "/tonight", icon: "wave" },
+  { label: "お気に入り", href: "/favorites", icon: "heart" },
+  { label: "履歴", href: "/mypage", icon: "history" },
+];
 
-export const OWNER_NAV = [
-  { label: "ダッシュボード", href: "/owner/dashboard", icon: "📊" },
-  { label: "発信する", href: "/owner/post", icon: "📡" },
-  { label: "発信履歴", href: "/owner/history", icon: "🕙" },
-  { label: "プロフィール編集", href: "/owner/profile", icon: "⚙️" },
-] as const;
+export const OWNER_NAV: {
+  label: string;
+  href: string;
+  icon: OwnerNavIconId;
+}[] = [
+  { label: "ダッシュボード", href: "/owner/dashboard", icon: "chart" },
+  { label: "発信する", href: "/owner/post", icon: "broadcast" },
+  { label: "発信履歴", href: "/owner/history", icon: "history" },
+  { label: "プロフィール編集", href: "/owner/profile", icon: "settings" },
+];
 
 export const OWNER_BOTTOM_NAV: BottomNavItem[] = [
   { label: "ホーム", href: "/owner/dashboard", icon: "home" },

@@ -4,26 +4,26 @@ import { excludeShopRegistrationPosts } from "./shopRegistration";
 
 export const GENRE_FILTERS = [
   { id: "すべて", label: "すべて" },
-  { id: "居酒屋", label: "🏮 居酒屋" },
-  { id: "バー", label: "🍸 バー" },
-  { id: "クラフトビール", label: "🍺 クラフトビール" },
-  { id: "カラオケ", label: "🎤 カラオケ" },
-  { id: "ライブハウス", label: "🎵 ライブハウス" },
-  { id: "ダイニング", label: "🍽️ ダイニング" },
+  { id: "居酒屋", label: "居酒屋" },
+  { id: "バー", label: "バー" },
+  { id: "クラフトビール", label: "クラフトビール" },
+  { id: "カラオケ", label: "カラオケ" },
+  { id: "ライブハウス", label: "ライブハウス" },
+  { id: "ダイニング", label: "ダイニング" },
   { id: "その他", label: "その他" },
 ];
 
 export const MOOD_FILTERS = [
-  { id: "激熱", label: "🔥 激熱" },
-  { id: "音楽あり", label: "🎵 音楽あり" },
-  { id: "混ざり歓迎", label: "🤝 混ざり歓迎" },
-  { id: "飲み放題", label: "🍻 飲み放題" },
-  { id: "踊れる", label: "🕺 踊れる" },
-  { id: "歌える", label: "🎤 歌える" },
+  { id: "激熱", label: "激熱" },
+  { id: "音楽あり", label: "音楽あり" },
+  { id: "混ざり歓迎", label: "混ざり歓迎" },
+  { id: "飲み放題", label: "飲み放題" },
+  { id: "踊れる", label: "踊れる" },
+  { id: "歌える", label: "歌える" },
 ];
 
 export const AREA_FILTERS = [
-  { id: "すべて", label: "📍 すべて" },
+  { id: "すべて", label: "すべて" },
   { id: "渋谷", label: "渋谷" },
   { id: "恵比寿", label: "恵比寿" },
   { id: "新宿", label: "新宿" },

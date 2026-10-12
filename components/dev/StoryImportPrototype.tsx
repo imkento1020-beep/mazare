@@ -6,6 +6,7 @@ import { analyzeStoryImage, type StoryDraft } from "@/lib/dev/mockStoryAnalysis"
 import { readFileAsDataUrl } from "@/lib/files";
 import VibePostForm from "@/components/owner/VibePostForm";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui/styles";
+import { PhoneIcon } from "@/components/icons/MazareIcons";
 
 type Step = "import" | "review" | "done";
 
@@ -207,7 +208,7 @@ export default function StoryImportPrototype({ shops }: StoryImportPrototypeProp
                 </div>
               ) : (
                 <>
-                  <span className="text-3xl">📱</span>
+                  <PhoneIcon size={36} color="#5a5668" />
                   <p className="mt-3 text-sm font-medium">ここに画像をドロップ</p>
                   <p className="mt-1 text-xs text-[#5a5668]">またはクリックして選択</p>
                 </>
@@ -247,7 +248,7 @@ export default function StoryImportPrototype({ shops }: StoryImportPrototypeProp
               value={hintText}
               onChange={(e) => setHintText(e.target.value)}
               rows={4}
-              placeholder={"例:\n今夜20時から営業中\nカウンター空きあり\n初めての方も大歓迎🍻"}
+              placeholder={"例:\n今夜20時から営業中\nカウンター空きあり\n初めての方も大歓迎"}
               className="mt-3 min-h-[96px] w-full resize-none rounded-xl border border-white/[0.12] bg-[#18181f] px-4 py-3 text-sm text-[#eeeaf4] outline-none placeholder:text-[#5a5668] focus:border-[#ff3d00]/50"
             />
           </section>

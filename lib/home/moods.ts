@@ -1,7 +1,12 @@
 import { MOOD_OPTIONS } from "@/lib/owner/constants";
 
-export function moodEmoji(mood: string) {
-  return MOOD_OPTIONS.find((option) => option.id === mood)?.emoji ?? "✨";
+/** @deprecated Use {@link MoodIcon} instead */
+export function moodEmoji(_mood: string) {
+  return "";
+}
+
+export function isKnownMood(mood: string) {
+  return MOOD_OPTIONS.some((option) => option.id === mood);
 }
 
 export function moodTagClass(mood: string) {

@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  FireIcon,
+  SparkleIcon,
+  StorefrontIcon,
+} from "@/components/icons/MazareIcons";
+
 type HomeFeedToggleProps = {
   mode: "hot" | "popular" | "shops";
   onChange: (mode: "hot" | "popular" | "shops") => void;
@@ -16,9 +22,24 @@ export default function HomeFeedToggle({
   shopsCount,
 }: HomeFeedToggleProps) {
   const tabs = [
-    { id: "hot" as const, label: "🔥 今夜ホット", count: hotCount },
-    { id: "popular" as const, label: "✨ 人気", count: popularCount },
-    { id: "shops" as const, label: "🏪 お店", count: shopsCount },
+    {
+      id: "hot" as const,
+      label: "今夜ホット",
+      count: hotCount,
+      Icon: FireIcon,
+    },
+    {
+      id: "popular" as const,
+      label: "人気",
+      count: popularCount,
+      Icon: SparkleIcon,
+    },
+    {
+      id: "shops" as const,
+      label: "お店",
+      count: shopsCount,
+      Icon: StorefrontIcon,
+    },
   ];
 
   return (
@@ -34,7 +55,10 @@ export default function HomeFeedToggle({
               : "text-[#9994a8] hover:text-[#eeeaf4]"
           }`}
         >
-          {tab.label}
+          <span className="inline-flex items-center justify-center gap-1">
+            <tab.Icon size={14} color="currentColor" />
+            {tab.label}
+          </span>
           <span className="ml-1 text-[10px] font-semibold opacity-80">
             {tab.count}
           </span>

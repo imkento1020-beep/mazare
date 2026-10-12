@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { getAuthErrorMessage } from "@/lib/auth/errors";
+import { EyeIcon, EyeOffIcon } from "@/components/icons/MazareIcons";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -174,7 +175,11 @@ export default function ResetPasswordPage() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#9994a8] transition hover:text-[#eeeaf4]"
                 aria-label={showPassword ? "パスワードを隠す" : "パスワードを表示"}
               >
-                {showPassword ? "🙈" : "👁️"}
+                {showPassword ? (
+                  <EyeOffIcon size={20} color="currentColor" />
+                ) : (
+                  <EyeIcon size={20} color="currentColor" />
+                )}
               </button>
             </div>
           </div>

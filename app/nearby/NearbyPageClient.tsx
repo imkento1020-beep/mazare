@@ -13,6 +13,7 @@ import {
 } from "@/lib/places/clientPlaces";
 import GeolocationPermissionHelp from "@/components/geo/GeolocationPermissionHelp";
 import { loadNearbyFromUserGesture } from "@/lib/places/loadNearbyFromUserGesture";
+import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 import {
   formatDistanceLabel,
@@ -130,7 +131,9 @@ export default function NearbyPageClient({
           onClick={handleLoadNearbyClick}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] border border-[#ff3d00]/35 bg-[#ff3d00]/10 py-3.5 text-sm font-bold text-[#eeeaf4] transition hover:bg-[#ff3d00]/15 disabled:opacity-50"
         >
-          <span aria-hidden>📍</span>
+          <span aria-hidden>
+            <FeedPinIcon size={16} color="currentColor" />
+          </span>
           現在地から近くのお店を表示
         </button>
 

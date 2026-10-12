@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GUEST_SIDEBAR_NAV, isActivePath } from "@/lib/layout/nav";
+import NavMenuIcon from "@/components/icons/NavMenuIcon";
 import {
   AREA_FILTERS,
   GENRE_FILTERS,
@@ -107,7 +108,13 @@ export default function FilterPanel({
                         : "text-[#9994a8] hover:bg-[#18181f] hover:text-[#eeeaf4]"
                     }`}
                   >
-                    <span className="w-[22px] text-center text-lg">{item.icon}</span>
+                    <span className="flex w-[22px] shrink-0 items-center justify-center">
+                      <NavMenuIcon
+                        icon={item.icon}
+                        size={20}
+                        color={active ? "#ff3d00" : "#9994a8"}
+                      />
+                    </span>
                     {item.label}
                   </Link>
                 );
@@ -124,7 +131,7 @@ export default function FilterPanel({
         <>
           <FilterGroup title="新着">
             <FilterChip
-              label="✨ 新しく追加されたお店"
+              label="新しく追加されたお店"
               active={newShopsOnly}
               onClick={() => onNewShopsOnlyChange(!newShopsOnly)}
             />

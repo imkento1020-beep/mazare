@@ -18,24 +18,6 @@ export type Notification = {
   created_at: string;
 };
 
-export function notificationEmoji(type: string) {
-  switch (type) {
-    case "favorite_shop_posted":
-      return "❤️";
-    case "shop_reposted":
-      return "👋";
-    case "post_interest":
-    case "guest_post_interest":
-      return "🔥";
-    case "shop_favorited":
-      return "⭐";
-    case "staff_invite":
-      return "🏪";
-    default:
-      return "🔔";
-  }
-}
-
 export function formatNotificationTime(iso: string) {
   const date = new Date(iso);
   const diffMs = Date.now() - date.getTime();

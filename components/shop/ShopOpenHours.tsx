@@ -1,6 +1,7 @@
 "use client";
 
 import { parseOpenHoursDisplay } from "@/lib/shop/openHoursDisplay";
+import { ClockIcon } from "@/components/icons/MazareIcons";
 
 type ShopOpenHoursProps = {
   hours: unknown;
@@ -12,8 +13,8 @@ export default function ShopOpenHours({ hours, className = "" }: ShopOpenHoursPr
 
   if (display.kind === "empty") {
     return (
-      <p className={`text-sm text-[#9994a8] ${className}`}>
-        <span className="mr-1">🕙</span>
+      <p className={`inline-flex items-center gap-1.5 text-sm text-[#9994a8] ${className}`}>
+        <ClockIcon size={14} color="#9994a8" />
         営業時間未登録
       </p>
     );

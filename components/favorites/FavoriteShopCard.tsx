@@ -7,6 +7,9 @@ import {
   getShopCoverImages,
   type Shop,
 } from "@/lib/home/types";
+import GenreIcon from "@/components/icons/GenreIcon";
+import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
+import { ClockIcon } from "@/components/icons/MazareIcons";
 
 type FavoriteShopCardProps = {
   shop: Shop;
@@ -14,13 +17,6 @@ type FavoriteShopCardProps = {
   onRemove?: () => void;
   removing?: boolean;
 };
-
-function genreEmoji(genre: string) {
-  if (genre.includes("居酒屋")) return "🎵";
-  if (genre.includes("バー") || genre.includes("クラフト")) return "🍻";
-  if (genre.includes("カラオケ")) return "🎤";
-  return "🕺";
-}
 
 export default function FavoriteShopCard({
   shop,
@@ -39,8 +35,8 @@ export default function FavoriteShopCard({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={cover} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200] text-4xl">
-              {genreEmoji(genre)}
+            <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200]">
+              <GenreIcon genre={genre} size={40} color="rgba(255,61,0,0.45)" />
             </div>
           )}
           {live && (
@@ -53,11 +49,13 @@ export default function FavoriteShopCard({
         <div className="p-4">
           <h3 className="font-bold leading-tight">{shop.name}</h3>
           <p className="mt-1 text-xs text-[#ff3d00]">{genre}</p>
-          <p className="mt-2 line-clamp-1 text-xs text-[#9994a8]">
-            📍 {shop.address}
+          <p className="mt-2 line-clamp-1 flex items-center gap-1 text-xs text-[#9994a8]">
+            <FeedPinIcon size={12} color="#9994a8" />
+            {shop.address}
           </p>
-          <p className="mt-1 text-xs text-[#5a5668]">
-            🕙 {formatOpenHours(shop.open_hours)}
+          <p className="mt-1 flex items-center gap-1 text-xs text-[#5a5668]">
+            <ClockIcon size={12} color="#5a5668" />
+            {formatOpenHours(shop.open_hours)}
           </p>
         </div>
       </Link>

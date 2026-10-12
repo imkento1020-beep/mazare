@@ -4,14 +4,7 @@ import Link from "next/link";
 import PostImageCarousel from "@/components/home/PostImageCarousel";
 import { formatGenre } from "@/lib/home/types";
 import type { Shop } from "@/lib/home/types";
-
-function genreEmoji(genre: string) {
-  if (genre.includes("居酒屋")) return "🎵";
-  if (genre.includes("バー") || genre.includes("クラフト")) return "🍻";
-  if (genre.includes("カラオケ")) return "🎤";
-  if (genre.includes("ライブ")) return "🎸";
-  return "🕺";
-}
+import GenreIcon from "@/components/icons/GenreIcon";
 
 type ShopCoverHeroProps = {
   shop: Shop;
@@ -26,7 +19,9 @@ export default function ShopCoverHero({ shop, coverImages }: ShopCoverHeroProps)
     <section className="overflow-hidden rounded-[14px] border border-white/7 bg-[#111118]">
       <PostImageCarousel
         images={coverImages}
-        fallbackEmoji={genreEmoji(genre)}
+        fallback={
+          <GenreIcon genre={genre} size={48} color="rgba(255,61,0,0.45)" />
+        }
         aspectClassName="aspect-[4/3] w-full max-h-[280px] md:aspect-[16/10] md:max-h-[320px]"
         overlay={
           <>

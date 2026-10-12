@@ -6,6 +6,7 @@ import HomeSidebarRight from "@/components/home/HomeSidebarRight";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import type { VibePost } from "@/lib/home/types";
+import SearchIcon from "@/components/icons/SearchIcon";
 
 type GuestLayoutProps = {
   children: ReactNode;
@@ -92,8 +93,8 @@ export default function GuestLayout({
               <div className="mb-3 flex items-center gap-2 md:hidden">
                 {showMobileSearch && onSearchChange && (
                   <div className="relative min-w-0 flex-1">
-                    <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-[#5a5668]">
-                      🔍
+                    <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#5a5668]">
+                      <SearchIcon size={16} color="#5a5668" />
                     </span>
                     <input
                       type="search"

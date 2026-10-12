@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { extractAreaFromAddress } from "@/lib/geo/area";
 import { formatOpenHours, type TodayInterestRow } from "@/lib/home/types";
+import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
+import { ClockIcon, NoteIcon } from "@/components/icons/MazareIcons";
 
 type TonightInterestCardProps = {
   item: TodayInterestRow;
@@ -66,11 +68,20 @@ export default function TonightInterestCard({
           >
             {shop?.name ?? "お店"}
           </Link>
-          <p className="mt-1 text-sm text-[#9994a8]">
-            📍 {area}
-            {shop?.open_hours
-              ? ` · 🕙 ${formatOpenHours(shop.open_hours)}`
-              : ""}
+          <p className="mt-1 flex flex-wrap items-center gap-x-1 text-sm text-[#9994a8]">
+            <span className="inline-flex items-center gap-1">
+              <FeedPinIcon size={12} color="#9994a8" />
+              {area}
+            </span>
+            {shop?.open_hours && (
+              <>
+                <span>·</span>
+                <span className="inline-flex items-center gap-1">
+                  <ClockIcon size={12} color="#9994a8" />
+                  {formatOpenHours(shop.open_hours)}
+                </span>
+              </>
+            )}
           </p>
           {!compact && item.vibe_posts?.comment && (
             <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[#9994a8]">
@@ -93,8 +104,11 @@ export default function TonightInterestCard({
       {showMemo && !compact && (
         <div className="mt-3 border-t border-white/[0.06] pt-3">
           {item.note && !memoOpen && (
-            <p className="mb-2 rounded-lg bg-[#18181f] px-3 py-2 text-sm text-[#eeeaf4]">
-              📝 {item.note}
+            <p className="mb-2 flex items-start gap-2 rounded-lg bg-[#18181f] px-3 py-2 text-sm text-[#eeeaf4]">
+              <span className="mt-0.5 shrink-0">
+                <NoteIcon size={16} color="#9994a8" />
+              </span>
+              {item.note}
             </p>
           )}
 
@@ -104,7 +118,10 @@ export default function TonightInterestCard({
               onClick={() => setMemoOpen(true)}
               className="text-sm font-semibold text-[#9994a8] transition hover:text-[#eeeaf4]"
             >
-              📝 {item.note ? "メモを編集" : "メモを追加"}
+              <span className="inline-flex items-center gap-1.5">
+                <NoteIcon size={14} color="currentColor" />
+                {item.note ? "メモを編集" : "メモを追加"}
+              </span>
             </button>
           ) : (
             <div className="space-y-2">

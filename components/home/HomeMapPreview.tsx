@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import GoogleMapView from "@/components/map/GoogleMapView";
 import { getShopCoverImages, type VibePost } from "@/lib/home/types";
+import MapIcon from "@/components/icons/MapIcon";
+import { FeedGlassIcon } from "@/components/icons/FeedActionIcons";
 
 type HomeMapPreviewProps = {
   posts: VibePost[];
@@ -80,8 +82,8 @@ function MapExploreFallback({
                     className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-lg opacity-40">
-                    🍻
+                  <div className="flex h-full items-center justify-center opacity-40">
+                    <FeedGlassIcon size={24} color="rgba(255,61,0,0.45)" />
                   </div>
                 )}
               </div>
@@ -89,15 +91,16 @@ function MapExploreFallback({
           </div>
         ) : (
           <div className="flex h-full flex-col items-center justify-center bg-gradient-to-br from-[#1a0a00] via-[#111118] to-[#2d1200] px-4 text-center">
-            <span className="text-3xl">🗺️</span>
+            <MapIcon size={36} color="#9994a8" />
             <p className="mt-2 text-xs text-[#9994a8]">今夜のお店を地図で探す</p>
           </div>
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-[#080810]/90 via-[#080810]/20 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-3">
-          <p className="text-[11px] font-bold text-[#eeeaf4]">
-            🗺️ 地図で今夜のお店を探す
+          <p className="flex items-center gap-1.5 text-[11px] font-bold text-[#eeeaf4]">
+            <MapIcon size={14} color="#eeeaf4" />
+            地図で今夜のお店を探す
           </p>
           <p className="mt-0.5 text-[10px] text-[#9994a8]">
             {liveCount > 0

@@ -10,6 +10,8 @@ import { useAppMode } from "@/hooks/useAppMode";
 import AppModeSwitcher from "@/components/auth/AppModeSwitcher";
 import MazareLogo from "@/components/MazareLogo";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import SearchIcon from "@/components/icons/SearchIcon";
+import UserIcon from "@/components/icons/UserIcon";
 type HeaderProps = {
   search?: string;
   onSearchChange?: (value: string) => void;
@@ -189,7 +191,7 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
             <NotificationBell />
             <LiveStatusPill />
             <IconButton href="/owner/profile" label="プロフィール">
-              👤
+              <UserIcon size={20} color="currentColor" />
             </IconButton>
           </div>
         </div>
@@ -207,7 +209,7 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
           className="relative mx-auto hidden max-w-[480px] flex-1 md:block"
         >
           <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5a5668]">
-            🔍
+            <SearchIcon size={18} color="#5a5668" />
           </span>
           <input
             type="search"
@@ -221,7 +223,7 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
         <div className="ml-auto flex items-center gap-1 md:gap-2">
           <div className="md:hidden">
             <IconButton href="/search" label="検索">
-              🔍
+              <SearchIcon size={20} color="currentColor" />
             </IconButton>
           </div>
           {isDualRole && (
@@ -230,7 +232,7 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
           <NotificationBell />
           <div className="hidden md:contents">
             <IconButton href="/mypage" label="プロフィール">
-              👤
+              <UserIcon size={20} color="currentColor" />
             </IconButton>
             {!hasOwnerRole && (
               <Link

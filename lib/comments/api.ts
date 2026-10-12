@@ -107,6 +107,10 @@ export async function fetchCommentCountsByPostIds(
   const map = new Map<string, number>();
   if (ids.length === 0) return map;
 
+  for (const id of ids) {
+    map.set(id, 0);
+  }
+
   const { data, error } = await supabase
     .from("comments")
     .select("vibe_post_id")

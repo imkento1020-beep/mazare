@@ -18,6 +18,8 @@ import type { NightOutInput } from "@/lib/guest-post/nightOut";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { ensureAnonymousSession } from "@/lib/auth/anonymous";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
+import { FeedGlassIcon, FeedPinIcon } from "@/components/icons/FeedActionIcons";
+import { FireIcon } from "@/components/icons/MazareIcons";
 import { countGuestPostsByUser } from "@/lib/auth/anonymous";
 import type { PlaceSummary } from "@/lib/places/types";
 import { cachePlacesForPost, searchPlacesByTextClient } from "@/lib/places/clientPlaces";
@@ -206,9 +208,13 @@ export default function PostPageClient({
       <div className="flex min-h-dvh flex-col bg-[#080810] text-[#eeeaf4]">
         <Header />
         <main className="mx-auto flex max-w-lg flex-1 flex-col justify-center px-6 py-12 text-center">
-          <p className="text-2xl font-black">投稿しました🔥</p>
-          <p className="mt-4 text-base font-semibold leading-relaxed text-[#eeeaf4]">
-            引き続き、最高の夜を。乾杯！🍺
+          <p className="flex items-center justify-center gap-2 text-2xl font-black">
+            <FireIcon size={28} color="#ff3d00" />
+            投稿しました
+          </p>
+          <p className="mt-4 flex items-center justify-center gap-2 text-base font-semibold leading-relaxed text-[#eeeaf4]">
+            <FeedGlassIcon size={20} color="#ffcc66" />
+            引き続き、最高の夜を。乾杯！
           </p>
           {successShopName && (
             <p className="mt-2 text-xs text-[#9994a8]">{successShopName}</p>
@@ -263,7 +269,7 @@ export default function PostPageClient({
           onClick={handleLoadNearbyClick}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] border border-[#ff3d00]/35 bg-[#ff3d00]/10 py-3.5 text-sm font-bold text-[#eeeaf4] transition hover:bg-[#ff3d00]/15 disabled:opacity-50"
         >
-          <span aria-hidden>📍</span>
+          <FeedPinIcon size={16} color="currentColor" />
           現在地から近くのお店を表示
         </button>
 

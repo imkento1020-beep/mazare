@@ -40,7 +40,7 @@ function buildComment(shopName: string, hintText: string) {
     return `${firstLine.slice(0, 77)}...`;
   }
 
-  return `${shopName}、今夜も盛り上がってます！詳細は画像をチェック🔥`;
+  return `${shopName}、今夜も盛り上がってます！詳細は画像をチェック`;
 }
 
 function mockExtractedText(hintText: string) {

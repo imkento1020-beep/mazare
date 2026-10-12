@@ -1,5 +1,7 @@
 "use client";
 
+import { HeartIcon } from "@/components/icons/MazareIcons";
+
 type FavoriteButtonProps = {
   favorited: boolean;
   loading?: boolean;
@@ -27,7 +29,11 @@ export default function FavoriteButton({
           : "border-white/12 bg-[#111118] text-[#9994a8] hover:border-[#ff3d00]/30 hover:text-[#eeeaf4]"
       }`}
     >
-      <span>{favorited ? "❤️" : "🤍"}</span>
+      <HeartIcon
+        size={compact ? 20 : 18}
+        color="currentColor"
+        filled={favorited}
+      />
       {!compact && (favorited ? "お気に入り済み" : "お気に入り")}
     </button>
   );

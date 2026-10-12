@@ -49,11 +49,14 @@ import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
 import { fetchInterestCountsByPostIds } from "@/lib/interests/postInterestCounts";
 import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
 import type { User } from "@supabase/supabase-js";
+import GenreIcon from "@/components/icons/GenreIcon";
+import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
+import { CheckIcon, CheckinIcon } from "@/components/icons/MazareIcons";
 
-function genreEmoji(genre: string) {
-  if (genre.includes("居酒屋")) return "🎵";
-  if (genre.includes("バー") || genre.includes("クラフト")) return "🍻";
-  return "🕺";
+function genreFallback(genre: string) {
+  return (
+    <GenreIcon genre={genre} size={48} color="rgba(255,61,0,0.45)" />
+  );
 }
 
 function CoverGallery({ shop, posts }: { shop: Shop; posts: VibePost[] }) {
@@ -64,8 +67,8 @@ function CoverGallery({ shop, posts }: { shop: Shop; posts: VibePost[] }) {
 
   if (images.length === 0) {
     return (
-      <div className="flex h-[240px] items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200] text-6xl">
-        {genreEmoji(formatGenre(shop.genre))}
+      <div className="flex h-[240px] items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200]">
+        {genreFallback(formatGenre(shop.genre))}
       </div>
     );
   }
@@ -78,8 +81,8 @@ function CoverGallery({ shop, posts }: { shop: Shop; posts: VibePost[] }) {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={src} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200] text-5xl">
-              {genreEmoji(formatGenre(shop.genre))}
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200]">
+              {genreFallback(formatGenre(shop.genre))}
             </div>
           )}
         </div>
@@ -347,8 +350,11 @@ export default function ShopDetailPage() {
             />
           )}
         </div>
-        <p className="mt-2 text-sm text-[#9994a8]">
-          📍 {shop.address}
+        <p className="mt-2 flex items-start gap-1.5 text-sm text-[#9994a8]">
+          <span className="mt-0.5 shrink-0">
+            <FeedPinIcon size={14} color="#9994a8" />
+          </span>
+          {shop.address}
           {distance ? ` · ${distance}` : ""}
         </p>
         <ShopOpenHours hours={shop.open_hours} className="mt-3" />
@@ -384,11 +390,19 @@ export default function ShopDetailPage() {
                 : "border-white/[0.12] bg-[#18181f] text-[#eeeaf4] hover:border-white/20"
             }`}
           >
-            {checkinLoading
-              ? "処理中..."
-              : checkedIn
-                ? "✓ チェックイン中"
-                : "📍 チェックイン"}
+            {checkinLoading ? (
+              "処理中..."
+            ) : checkedIn ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <CheckIcon size={16} color="#00e87a" />
+                チェックイン中
+              </span>
+            ) : (
+              <span className="inline-flex items-center justify-center gap-2">
+                <CheckinIcon size={16} color="currentColor" />
+                チェックイン
+              </span>
+            )}
           </button>
         </div>
 

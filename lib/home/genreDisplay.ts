@@ -134,12 +134,3 @@ export function labelsFromGooglePlaceTypes(
   return labels.length > 0 ? labels : ["飲食店"];
 }
 
-export function genreDisplayEmoji(label: string): string {
-  if (label.includes("居酒屋")) return "🏮";
-  if (label.includes("バー") || label.includes("パブ") || label.includes("クラブ")) return "🍸";
-  if (label.includes("カフェ")) return "☕";
-  if (label.includes("カラオケ")) return "🎤";
-  if (label.includes("ライブ")) return "🎵";
-  if (label.includes("ラーメン") || label.includes("寿司") || label.includes("和食")) return "🍜";
-  return "🍽️";
-}

@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { completeAuthFlow } from "@/lib/auth/postAuth";
 import { syncProfileAfterAuth } from "@/lib/auth/syncProfileAfterAuth";
 import { readPendingReturnPath } from "@/lib/auth/pendingReturnPath";
+import { CheckIcon } from "@/components/icons/MazareIcons";
 
 function getAuthErrorMessage(error: { message: string } | null) {
   if (!error) return "認証に失敗しました。もう一度お試しください。";
@@ -162,8 +163,8 @@ export default function AuthCallbackPage() {
         {!verified ? (
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#ff3d00] border-t-transparent" />
         ) : (
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#00e87a]/15 text-xl">
-            ✓
+          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#00e87a]/15">
+            <CheckIcon size={24} color="#00e87a" />
           </div>
         )}
         <p className="mt-4 text-sm leading-relaxed text-[#9994a8]">{message}</p>

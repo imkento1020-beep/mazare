@@ -1,17 +1,22 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import { FeedGlassIcon } from "@/components/icons/FeedActionIcons";
 
 type PostImageCarouselProps = {
   images: string[];
-  fallbackEmoji?: string;
+  fallback?: ReactNode;
   aspectClassName?: string;
   overlay?: React.ReactNode;
 };
 
+const defaultFallback = (
+  <FeedGlassIcon size={48} color="rgba(255,61,0,0.45)" />
+);
+
 export default function PostImageCarousel({
   images,
-  fallbackEmoji = "🍻",
+  fallback = defaultFallback,
   aspectClassName = "h-[200px] md:h-[220px]",
   overlay,
 }: PostImageCarouselProps) {
@@ -35,8 +40,8 @@ export default function PostImageCarousel({
       <div
         className={`relative overflow-hidden bg-gradient-to-br from-[#1a0a00] via-[#120810] to-[#2d1200] ${aspectClassName}`}
       >
-        <div className="flex h-full items-center justify-center text-5xl opacity-90">
-          {fallbackEmoji}
+        <div className="flex h-full items-center justify-center opacity-90">
+          {fallback}
         </div>
         {overlay}
       </div>

@@ -18,6 +18,7 @@ import TonightInterestsShareButton from "@/components/interests/TonightInterests
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { isCurrentlyInTonightInterestHours } from "@/lib/home/dates";
+import { FeedPeopleIcon } from "@/components/icons/FeedActionIcons";
 
 export default function TonightPage() {
   const { openFormalRegistrationPrompt } = useAuthPrompt();
@@ -155,7 +156,7 @@ export default function TonightPage() {
         <div className="mt-6 space-y-3">
           {items.length === 0 ? (
             <div className="rounded-2xl border border-white/7 bg-[#111118] p-8 text-center">
-              <p className="text-4xl">👋</p>
+              <FeedPeopleIcon size={48} color="#5a5668" />
               <p className="mt-4 text-sm font-bold text-[#eeeaf4]">
                 今夜の行くかもはまだありません
               </p>

@@ -12,6 +12,9 @@ import { extractAreaFromAddress } from "@/lib/geo/area";
 import { getDistanceLabel, type GeoPoint } from "@/lib/geo/haversine";
 import type { CheckinUser } from "@/lib/checkins/api";
 import CheckinAvatarStack from "@/components/checkins/CheckinAvatarStack";
+import GenreIcon from "@/components/icons/GenreIcon";
+import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
+import { ClockIcon } from "@/components/icons/MazareIcons";
 
 type ShopBrowseCardProps = {
   shop: Shop;
@@ -23,13 +26,6 @@ type ShopBrowseCardProps = {
   userLocation?: GeoPoint | null;
   checkinUsers?: CheckinUser[];
 };
-
-function genreEmoji(genre: string) {
-  if (genre.includes("居酒屋")) return "🎵";
-  if (genre.includes("バー") || genre.includes("クラフト")) return "🍻";
-  if (genre.includes("カラオケ")) return "🎤";
-  return "🕺";
-}
 
 export default function ShopBrowseCard({
   shop,
@@ -54,8 +50,8 @@ export default function ShopBrowseCard({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={cover} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200] text-4xl">
-              {genreEmoji(genre)}
+            <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200]">
+              <GenreIcon genre={genre} size={40} color="rgba(255,61,0,0.45)" />
             </div>
           )}
           <div className="absolute left-3 top-3 flex flex-col gap-1">
@@ -75,12 +71,14 @@ export default function ShopBrowseCard({
         <div className="p-4">
           <h3 className="font-bold leading-tight">{shop.name}</h3>
           <p className="mt-1 text-xs text-[#ff3d00]">{genre}</p>
-          <p className="mt-2 line-clamp-1 text-xs text-[#9994a8]">
-            📍 {area}
+          <p className="mt-2 line-clamp-1 flex items-center gap-1 text-xs text-[#9994a8]">
+            <FeedPinIcon size={12} color="#9994a8" />
+            {area}
             {distance ? ` · ${distance}` : ""}
           </p>
-          <p className="mt-1 text-xs text-[#5a5668]">
-            🕙 {formatOpenHours(shop.open_hours)}
+          <p className="mt-1 flex items-center gap-1 text-xs text-[#5a5668]">
+            <ClockIcon size={12} color="#5a5668" />
+            {formatOpenHours(shop.open_hours)}
           </p>
 
           <CheckinAvatarStack users={checkinUsers} className="mt-3" />

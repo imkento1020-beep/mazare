@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { UploadIcon } from "@/components/icons/MazareIcons";
 
 const MEDIA_ACCEPT =
   "image/jpeg,image/png,image/webp,video/mp4,video/quicktime";
@@ -60,8 +61,8 @@ export default function GuestPostMediaUpload({
         onClick={() => inputRef.current?.click()}
         className="flex w-full flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-white/15 bg-[#080810] px-4 py-8 transition hover:border-[#ff3d00]/40 hover:bg-[#0d0d14]"
       >
-        <span className="text-3xl leading-none" aria-hidden>
-          📤
+        <span aria-hidden>
+          <UploadIcon size={32} color="#5a5668" />
         </span>
         <span className="text-sm font-bold text-[#eeeaf4]">アップロード</span>
       </button>

@@ -1,4 +1,5 @@
 import type { CheckinUser } from "@/lib/checkins/api";
+import UserIcon from "@/components/icons/UserIcon";
 
 type CheckinAvatarStackProps = {
   users: CheckinUser[];
@@ -34,7 +35,7 @@ export default function CheckinAvatarStack({
                 className="h-full w-full object-cover"
               />
             ) : (
-              "👤"
+              <UserIcon size={14} color="#9994a8" />
             )}
           </div>
         ))}

@@ -3,6 +3,8 @@
 import { countByArea, countByMood } from "@/lib/home/filters";
 import type { VibePost } from "@/lib/home/types";
 import HomeMapPreview from "./HomeMapPreview";
+import MoodIcon from "@/components/icons/MoodIcon";
+import { FireIcon } from "@/components/icons/MazareIcons";
 
 type HomeSidebarRightProps = {
   posts: VibePost[];
@@ -53,7 +55,14 @@ export default function HomeSidebarRight({
               <p
                 className={`mt-0.5 text-[10px] ${hot ? "text-[#ff3d00]" : "text-[#5a5668]"}`}
               >
-                {count > 0 ? `${hot ? "🔥 " : ""}${count}件発信中` : "発信なし"}
+                {count > 0 ? (
+                  <span className="inline-flex items-center justify-center gap-1">
+                    {hot && <FireIcon size={12} color="#ff3d00" />}
+                    {count}件発信中
+                  </span>
+                ) : (
+                  "発信なし"
+                )}
               </p>
             </button>
           );
@@ -77,9 +86,7 @@ export default function HomeSidebarRight({
                 <p className="text-[13px] font-semibold text-[#eeeaf4]">{mood}</p>
                 <p className="text-[11px] text-[#5a5668]">{count}件のお店が発信</p>
               </div>
-              <span className="text-xl">
-                {mood === "激熱" ? "🔥" : mood === "音楽あり" ? "🎵" : "🤝"}
-              </span>
+              <MoodIcon mood={mood} size={20} color="currentColor" />
             </div>
           ))
         )}

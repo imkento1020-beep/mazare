@@ -1,16 +1,20 @@
+import GenreIcon from "@/components/icons/GenreIcon";
+import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
+import { ClockIcon } from "@/components/icons/MazareIcons";
+
 const sampleCards = [
   {
-    emoji: "🎵",
+    genre: "カラオケ",
     name: "島唄酒場 ゆんたく",
     area: "渋谷",
     hours: "17:00–24:00",
-    comment: "カラオケ開放中！知らない人たちと大合唱になってます🎤",
+    comment: "カラオケ開放中！知らない人たちと大合唱になってます",
     moods: ["激熱", "混ざり歓迎"],
     going: 24,
     heat: 5,
   },
   {
-    emoji: "🍻",
+    genre: "クラフトビール",
     name: "クラフトビール ROOTS",
     area: "恵比寿",
     hours: "18:00–02:00",
@@ -28,7 +32,7 @@ function moodClass(mood: string) {
 }
 
 function SampleCard({
-  emoji,
+  genre,
   name,
   area,
   hours,
@@ -40,8 +44,8 @@ function SampleCard({
   return (
     <article className="overflow-hidden rounded-xl border border-white/10 bg-[#111118]/90 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-sm">
       <div className="relative h-16 overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200] text-2xl">
-          {emoji}
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200]">
+          <GenreIcon genre={genre} size={28} color="rgba(255,61,0,0.45)" />
         </div>
         <span className="absolute left-1.5 top-1.5 rounded bg-[#ff3d00] px-1 py-0.5 text-[8px] font-extrabold uppercase text-white">
           LIVE
@@ -64,8 +68,16 @@ function SampleCard({
             {going}
           </span>
         </div>
-        <p className="mt-0.5 text-[9px] text-[#5a5668]">
-          📍 {area} · 🕙 {hours}
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-1 text-[9px] text-[#5a5668]">
+          <span className="inline-flex items-center gap-0.5">
+            <FeedPinIcon size={10} color="#5a5668" />
+            {area}
+          </span>
+          <span>·</span>
+          <span className="inline-flex items-center gap-0.5">
+            <ClockIcon size={10} color="#5a5668" />
+            {hours}
+          </span>
         </p>
         <p className="mt-1.5 line-clamp-2 rounded border-l-2 border-[#ff3d00] bg-[#18181f]/80 pl-2 text-[10px] leading-relaxed text-[#9994a8]">
           {comment}

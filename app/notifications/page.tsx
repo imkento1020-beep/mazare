@@ -12,9 +12,10 @@ import {
 } from "@/lib/notifications/api";
 import {
   formatNotificationTime,
-  notificationEmoji,
   type Notification,
 } from "@/lib/notifications/types";
+import NotificationTypeIcon from "@/components/icons/NotificationTypeIcon";
+import BellIcon from "@/components/icons/BellIcon";
 import { useAppMode } from "@/hooks/useAppMode";
 import GuestLayout from "@/components/layout/GuestLayout";
 import OwnerLayout from "@/components/layout/OwnerLayout";
@@ -123,7 +124,7 @@ export default function NotificationsPage() {
       <div className="mt-6 space-y-2">
         {notifications.length === 0 ? (
           <div className="rounded-[14px] border border-white/7 bg-[#111118] p-8 text-center">
-            <p className="text-4xl">🔔</p>
+            <BellIcon size={48} color="#5a5668" />
             <p className="mt-4 text-sm font-bold">通知はまだありません</p>
             <p className="mt-2 text-sm text-[#9994a8]">
               お気に入りのお店の発信や、お店への反応がここに表示されます
@@ -139,7 +140,13 @@ export default function NotificationsPage() {
                 notification.read_at ? "opacity-70" : ""
               }`}
             >
-              <span className="text-2xl">{notificationEmoji(notification.type)}</span>
+              <span className="shrink-0">
+                <NotificationTypeIcon
+                  type={notification.type}
+                  size={28}
+                  color="#9994a8"
+                />
+              </span>
               <span className="min-w-0 flex-1">
                 <span className="font-bold">{notification.title}</span>
                 <span className="mt-1 block text-sm text-[#9994a8]">

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { AppMode } from "@/lib/auth/mode";
+import { FeedGlassIcon } from "@/components/icons/FeedActionIcons";
+import { StorefrontIcon } from "@/components/icons/MazareIcons";
 
 type AppModeSwitcherProps = {
   mode: AppMode;
@@ -30,7 +32,19 @@ export default function AppModeSwitcher({
         onClick={() => switchTo(mode === "owner" ? "guest" : "owner")}
         className="rounded-[10px] border border-white/12 bg-[#111118] px-3 py-1.5 text-[11px] font-semibold text-[#9994a8] transition hover:border-[#ff3d00]/30 hover:text-[#eeeaf4]"
       >
-        {mode === "owner" ? "🍻 飲みに行く" : "🏪 お店を管理"}
+        <span className="inline-flex items-center gap-1.5">
+          {mode === "owner" ? (
+            <>
+              <FeedGlassIcon size={14} color="currentColor" />
+              飲みに行く
+            </>
+          ) : (
+            <>
+              <StorefrontIcon size={14} color="currentColor" />
+              お店を管理
+            </>
+          )}
+        </span>
       </button>
     );
   }

@@ -17,6 +17,8 @@ import {
 } from "@/lib/owner/scheduling";
 import { readFilesAsDataUrls } from "@/lib/files";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui/styles";
+import MoodIcon from "@/components/icons/MoodIcon";
+import { CloseIcon } from "@/components/icons/MazareIcons";
 
 type PublishMode = "now" | "schedule";
 
@@ -179,7 +181,9 @@ export default function VibePostForm({
                     : "border-white/7 bg-[#111118] text-[#9994a8]"
                 }`}
               >
-                <span className="block text-lg">{mood.emoji}</span>
+                <span className="mx-auto mb-1 flex justify-center">
+                  <MoodIcon mood={mood.id} size={20} color="currentColor" />
+                </span>
                 {mood.label}
               </button>
             );
@@ -234,7 +238,7 @@ export default function VibePostForm({
                   className="text-[#9994a8] transition hover:text-[#ff3d00]"
                   aria-label={`${tag} を削除`}
                 >
-                  ×
+                  <CloseIcon size={12} color="currentColor" />
                 </button>
               </span>
             ))}
@@ -251,7 +255,7 @@ export default function VibePostForm({
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           rows={4}
-          placeholder="例: カラオケ開放中！知らない人たちと大合唱になってます🎤"
+          placeholder="例: カラオケ開放中！知らない人たちと大合唱になってます"
           className="mt-2 min-h-[80px] w-full resize-none rounded-xl border border-white/[0.12] bg-[#18181f] px-4 py-3 text-sm text-[#eeeaf4] outline-none placeholder:text-[#5a5668] focus:border-[#ff3d00]/50"
         />
       </div>
@@ -272,9 +276,9 @@ export default function VibePostForm({
                 onClick={() =>
                   setImages((prev) => prev.filter((_, i) => i !== index))
                 }
-                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff3d00] text-[10px] text-white"
+                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff3d00] text-white"
               >
-                ×
+                <CloseIcon size={12} color="#ffffff" />
               </button>
             </div>
           ))}

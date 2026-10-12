@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import type { VibePost } from "@/lib/home/types";
+import UserIcon from "@/components/icons/UserIcon";
+import { LanternIcon } from "@/components/icons/MazareIcons";
 
 type PostAuthorBadgeProps = {
   post: Pick<
@@ -17,9 +19,10 @@ export default function PostAuthorBadge({ post, className = "" }: PostAuthorBadg
   if (!guest) {
     return (
       <span
-        className={`inline-flex items-center rounded-md bg-[#ff3d00]/15 px-2 py-0.5 text-[10px] font-bold text-[#ff3d00] ${className}`}
+        className={`inline-flex items-center gap-1 rounded-md bg-[#ff3d00]/15 px-2 py-0.5 text-[10px] font-bold text-[#ff3d00] ${className}`}
       >
-        🏮 お店からの発信
+        <LanternIcon size={12} color="currentColor" />
+        お店からの発信
       </span>
     );
   }
@@ -27,9 +30,10 @@ export default function PostAuthorBadge({ post, className = "" }: PostAuthorBadg
   if (!post.author_id) {
     return (
       <span
-        className={`inline-flex items-center rounded-md bg-[#111118] px-2 py-0.5 text-[10px] font-bold text-[#9994a8] ring-1 ring-white/10 ${className}`}
+        className={`inline-flex items-center gap-1 rounded-md bg-[#111118] px-2 py-0.5 text-[10px] font-bold text-[#9994a8] ring-1 ring-white/10 ${className}`}
       >
-        👤 来店者の投稿
+        <UserIcon size={12} color="currentColor" />
+        来店者の投稿
       </span>
     );
   }
@@ -40,9 +44,10 @@ export default function PostAuthorBadge({ post, className = "" }: PostAuthorBadg
     <Link
       href={`/user/${post.author_id}`}
       onClick={(event) => event.stopPropagation()}
-      className={`inline-flex items-center rounded-md bg-[#111118] px-2 py-0.5 text-[10px] font-bold text-[#eeeaf4] ring-1 ring-white/10 transition hover:bg-[#18181f] hover:ring-[#ff3d00]/40 ${className}`}
+      className={`inline-flex items-center gap-1 rounded-md bg-[#111118] px-2 py-0.5 text-[10px] font-bold text-[#eeeaf4] ring-1 ring-white/10 transition hover:bg-[#18181f] hover:ring-[#ff3d00]/40 ${className}`}
     >
-      👤 {label}
+      <UserIcon size={12} color="currentColor" />
+      {label}
     </Link>
   );
 }

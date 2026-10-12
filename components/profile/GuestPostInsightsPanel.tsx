@@ -4,6 +4,7 @@ import { formatPostedAt } from "@/lib/home/types";
 
 type GuestPostInsightsPanelProps = {
   insights: GuestPostInsights;
+  className?: string;
 };
 
 function ChipRow({ label, items }: { label: string; items: string[] }) {
@@ -30,6 +31,7 @@ function ChipRow({ label, items }: { label: string; items: string[] }) {
 
 export default function GuestPostInsightsPanel({
   insights,
+  className = "mt-4",
 }: GuestPostInsightsPanelProps) {
   const hasTonight =
     insights.tonightPostCount > 0 ||
@@ -38,7 +40,7 @@ export default function GuestPostInsightsPanel({
 
   if (!hasTonight) {
     return (
-      <section className="mt-4 rounded-[14px] border border-white/[0.07] bg-[#111118] p-4">
+      <section className={`${className} rounded-2xl border border-white/[0.07] bg-[#111118] p-4`}>
         <p className="text-sm font-bold text-[#eeeaf4]">今夜の記録</p>
         <p className="mt-2 text-sm text-[#9994a8]">
           今夜（17:00〜翌5:00）の投稿がまだありません
@@ -48,7 +50,7 @@ export default function GuestPostInsightsPanel({
   }
 
   return (
-    <section className="mt-4 space-y-4 rounded-[14px] border border-[#ff3d00]/20 bg-[#ff3d00]/[0.04] p-4">
+    <section className={`${className} space-y-4 rounded-2xl border border-[#ff3d00]/20 bg-[#ff3d00]/[0.04] p-4`}>
       <div>
         <p className="text-sm font-black text-[#eeeaf4]">今夜の記録</p>
         {insights.latestSummary && (

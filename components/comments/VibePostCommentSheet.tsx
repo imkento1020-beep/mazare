@@ -17,6 +17,7 @@ import {
   getFormalSignupPathWithReturn,
 } from "@/lib/auth/authPaths";
 import { FeedCommentIcon } from "@/components/icons/FeedActionIcons";
+import { CloseIcon } from "@/components/icons/MazareIcons";
 
 type VibePostCommentSheetProps = {
   vibePostId: string;
@@ -242,10 +243,10 @@ export default function VibePostCommentSheet({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-[#9994a8] transition hover:bg-white/10 hover:text-[#eeeaf4]"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[#9994a8] transition hover:bg-white/10 hover:text-[#eeeaf4]"
             aria-label="閉じる"
           >
-            ×
+            <CloseIcon size={18} color="currentColor" />
           </button>
         </header>
 

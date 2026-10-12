@@ -12,7 +12,13 @@ import {
   fetchUserGuestPosts,
   fetchUserInterestStats,
   fetchUserInterests,
+  updateTonightSocialMood,
 } from "@/lib/mypage/api";
+import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
+import TonightSocialMoodPicker from "@/components/profile/TonightSocialMoodPicker";
+import ProfileHero from "@/components/profile/ProfileHero";
+import ProfileSection from "@/components/profile/ProfileSection";
+import MyPageTabBar, { type MyPageTab } from "@/components/mypage/MyPageTabBar";
 import {
   acceptStaffInviteWithRole,
   fetchPendingInvitesForEmail,
@@ -28,6 +34,7 @@ import { fetchLiveShopIds, fetchVibePosts } from "@/lib/home/api";
 import { formatPostedAt } from "@/lib/home/types";
 import type { InterestRow, TodayInterestRow, VibePost } from "@/lib/home/types";
 import GuestLayout from "@/components/layout/GuestLayout";
+import { HeartIcon } from "@/components/icons/MazareIcons";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import FavoriteShopCard from "@/components/favorites/FavoriteShopCard";
 import TonightInterestCard from "@/components/interests/TonightInterestCard";
@@ -57,6 +64,10 @@ export default function MyPage() {
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [tab, setTab] = useState<MyPageTab>("posts");
+  const [socialMood, setSocialMood] = useState<TonightSocialMoodId | null>(null);
+  const [moodSaving, setMoodSaving] = useState(false);
+  const [moodError, setMoodError] = useState<string | null>(null);
   const postInsights = useMemo(
     () => computeGuestPostInsights(myPosts),
     [myPosts],
@@ -102,6 +113,7 @@ export default function MyPage() {
         ]);
 
       setProfile(profileResult.data);
+      setSocialMood(profileResult.data.tonight_social_mood);
       setInterests(interestsResult.data);
       setTodayInterests(todayInterestsResult.data);
       setStats(interestStats);
@@ -189,6 +201,23 @@ export default function MyPage() {
     setFavorites((prev) => prev.filter((item) => item.shop_id !== shopId));
   }
 
+  async function handleSocialMoodChange(mood: TonightSocialMoodId | null) {
+    if (!user) return;
+    setSocialMood(mood);
+    setMoodSaving(true);
+    setMoodError(null);
+    const { error } = await updateTonightSocialMood(user.id, mood);
+    setMoodSaving(false);
+    if (error) {
+      setMoodError(error);
+      setSocialMood(profile?.tonight_social_mood ?? null);
+    } else {
+      setProfile((prev) =>
+        prev ? { ...prev, tonight_social_mood: mood } : prev,
+      );
+    }
+  }
+
   async function handleLogout() {
     setLoggingOut(true);
     clearStoredAppMode();
@@ -210,42 +239,87 @@ export default function MyPage() {
       posts={sidebarPosts}
       filteredCount={sidebarPosts.length}
     >
-      <section className="rounded-[14px] border border-white/[0.07] bg-[#111118] p-5 text-center md:max-w-xl">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[#18181f] text-3xl">
-          {profile?.profile_image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={profile.profile_image}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            "👤"
+      <div className="mx-auto max-w-2xl space-y-1">
+      <ProfileHero
+        displayName={displayName}
+        avatarUrl={profile?.profile_image}
+        metaLine={user?.email}
+        mood={socialMood}
+        stats={[
+          { value: myPosts.length, label: "投稿" },
+          { value: stats.totalInterests, label: "行くかも" },
+          { value: stats.visitedShops, label: "行った店" },
+        ]}
+        actions={
+          <>
+            <Link
+              href="/mypage/edit"
+              className="flex-1 rounded-xl border border-white/12 bg-[#18181f] px-4 py-2.5 text-center text-xs font-bold text-[#eeeaf4] transition hover:border-[#ff3d00]/35"
+            >
+              プロフィール編集
+            </Link>
+            <Link
+              href="/post"
+              className="flex-1 rounded-xl bg-[#ff3d00] px-4 py-2.5 text-center text-xs font-bold text-white shadow-[0_4px_20px_rgba(255,61,0,0.35)] transition hover:bg-[#e63600]"
+            >
+              今夜を投稿
+            </Link>
+          </>
+        }
+      />
+
+      <div className="mt-2 rounded-2xl border border-white/[0.07] bg-[#111118] px-1">
+        <MyPageTabBar
+          active={tab}
+          onChange={setTab}
+          postCount={myPosts.length}
+        />
+      </div>
+
+      {tab === "posts" && (
+        <div id="my-posts" className="mt-4">
+          {myPostsError && (
+            <p className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              {myPostsError}
+            </p>
           )}
+          <GuestPostInsightsPanel insights={postInsights} className="mt-0 mb-4" />
+          <GuestPostHistorySection
+            posts={myPosts}
+            showPostLink
+            allowEdit
+            emptyMessage="まだ投稿がありません。今夜のお店をシェアしてみましょう。"
+          />
         </div>
-        <h2 className="mt-4 text-xl font-black">{displayName}</h2>
-        <p className="mt-1 text-sm text-[#9994a8]">{user?.email}</p>
-        <Link
-          href="/mypage/edit"
-          className="mt-4 inline-block rounded-xl border border-white/12 bg-[#18181f] px-4 py-2 text-xs font-semibold text-[#9994a8] transition hover:border-[#ff3d00]/30 hover:text-[#eeeaf4]"
-        >
-          プロフィール編集
-        </Link>
+      )}
+
+      {tab === "profile" && (
+        <div className="mt-4 space-y-8 pb-4">
+      <section className="rounded-2xl border border-white/[0.07] bg-[#111118] p-5">
+        <TonightSocialMoodPicker
+          value={socialMood}
+          onChange={(m) => void handleSocialMoodChange(m)}
+          disabled={moodSaving}
+        />
+        {moodSaving && (
+          <p className="mt-3 text-xs text-[#9994a8]">保存中...</p>
+        )}
+        {moodError && (
+          <p className="mt-3 text-xs text-red-400">{moodError}</p>
+        )}
       </section>
 
       {staffInvites.length > 0 && (
-        <section id="staff-invites" className="mt-4 scroll-mt-24 md:max-w-xl">
-          <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-[#5a5668]">
-            スタッフ招待
-          </h2>
-          <p className="mt-1 text-xs text-[#9994a8]">
-            お店からスタッフとして招待されています。承認すると店舗管理画面を使えます。
-          </p>
-          <div className="mt-3 space-y-2">
+        <ProfileSection
+          title="スタッフ招待"
+          description="承認すると店舗管理画面が使えます"
+          className="scroll-mt-24"
+        >
+          <div id="staff-invites" className="space-y-2">
             {staffInvites.map((invite) => (
               <div
                 key={invite.id}
-                className="rounded-[14px] border border-[#ff3d00]/35 bg-[#ff3d00]/10 p-4"
+                className="rounded-2xl border border-[#ff3d00]/35 bg-[#ff3d00]/10 p-4"
               >
                 <p className="font-bold text-[#eeeaf4]">
                   {invite.shops?.name ?? "お店"}
@@ -269,64 +343,24 @@ export default function MyPage() {
               {inviteError}
             </p>
           )}
-        </section>
+        </ProfileSection>
       )}
 
-      <section className="mt-4 grid grid-cols-2 gap-3 md:max-w-xl">
-        <div className="rounded-[14px] bg-[#111118] p-4 text-center">
-          <p className="text-2xl font-black text-[#ff3d00]">
-            {stats.totalInterests}
-          </p>
-          <p className="mt-1 text-xs text-[#5a5668]">行くかもした数</p>
-        </div>
-        <div className="rounded-[14px] bg-[#111118] p-4 text-center">
-          <p className="text-2xl font-black text-[#ffaa00]">
-            {stats.visitedShops}
-          </p>
-          <p className="mt-1 text-xs text-[#5a5668]">実際に行ったお店</p>
-        </div>
-      </section>
-
-      <div id="my-posts" className="mt-8 md:max-w-2xl">
-        {myPostsError && (
-          <p className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            {myPostsError}
-          </p>
-        )}
-        <GuestPostInsightsPanel insights={postInsights} />
-        <GuestPostHistorySection
-          posts={myPosts}
-          showPostLink
-          allowEdit
-          emptyMessage="まだ投稿がありません。今夜のお店をシェアしてみましょう。"
-        />
-      </div>
-
-      <section id="favorite-shops" className="mt-8 md:max-w-3xl">
-        <div className="flex items-end justify-between gap-3">
-          <h2 className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">
-            お気に入りのお店
-          </h2>
-          {favorites.length > 0 && (
-            <Link
-              href="/favorites"
-              className="text-xs font-semibold text-[#ff3d00] hover:underline"
-            >
-              すべて見る
-            </Link>
-          )}
-        </div>
-
+      <ProfileSection
+        title="お気に入りのお店"
+        actionHref={favorites.length > 0 ? "/favorites" : undefined}
+        actionLabel={favorites.length > 0 ? "すべて" : undefined}
+      >
         {favoriteError && (
-          <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <p className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {favoriteError}
           </p>
         )}
 
-        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+        <div id="favorite-shops" className="grid gap-4 sm:grid-cols-2">
           {favorites.length === 0 ? (
-            <div className="col-span-full rounded-[14px] border border-white/[0.07] bg-[#111118] p-6 text-center">
-              <p className="text-3xl">❤️</p>
+            <div className="col-span-full rounded-2xl border border-white/[0.07] bg-[#111118] p-8 text-center">
+              <HeartIcon size={40} color="#5a5668" />
               <p className="mt-3 text-sm font-bold text-[#eeeaf4]">
                 お気に入りのお店はまだありません
               </p>
@@ -352,25 +386,19 @@ export default function MyPage() {
             ))
           )}
         </div>
-      </section>
+      </ProfileSection>
 
-      <section id="today-interests" className="mt-8 scroll-mt-24 md:max-w-2xl">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">
-            今夜の行くかもリスト
-          </h2>
-          <Link
-            href="/tonight"
-            className="text-xs font-semibold text-[#00e87a] hover:underline"
-          >
-            一覧を見る →
-          </Link>
-        </div>
-        <p className="mt-1 text-xs text-[#5a5668]">17:00〜翌5:00に追加したお店</p>
-        <div className="mt-3 space-y-2">
+      <ProfileSection
+        title="今夜の行くかも"
+        description="17:00〜翌5:00に追加したお店"
+        actionHref="/tonight"
+        actionLabel="一覧"
+        className="scroll-mt-24"
+      >
+        <div id="today-interests" className="space-y-2">
           {todayInterests.length === 0 ? (
-            <p className="rounded-[14px] border border-white/[0.07] bg-[#111118] p-4 text-sm text-[#9994a8]">
-              今夜の行くかもはまだありません
+            <p className="rounded-2xl border border-white/[0.07] bg-[#111118] p-5 text-sm text-[#9994a8]">
+              今夜の行くかもはまだありません。気になる投稿から追加してみましょう。
             </p>
           ) : (
             todayInterests.map((item) => (
@@ -383,15 +411,12 @@ export default function MyPage() {
             ))
           )}
         </div>
-      </section>
+      </ProfileSection>
 
-      <section className="mt-8 md:max-w-2xl">
-        <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-[#5a5668]">
-          行くかも履歴
-        </h2>
-        <div className="mt-3 space-y-2">
+      <ProfileSection title="行くかも履歴">
+        <div className="space-y-2">
           {interests.length === 0 ? (
-            <p className="rounded-[14px] border border-white/[0.07] bg-[#111118] p-4 text-sm text-[#9994a8]">
+            <p className="rounded-2xl border border-white/[0.07] bg-[#111118] p-5 text-sm text-[#9994a8]">
               まだ行くかもしたお店はありません
             </p>
           ) : (
@@ -399,7 +424,7 @@ export default function MyPage() {
               <Link
                 key={item.id}
                 href={`/shop/${item.shop_id}`}
-                className="block rounded-[14px] border border-white/[0.07] bg-[#111118] p-4 transition hover:border-[#ff3d00]/30"
+                className="block rounded-2xl border border-white/[0.07] bg-[#111118] p-4 transition hover:border-[#ff3d00]/30"
               >
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-bold">
@@ -416,16 +441,19 @@ export default function MyPage() {
             ))
           )}
         </div>
-      </section>
+      </ProfileSection>
 
       <button
         type="button"
         onClick={handleLogout}
         disabled={loggingOut}
-        className="mt-8 w-full max-w-xl rounded-[13px] border border-[#ff3d00]/30 bg-transparent py-3.5 text-sm font-bold text-[#ff3d00] transition hover:bg-[#ff3d00]/10 disabled:opacity-60"
+        className="w-full rounded-2xl border border-white/10 bg-[#0d0d12] py-3.5 text-sm font-bold text-[#9994a8] transition hover:border-[#ff3d00]/30 hover:text-[#ff3d00] disabled:opacity-60"
       >
         {loggingOut ? "ログアウト中..." : "ログアウト"}
       </button>
+        </div>
+      )}
+      </div>
     </GuestLayout>
   );
 }

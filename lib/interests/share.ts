@@ -23,10 +23,10 @@ export function formatTonightInterestsShareText(
   });
 
   return [
-    "今夜行くかもリスト🍺",
+    "今夜行くかもリスト",
     "",
     ...lines,
     "",
-    `mazareで今夜の場所を探す👉 ${shareUrl}`,
+    `mazareで今夜の場所を探す: ${shareUrl}`,
   ].join("\n");
 }

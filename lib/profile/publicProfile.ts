@@ -2,12 +2,15 @@ import { supabase } from "@/lib/supabase";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
 import type { Shop, VibePost } from "@/lib/home/types";
 
+import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
+
 export type PublicGuestProfile = {
   id: string;
   display_name: string;
   profile_image: string | null;
   user_type: string;
   created_at: string | null;
+  tonight_social_mood: TonightSocialMoodId | null;
 };
 
 const GUEST_POST_SELECT = `
@@ -37,7 +40,9 @@ export async function fetchPublicGuestProfile(userId: string): Promise<{
 }> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, display_name, profile_image, user_type, created_at")
+    .select(
+      "id, display_name, profile_image, user_type, created_at, tonight_social_mood",
+    )
     .eq("id", userId)
     .maybeSingle();
 
@@ -49,6 +54,13 @@ export async function fetchPublicGuestProfile(userId: string): Promise<{
       ? data.display_name.trim()
       : "ゲスト";
 
+  const moodRaw = data.tonight_social_mood;
+  const tonight_social_mood =
+    typeof moodRaw === "string" &&
+    ["merge_welcome", "solo", "pair_ok", "large_ok"].includes(moodRaw)
+      ? (moodRaw as TonightSocialMoodId)
+      : null;
+
   return {
     data: {
       id: data.id,
@@ -56,6 +68,7 @@ export async function fetchPublicGuestProfile(userId: string): Promise<{
       profile_image: data.profile_image ?? null,
       user_type: data.user_type ?? "guest",
       created_at: data.created_at ?? null,
+      tonight_social_mood,
     },
     error: null,
   };

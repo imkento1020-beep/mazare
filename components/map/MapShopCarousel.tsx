@@ -7,6 +7,7 @@ import {
   type Shop,
 } from "@/lib/home/types";
 import type { LatestVibePost } from "@/lib/home/api";
+import GenreIcon from "@/components/icons/GenreIcon";
 
 type MapShopCarouselProps = {
   shops: Shop[];
@@ -92,8 +93,12 @@ export default function MapShopCarousel({
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200] text-2xl">
-                      🍻
+                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200]">
+                      <GenreIcon
+                        genre={formatGenre(shop.genre)}
+                        size={28}
+                        color="rgba(255,61,0,0.45)"
+                      />
                     </div>
                   )}
                   {live && (

@@ -12,6 +12,7 @@ import { uploadShopImages } from "@/lib/owner/uploadImages";
 import { GENRE_OPTIONS, MAX_IMAGES } from "@/lib/owner/constants";
 import { readFilesAsDataUrls } from "@/lib/files";
 import StepIndicator from "@/components/owner/StepIndicator";
+import { CameraOutlineIcon, CloseIcon } from "@/components/icons/MazareIcons";
 import OpenHoursInput from "@/components/owner/OpenHoursInput";
 import OwnerLogoutButton from "@/components/owner/OwnerLogoutButton";
 import OwnerLayout from "@/components/layout/OwnerLayout";
@@ -257,7 +258,7 @@ export default function OwnerOnboardingPage() {
                 登録後、ダッシュボードから今夜の雰囲気を発信できます
               </p>
               <label className="mt-3 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-[#5a5668] bg-[#111118]/50 px-4 py-10 text-center transition hover:border-[#ff3d00]/40">
-                <span className="text-2xl">📷</span>
+                <CameraOutlineIcon size={28} color="#9994a8" />
                 <span className="mt-2 text-sm text-[#9994a8]">
                   タップして画像をアップロード
                 </span>
@@ -287,9 +288,9 @@ export default function OwnerOnboardingPage() {
                             prev.filter((_, i) => i !== index),
                           )
                         }
-                        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff3d00] text-[10px] text-white"
+                        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff3d00] text-white"
                       >
-                        ×
+                        <CloseIcon size={12} color="#ffffff" />
                       </button>
                     </div>
                   ))}

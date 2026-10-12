@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { getTonightInterestWindowJST } from "@/lib/home/dates";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
 import type { InterestRow, Shop, TodayInterestRow, VibePost } from "@/lib/home/types";
+import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
 import type { GuestProfile } from "./types";
 import type { User } from "@supabase/supabase-js";
 import { countUserVisitedShops } from "@/lib/checkins/api";
@@ -35,23 +36,35 @@ export async function fetchGuestProfile(user: User): Promise<{
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, user_type, profile_image, created_at, display_name")
+    .select(
+      "id, user_type, profile_image, created_at, display_name, tonight_social_mood",
+    )
     .eq("id", user.id)
     .maybeSingle();
 
+  const fallbackProfile: GuestProfile = {
+    id: user.id,
+    user_type: "guest",
+    profile_image: null,
+    created_at: null,
+    display_name: getDisplayName(user),
+    email: user.email ?? "",
+    tonight_social_mood: null,
+  };
+
   if (error) {
     return {
-      data: {
-        id: user.id,
-        user_type: "guest",
-        profile_image: null,
-        created_at: null,
-        display_name: getDisplayName(user),
-        email: user.email ?? "",
-      },
+      data: fallbackProfile,
       error: error.message,
     };
   }
+
+  const moodRaw = data?.tonight_social_mood;
+  const tonight_social_mood =
+    typeof moodRaw === "string" &&
+    ["merge_welcome", "solo", "pair_ok", "large_ok"].includes(moodRaw)
+      ? (moodRaw as TonightSocialMoodId)
+      : null;
 
   return {
     data: {
@@ -63,9 +76,23 @@ export async function fetchGuestProfile(user: User): Promise<{
         (typeof data?.display_name === "string" && data.display_name.trim()) ||
         getDisplayName(user),
       email: user.email ?? "",
+      tonight_social_mood,
     },
     error: null,
   };
+}
+
+export async function updateTonightSocialMood(
+  userId: string,
+  mood: TonightSocialMoodId | null,
+) {
+  const { error } = await supabase
+    .from("profiles")
+    .update({ tonight_social_mood: mood })
+    .eq("id", userId);
+
+  if (error) return { error: error.message };
+  return { error: null };
 }
 
 export async function updateGuestProfile(input: {

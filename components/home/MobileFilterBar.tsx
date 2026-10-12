@@ -9,6 +9,7 @@ import {
   toggleMood,
   toggleSetValue,
 } from "@/lib/home/filters";
+import { CheckIcon, SparkleIcon } from "@/components/icons/MazareIcons";
 
 type FilterSheet = "genres" | "areas" | "moods" | null;
 
@@ -96,7 +97,10 @@ export default function MobileFilterBar({
               : "border-white/[0.12] bg-[#111118] text-[#9994a8]"
           }`}
         >
-          ✨ 新しく追加されたお店
+          <span className="inline-flex items-center justify-center gap-1.5">
+            <SparkleIcon size={14} color="currentColor" />
+            新しく追加されたお店
+          </span>
         </button>
       )}
 
@@ -174,7 +178,9 @@ export default function MobileFilterBar({
                     }`}
                   >
                     <span>{option.label}</span>
-                    {active && <span className="text-xs font-bold">✓</span>}
+                    {active && (
+                      <CheckIcon size={14} color="currentColor" />
+                    )}
                   </button>
                 );
               })}

@@ -14,6 +14,7 @@ import type { VibePost } from "@/lib/home/types";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import FavoriteShopCard from "@/components/favorites/FavoriteShopCard";
+import { HeartIcon } from "@/components/icons/MazareIcons";
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -104,7 +105,7 @@ export default function FavoritesPage() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {favorites.length === 0 ? (
             <div className="col-span-full rounded-[14px] border border-white/7 bg-[#111118] p-8 text-center">
-              <p className="text-4xl">❤️</p>
+              <HeartIcon size={48} color="#5a5668" />
               <p className="mt-4 text-sm font-bold text-[#eeeaf4]">
                 お気に入りのお店はまだありません
               </p>

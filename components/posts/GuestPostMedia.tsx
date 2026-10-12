@@ -1,17 +1,22 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import { FeedGlassIcon } from "@/components/icons/FeedActionIcons";
 
 /** Instagram フィード寄り（縦 4:5） */
 export const GUEST_POST_IMAGE_ASPECT = "aspect-[4/5]";
 /** TikTok / Reels 寄り（縦 9:16） */
 export const GUEST_POST_VIDEO_ASPECT = "aspect-[9/16]";
 
+const defaultFallback = (
+  <FeedGlassIcon size={48} color="rgba(255,61,0,0.45)" />
+);
+
 type GuestPostMediaProps = {
   mediaType: "image" | "video" | null | undefined;
   images?: string[] | null;
   videoUrl?: string | null;
-  fallbackEmoji?: string;
+  fallback?: ReactNode;
   /** 一覧などで高さを抑える */
   compact?: boolean;
   className?: string;
@@ -21,7 +26,7 @@ export default function GuestPostMedia({
   mediaType,
   images,
   videoUrl,
-  fallbackEmoji = "🍻",
+  fallback = defaultFallback,
   compact = false,
   className = "",
 }: GuestPostMediaProps) {
@@ -110,7 +115,7 @@ export default function GuestPostMedia({
     <div
       className={`relative mx-auto flex w-full items-center justify-center bg-gradient-to-br from-[#1a0a00] via-[#120810] to-[#2d1200] ${aspectClass} ${className}`}
     >
-      <span className="text-5xl opacity-90">{fallbackEmoji}</span>
+      {fallback}
     </div>
   );
 }

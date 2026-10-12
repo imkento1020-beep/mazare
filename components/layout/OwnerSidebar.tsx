@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OWNER_NAV, isActivePath } from "@/lib/layout/nav";
+import NavMenuIcon from "@/components/icons/NavMenuIcon";
+import GenreIcon from "@/components/icons/GenreIcon";
+import { FeedGlassIcon } from "@/components/icons/FeedActionIcons";
+import { StorefrontIcon } from "@/components/icons/MazareIcons";
 import OwnerLogoutButton from "@/components/owner/OwnerLogoutButton";
 import type { Shop } from "@/lib/home/types";
 
@@ -24,8 +28,12 @@ export default function OwnerSidebar({
       <div className="sticky top-0 px-5 py-7">
         <div className="mb-6 rounded-[14px] border border-white/7 bg-[#111118] p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#18181f] text-xl">
-              {isOnboarding ? "🏪" : "🍻"}
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#18181f]">
+              {isOnboarding ? (
+                <StorefrontIcon size={24} color="#ff3d00" />
+              ) : (
+                <FeedGlassIcon size={24} color="#ff3d00" />
+              )}
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-[#eeeaf4]">
@@ -75,7 +83,13 @@ export default function OwnerSidebar({
                       : "text-[#9994a8] hover:bg-[#18181f] hover:text-[#eeeaf4]"
                   }`}
                 >
-                  <span className="w-[22px] text-center text-lg">{item.icon}</span>
+                  <span className="flex w-[22px] shrink-0 items-center justify-center">
+                    <NavMenuIcon
+                      icon={item.icon}
+                      size={20}
+                      color={active ? "#ff3d00" : "#9994a8"}
+                    />
+                  </span>
                   {item.label}
                 </Link>
               );

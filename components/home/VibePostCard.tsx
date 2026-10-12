@@ -8,7 +8,10 @@ import {
   getShopCoverImages,
   type VibePost,
 } from "@/lib/home/types";
-import { heatLevel, moodEmoji, moodTagClass } from "@/lib/home/moods";
+import { heatLevel } from "@/lib/home/moods";
+import GenreIcon from "@/components/icons/GenreIcon";
+import MoodTag from "@/components/icons/MoodTag";
+import { ClockMeta } from "@/components/icons/InlineMeta";
 import { usePostViewTracking } from "@/lib/home/usePostViewTracking";
 import { extractAreaFromAddress } from "@/lib/geo/area";
 import { getDistanceLabel, type GeoPoint } from "@/lib/geo/haversine";
@@ -18,14 +21,6 @@ import PostImageCarousel from "./PostImageCarousel";
 import PostAuthorBadge from "@/components/posts/PostAuthorBadge";
 import PostInterestLabel from "@/components/posts/PostInterestLabel";
 import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
-
-function genreEmoji(genre: string) {
-  if (genre.includes("居酒屋")) return "🎵";
-  if (genre.includes("バー") || genre.includes("クラフト")) return "🍻";
-  if (genre.includes("カラオケ")) return "🎤";
-  if (genre.includes("ライブ")) return "🎸";
-  return "🕺";
-}
 
 type VibePostCardProps = {
   post: VibePost;
@@ -64,7 +59,7 @@ export default function VibePostCard({
     >
       <PostImageCarousel
         images={carouselImages}
-        fallbackEmoji={genreEmoji(genre)}
+        fallback={<GenreIcon genre={genre} size={48} color="rgba(255,61,0,0.45)" />}
         overlay={
           <>
             <div className="absolute left-3 top-3 flex flex-col gap-1.5">
@@ -115,13 +110,7 @@ export default function VibePostCard({
         {post.moods && post.moods.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {post.moods.map((mood) => (
-              <span
-                key={mood}
-                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium ${moodTagClass(mood)}`}
-              >
-                <span>{moodEmoji(mood)}</span>
-                {mood}
-              </span>
+              <MoodTag key={mood} mood={mood} />
             ))}
           </div>
         )}
@@ -202,7 +191,7 @@ function ShopMeta({
           {area}
           {distance ? ` · ${distance}` : ""}
         </span>
-        <span>🕙 {formatOpenHours(shop.open_hours)}</span>
+        <ClockMeta>{formatOpenHours(shop.open_hours)}</ClockMeta>
       </p>
       <p className="mt-2 text-[11px] font-semibold text-[#ff3d00]/80 group-hover:text-[#ff3d00]">
         お店の詳細を見る →

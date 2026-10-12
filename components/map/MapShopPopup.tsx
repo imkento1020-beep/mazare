@@ -10,8 +10,11 @@ import {
   getShopCoverImages,
   type Shop,
 } from "@/lib/home/types";
-import { moodEmoji, moodTagClass } from "@/lib/home/moods";
 import type { LatestVibePost } from "@/lib/home/api";
+import MoodTag from "@/components/icons/MoodTag";
+import GenreIcon from "@/components/icons/GenreIcon";
+import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
+import { ClockIcon, CloseIcon } from "@/components/icons/MazareIcons";
 
 type MapShopPopupProps = {
   shop: Shop;
@@ -40,6 +43,7 @@ export default function MapShopPopup({
   onClose,
 }: MapShopPopupProps) {
   const image = popupImage(shop, latestPost);
+  const genre = formatGenre(shop.genre);
 
   useEffect(() => {
     if (live && latestPost?.id) {
@@ -54,18 +58,18 @@ export default function MapShopPopup({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={image} alt="" className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200] text-4xl">
-            🍻
+          <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200]">
+            <GenreIcon genre={genre} size={40} color="rgba(255,61,0,0.45)" />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#111118] via-transparent to-transparent" />
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-sm text-white backdrop-blur-sm"
+          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm"
           aria-label="閉じる"
         >
-          ×
+          <CloseIcon size={16} color="#ffffff" />
         </button>
         {live && (
           <span className="absolute left-2 top-2 rounded-md bg-[#ff3d00] px-2 py-0.5 text-[10px] font-extrabold uppercase text-white">
@@ -76,11 +80,19 @@ export default function MapShopPopup({
 
       <div className="p-4 pt-3">
         <h3 className="text-base font-black leading-tight">{shop.name}</h3>
-        <p className="mt-1 text-xs text-[#ff3d00]">{formatGenre(shop.genre)}</p>
+        <p className="mt-1 text-xs text-[#ff3d00]">{genre}</p>
 
         <div className="mt-2 space-y-1 text-[11px] text-[#9994a8]">
-          <p>📍 {shop.address}</p>
-          <p>🕙 {formatOpenHours(shop.open_hours)}</p>
+          <p className="flex items-start gap-1">
+            <span className="mt-0.5 shrink-0">
+              <FeedPinIcon size={12} color="#9994a8" />
+            </span>
+            {shop.address}
+          </p>
+          <p className="flex items-center gap-1">
+            <ClockIcon size={12} color="#9994a8" />
+            {formatOpenHours(shop.open_hours)}
+          </p>
         </div>
 
         {live && latestPost && (
@@ -99,13 +111,7 @@ export default function MapShopPopup({
             {latestPost.moods && latestPost.moods.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
                 {latestPost.moods.map((mood) => (
-                  <span
-                    key={mood}
-                    className={`inline-flex items-center gap-0.5 rounded-full border px-2 py-0.5 text-[10px] font-medium ${moodTagClass(mood)}`}
-                  >
-                    <span>{moodEmoji(mood)}</span>
-                    {mood}
-                  </span>
+                  <MoodTag key={mood} mood={mood} />
                 ))}
               </div>
             )}

@@ -199,16 +199,25 @@ export default function HomeMobileReelsFeed() {
     setSubmittingId(post.id);
 
     if (already) {
-      await supabase
+      const { error: deleteError } = await supabase
         .from("interests")
         .delete()
         .eq("user_id", user.id)
         .eq("vibe_post_id", post.id);
-      setInterestedPostIds((prev) => {
-        const next = new Set(prev);
-        next.delete(post.id);
-        return next;
-      });
+      if (deleteError) {
+        setError(deleteError.message);
+      } else {
+        setInterestedPostIds((prev) => {
+          const next = new Set(prev);
+          next.delete(post.id);
+          return next;
+        });
+        setInterestCounts((prev) => {
+          const next = new Map(prev);
+          next.set(post.id, Math.max(0, (next.get(post.id) ?? 0) - 1));
+          return next;
+        });
+      }
     } else {
       const { data, error: insertError } = await supabase
         .from("interests")
@@ -225,6 +234,11 @@ export default function HomeMobileReelsFeed() {
       } else if (data?.id) {
         await notifyPostInterestCreated(data.id);
         setInterestedPostIds((prev) => new Set(prev).add(post.id));
+        setInterestCounts((prev) => {
+          const next = new Map(prev);
+          next.set(post.id, (next.get(post.id) ?? 0) + 1);
+          return next;
+        });
       }
     }
 

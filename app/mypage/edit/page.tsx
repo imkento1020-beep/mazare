@@ -13,6 +13,7 @@ import { readFileAsDataUrl } from "@/lib/files";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui/styles";
+import UserIcon from "@/components/icons/UserIcon";
 import type { User } from "@supabase/supabase-js";
 
 export default function MyPageEditPage() {
@@ -132,8 +133,8 @@ export default function MyPageEditPage() {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full items-center justify-center text-3xl text-[#5a5668]">
-                  👤
+                <div className="flex h-full items-center justify-center text-[#5a5668]">
+                  <UserIcon size={36} color="#5a5668" />
                 </div>
               )}
               <input

@@ -11,6 +11,7 @@ import {
   type ContactCategory,
   type InquirerType,
 } from "@/lib/contact/types";
+import { MailIcon } from "@/components/icons/MazareIcons";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui/styles";
 import { supabase } from "@/lib/supabase";
 
@@ -120,7 +121,9 @@ export default function ContactPageClient() {
         subtitle="送信が完了しました"
       >
         <div className="rounded-[14px] border border-[#00e87a]/30 bg-[#00e87a]/10 p-8 text-center">
-          <p className="text-4xl">✉️</p>
+          <p className="flex justify-center">
+            <MailIcon size={40} color="#00e87a" />
+          </p>
           <p className="mt-4 text-lg font-bold text-[#eeeaf4]">
             お問い合わせを受け付けました
           </p>

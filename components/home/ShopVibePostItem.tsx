@@ -1,7 +1,7 @@
 "use client";
 
 import { formatPostedAt, type VibePost } from "@/lib/home/types";
-import { moodEmoji, moodTagClass } from "@/lib/home/moods";
+import MoodTag from "@/components/icons/MoodTag";
 import { usePostViewTracking } from "@/lib/home/usePostViewTracking";
 import PostImageCarousel from "./PostImageCarousel";
 import GuestPostFeedCard from "@/components/posts/GuestPostFeedCard";
@@ -77,13 +77,7 @@ export default function ShopVibePostItem({
         {post.moods && post.moods.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {post.moods.map((mood) => (
-              <span
-                key={mood}
-                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium ${moodTagClass(mood)}`}
-              >
-                <span>{moodEmoji(mood)}</span>
-                {mood}
-              </span>
+              <MoodTag key={mood} mood={mood} />
             ))}
           </div>
         )}

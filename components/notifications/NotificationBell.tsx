@@ -12,9 +12,10 @@ import {
 } from "@/lib/notifications/api";
 import {
   formatNotificationTime,
-  notificationEmoji,
   type Notification,
 } from "@/lib/notifications/types";
+import NotificationTypeIcon from "@/components/icons/NotificationTypeIcon";
+import BellIcon from "@/components/icons/BellIcon";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { isRegisteredUser } from "@/lib/auth/anonymous";
@@ -124,7 +125,7 @@ export default function NotificationBell({ className = "" }: NotificationBellPro
         aria-expanded={open}
         className="relative flex h-9 w-9 items-center justify-center rounded-[10px] text-base text-[#9994a8] transition hover:bg-[#111118] hover:text-[#eeeaf4]"
       >
-        🔔
+        <BellIcon size={20} color="currentColor" />
         {unreadCount > 0 && (
           <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff3d00] px-1 text-[9px] font-bold text-white">
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -173,8 +174,12 @@ export default function NotificationBell({ className = "" }: NotificationBellPro
                     notification.read_at ? "opacity-70" : ""
                   }`}
                 >
-                  <span className="mt-0.5 text-lg">
-                    {notificationEmoji(notification.type)}
+                  <span className="mt-0.5 shrink-0">
+                    <NotificationTypeIcon
+                      type={notification.type}
+                      size={22}
+                      color="#9994a8"
+                    />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-start justify-between gap-2">
