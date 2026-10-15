@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { fetchLiveShopIds, fetchVibePosts } from "@/lib/home/api";
+import {
+  deriveLiveShopIdsFromPosts,
+  fetchBrowseVibePostsBundleCached,
+} from "@/lib/home/api";
 import { AREA_FILTERS } from "@/lib/home/filters";
 import type { VibePost } from "@/lib/home/types";
 import GuestLayout from "@/components/layout/GuestLayout";
@@ -19,8 +22,9 @@ import {
   type TonightSocialMoodId,
 } from "@/lib/profile/tonightSocialMood";
 import {
-  buildShopSearchIndex,
+  buildShopSearchIndexFromShops,
   filterShopSearchItems,
+  type ShopSearchItem,
 } from "@/lib/search/shopSearch";
 import {
   attachAuthorTonightMoods,
@@ -40,9 +44,7 @@ export default function SearchPageClient() {
   const searchParams = useSearchParams();
   const [posts, setPosts] = useState<VibePost[]>([]);
   const [postRows, setPostRows] = useState<PostSearchRow[]>([]);
-  const [shopItems, setShopItems] = useState<
-    Awaited<ReturnType<typeof buildShopSearchIndex>>["items"]
-  >([]);
+  const [shopItems, setShopItems] = useState<ShopSearchItem[]>([]);
   const [liveShopIds, setLiveShopIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<SearchMode>("shops");
@@ -60,6 +62,7 @@ export default function SearchPageClient() {
   const [commentCounts, setCommentCounts] = useState<Map<string, number>>(
     new Map(),
   );
+  const countsRequestRef = useRef(0);
 
   useEffect(() => {
     const query = searchParams.get("q");
@@ -70,27 +73,22 @@ export default function SearchPageClient() {
 
   useEffect(() => {
     async function load() {
-      const [postsResult, liveIds] = await Promise.all([
-        fetchVibePosts(),
-        fetchLiveShopIds(),
-      ]);
-      const list = postsResult.data ?? [];
+      const bundleResult = await fetchBrowseVibePostsBundleCached();
+      if (bundleResult.error || !bundleResult.data) {
+        setLoading(false);
+        return;
+      }
+
+      const { posts: list, shops } = bundleResult.data;
       setPosts(list);
-      setLiveShopIds(liveIds);
+      setLiveShopIds(deriveLiveShopIdsFromPosts(list));
 
-      const shopIndex = await buildShopSearchIndex(list);
-      setShopItems(shopIndex.items);
-
-      const withMoods = await attachAuthorTonightMoods(list);
-      setPostRows(withMoods);
-
-      const ids = withMoods.map((p) => p.id);
-      const [interests, comments] = await Promise.all([
-        fetchInterestCountsByPostIds(ids),
-        fetchCommentCountsByPostIds(ids),
+      const [shopItemsNext, withMoods] = await Promise.all([
+        Promise.resolve(buildShopSearchIndexFromShops(list, shops)),
+        attachAuthorTonightMoods(list),
       ]);
-      setInterestCounts(interests);
-      setCommentCounts(comments);
+      setShopItems(shopItemsNext);
+      setPostRows(withMoods);
       setLoading(false);
     }
 
@@ -123,6 +121,28 @@ export default function SearchPageClient() {
     () => buildTonightCumulativeCupTotals(filteredPosts),
     [filteredPosts],
   );
+
+  const filteredPostIdsKey = useMemo(
+    () => filteredPosts.map((p) => p.id).join(","),
+    [filteredPosts],
+  );
+
+  useEffect(() => {
+    if (mode !== "posts" || filteredPosts.length === 0) return;
+
+    const requestId = ++countsRequestRef.current;
+    const ids = filteredPosts.map((p) => p.id).slice(0, 48);
+
+    void (async () => {
+      const [interests, comments] = await Promise.all([
+        fetchInterestCountsByPostIds(ids),
+        fetchCommentCountsByPostIds(ids),
+      ]);
+      if (countsRequestRef.current !== requestId) return;
+      setInterestCounts(interests);
+      setCommentCounts(comments);
+    })();
+  }, [mode, filteredPostIdsKey, filteredPosts]);
 
   function toggleArea(id: string) {
     setAreas((prev) => {

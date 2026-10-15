@@ -227,7 +227,7 @@ export default function VibePostCommentSheet({
       />
 
       <div
-        className="relative flex h-[70vh] w-full flex-col rounded-t-[16px] bg-[#111118] shadow-[0_-8px_40px_rgba(0,0,0,0.5)]"
+        className="relative flex h-[70vh] w-full flex-col rounded-t-[16px] bg-[#111118] shadow-[0_-8px_40px_rgba(0,0,0,0.5)] transition-transform duration-300 ease-out animate-[sheet-up_0.3s_ease-out]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="comment-sheet-title"

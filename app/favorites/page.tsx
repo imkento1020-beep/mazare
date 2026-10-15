@@ -9,7 +9,10 @@ import {
   removeFavoriteShop,
   type FavoriteShop,
 } from "@/lib/favorites/api";
-import { fetchLiveShopIds, fetchVibePosts } from "@/lib/home/api";
+import {
+  deriveLiveShopIdsFromPosts,
+  fetchBrowseVibePostsBundleCached,
+} from "@/lib/home/api";
 import type { VibePost } from "@/lib/home/types";
 import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
@@ -36,17 +39,17 @@ export default function FavoritesPage() {
         return;
       }
 
-      const [favoritesResult, liveIds, postsResult] = await Promise.all([
+      const [favoritesResult, browseResult] = await Promise.all([
         fetchUserFavorites(session.user.id),
-        fetchLiveShopIds(),
-        fetchVibePosts(),
+        fetchBrowseVibePostsBundleCached(),
       ]);
 
       if (favoritesResult.error) setError(favoritesResult.error);
 
       setFavorites(favoritesResult.data);
-      setLiveShopIds(liveIds);
-      setSidebarPosts(postsResult.data ?? []);
+      const sidebar = browseResult.data?.posts ?? [];
+      setSidebarPosts(sidebar);
+      setLiveShopIds(deriveLiveShopIdsFromPosts(sidebar));
       setLoading(false);
     }
 

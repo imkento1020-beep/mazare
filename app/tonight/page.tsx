@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { fetchVibePosts } from "@/lib/home/api";
+import { fetchBrowseVibePostsBundleCached } from "@/lib/home/api";
 import type { VibePost } from "@/lib/home/types";
 import {
   cancelInterest,
@@ -56,15 +56,15 @@ export default function TonightPage() {
 
       setUserId(user.id);
 
-      const [interestsResult, postsResult] = await Promise.all([
+      const [interestsResult, browseResult] = await Promise.all([
         fetchTonightInterests(user.id),
-        fetchVibePosts(),
+        fetchBrowseVibePostsBundleCached(),
       ]);
 
       if (interestsResult.error) setError(interestsResult.error);
 
       setItems(interestsResult.data);
-      setSidebarPosts(postsResult.data ?? []);
+      setSidebarPosts(browseResult.data?.posts ?? []);
       setLoading(false);
     }
 

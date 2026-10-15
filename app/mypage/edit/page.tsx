@@ -22,6 +22,7 @@ export default function MyPageEditPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +41,7 @@ export default function MyPageEditPage() {
 
       const { data: profile } = await fetchGuestProfile(session.user);
       setDisplayName(profile.display_name);
+      setBio(profile.bio ?? "");
       setProfileImage(profile.profile_image);
       setLoading(false);
     }
@@ -85,6 +87,7 @@ export default function MyPageEditPage() {
       userId: user.id,
       displayName,
       profileImage: uploadedImage,
+      bio,
     });
 
     setSubmitting(false);
@@ -118,7 +121,7 @@ export default function MyPageEditPage() {
 
         <h1 className="mt-4 text-xl font-black">プロフィール編集</h1>
         <p className="mt-1 text-sm text-[#9994a8]">
-          表示名とプロフィール画像を変更できます
+          表示名・自己紹介・アイコンを変更できます
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
@@ -168,6 +171,24 @@ export default function MyPageEditPage() {
               placeholder="ゲスト"
               className={inputClassName}
             />
+          </div>
+
+          <div>
+            <label htmlFor="bio" className="block text-sm font-medium">
+              自己紹介
+            </label>
+            <textarea
+              id="bio"
+              maxLength={100}
+              rows={3}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="今夜の気分や好きなお店など（100文字以内）"
+              className={`${inputClassName} resize-none`}
+            />
+            <p className="mt-1 text-right text-[10px] text-[#5a5668]">
+              {bio.length}/100
+            </p>
           </div>
 
           <div>

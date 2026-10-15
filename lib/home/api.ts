@@ -1,9 +1,12 @@
+import { getCached } from "@/lib/cache/clientCache";
 import { supabase } from "@/lib/supabase";
 import {
   filterPostsPostedTonight,
   filterPublishedPosts,
   isPostedTonightJST,
 } from "@/lib/home/dates";
+import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
+import { getRecentPostsWindowStart } from "@/lib/home/recentWindow";
 import {
   normalizeMoods,
   type Shop,
@@ -15,6 +18,101 @@ import {
   isShopRegistrationPost,
   SHOP_REGISTRATION_COMMENT,
 } from "@/lib/home/shopRegistration";
+
+const BROWSE_POST_SELECT =
+  "id, shop_id, comment, moods, images, video_url, posted_at, hashtags, media_type, is_guest_post, author_id, stop_number, visit_order, drink_name, drink_cups, drink_count, party_size";
+
+const BROWSE_CACHE_TTL_MS = 45_000;
+
+export type BrowseVibePostsBundle = {
+  posts: VibePost[];
+  shops: Shop[];
+};
+
+function mapBrowsePostRow(
+  row: Record<string, unknown>,
+  shop: Shop | null,
+): VibePost {
+  return {
+    id: String(row.id),
+    shop_id: String(row.shop_id),
+    comment: String(row.comment ?? ""),
+    moods: normalizeMoods(row.moods),
+    images: Array.isArray(row.images) ? row.images.map(String) : [],
+    video_url: typeof row.video_url === "string" ? row.video_url : null,
+    posted_at: typeof row.posted_at === "string" ? row.posted_at : null,
+    hashtags: Array.isArray(row.hashtags) ? row.hashtags.map(String) : [],
+    media_type:
+      row.media_type === "image" || row.media_type === "video"
+        ? row.media_type
+        : null,
+    is_guest_post: Boolean(row.is_guest_post),
+    author_id: typeof row.author_id === "string" ? row.author_id : null,
+    shops: shop,
+    ...parseNightOutFromRow(row),
+  };
+}
+
+/** 24h 以内のゲスト投稿 + 全店舗（探す・サイドバー向け・軽量） */
+export async function fetchBrowseVibePostsBundle(): Promise<{
+  data: BrowseVibePostsBundle | null;
+  error: string | null;
+}> {
+  const since = getRecentPostsWindowStart().toISOString();
+  const nowIso = new Date().toISOString();
+
+  const [postsResult, shopsResult] = await Promise.all([
+    supabase
+      .from("vibe_posts")
+      .select(BROWSE_POST_SELECT)
+      .eq("is_guest_post", true)
+      .gte("posted_at", since)
+      .lte("posted_at", nowIso)
+      .order("posted_at", { ascending: false }),
+    fetchShopsFromDb(),
+  ]);
+
+  if (postsResult.error) {
+    return { data: null, error: postsResult.error.message };
+  }
+  if (shopsResult.error || !shopsResult.data) {
+    return { data: null, error: shopsResult.error ?? "shops" };
+  }
+
+  const shopsMap = new Map(
+    shopsResult.data.map((shop) => [shop.id, shop as Shop]),
+  );
+
+  const posts = (postsResult.data ?? []).map((row) =>
+    mapBrowsePostRow(row as Record<string, unknown>, shopsMap.get(String(row.shop_id)) ?? null),
+  );
+
+  return {
+    data: { posts, shops: shopsResult.data },
+    error: null,
+  };
+}
+
+export function fetchBrowseVibePostsBundleCached(): Promise<{
+  data: BrowseVibePostsBundle | null;
+  error: string | null;
+}> {
+  return getCached("browse-vibe-posts-bundle", BROWSE_CACHE_TTL_MS, () =>
+    fetchBrowseVibePostsBundle(),
+  );
+}
+
+export function deriveLiveShopIdsFromPosts(posts: VibePost[]): Set<string> {
+  return new Set(
+    posts
+      .filter(
+        (post) =>
+          isPostedTonightJST(post.posted_at) &&
+          !isShopRegistrationPost({ comment: post.comment }),
+      )
+      .map((post) => post.shop_id),
+  );
+}
 
 export async function fetchVibePosts(): Promise<{
   data: VibePost[] | null;

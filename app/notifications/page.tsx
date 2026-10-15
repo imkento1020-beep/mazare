@@ -35,6 +35,8 @@ export default function NotificationsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     async function load() {
       const {
         data: { session },
@@ -63,10 +65,31 @@ export default function NotificationsPage() {
       setNotifications(data);
       if (fetchError) setError(fetchError);
       setLoading(false);
+
+      channel = supabase
+        .channel(`notifications-${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${user.id}`,
+          },
+          async () => {
+            const refreshed = await fetchNotifications(50);
+            setNotifications(refreshed.data);
+          },
+        )
+        .subscribe();
     }
 
-    load();
-  }, [router]);
+    void load();
+
+    return () => {
+      if (channel) void supabase.removeChannel(channel);
+    };
+  }, [router, authReady, authUser, openFormalRegistrationPrompt]);
 
   async function handleClick(notification: Notification) {
     if (!notification.read_at) {

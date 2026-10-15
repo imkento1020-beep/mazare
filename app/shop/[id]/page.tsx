@@ -10,7 +10,7 @@ import {
   fetchShopPosts,
   fetchUserInterestForPost,
 } from "@/lib/shop/api";
-import { fetchVibePosts } from "@/lib/home/api";
+import { fetchBrowseVibePostsBundleCached } from "@/lib/home/api";
 import {
   addFavoriteShop,
   isShopFavorited,
@@ -132,11 +132,11 @@ export default function ShopDetailPage() {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
-      const [shopResult, postsResult, count, allPostsResult] = await Promise.all([
+      const [shopResult, postsResult, count, browseResult] = await Promise.all([
         fetchShopById(shopId),
         fetchShopPosts(shopId),
         fetchShopInterestCount(shopId),
-        fetchVibePosts(),
+        fetchBrowseVibePostsBundleCached(),
       ]);
 
       if (shopResult.error || !shopResult.data) {
@@ -151,15 +151,18 @@ export default function ShopDetailPage() {
         shops: post.shops ?? shopResult.data,
       }));
       setPosts(postList);
-      setSidebarPosts(allPostsResult.data ?? []);
+      setSidebarPosts(browseResult.data?.posts ?? []);
       setInterestCount(count);
+      setLoading(false);
+
       const ids = postList.map((post) => post.id);
-      const [interestByPost, commentByPost] = await Promise.all([
+      void Promise.all([
         fetchInterestCountsByPostIds(ids),
         fetchCommentCountsByPostIds(ids),
-      ]);
-      setPostInterestCounts(interestByPost);
-      setPostCommentCounts(commentByPost);
+      ]).then(([interestByPost, commentByPost]) => {
+        setPostInterestCounts(interestByPost);
+        setPostCommentCounts(commentByPost);
+      });
 
       const firstPost = postsResult.data?.[0];
       if (currentUser && firstPost) {

@@ -37,7 +37,7 @@ export async function fetchGuestProfile(user: User): Promise<{
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, user_type, profile_image, created_at, display_name, tonight_social_mood",
+      "id, user_type, profile_image, created_at, display_name, tonight_social_mood, bio",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -50,6 +50,7 @@ export async function fetchGuestProfile(user: User): Promise<{
     display_name: getDisplayName(user),
     email: user.email ?? "",
     tonight_social_mood: null,
+    bio: null,
   };
 
   if (error) {
@@ -77,6 +78,10 @@ export async function fetchGuestProfile(user: User): Promise<{
         getDisplayName(user),
       email: user.email ?? "",
       tonight_social_mood,
+      bio:
+        typeof data?.bio === "string" && data.bio.trim()
+          ? data.bio.trim().slice(0, 100)
+          : null,
     },
     error: null,
   };
@@ -99,11 +104,17 @@ export async function updateGuestProfile(input: {
   userId: string;
   displayName: string;
   profileImage: string | null;
+  bio?: string | null;
 }) {
   const trimmedName = input.displayName.trim();
   if (!trimmedName) {
     return { error: "表示名を入力してください" };
   }
+
+  const bio =
+    input.bio == null
+      ? null
+      : input.bio.trim().slice(0, 100) || null;
 
   const { error: authError } = await supabase.auth.updateUser({
     data: { display_name: trimmedName },
@@ -117,6 +128,7 @@ export async function updateGuestProfile(input: {
       user_type: "guest",
       profile_image: input.profileImage,
       display_name: trimmedName,
+      bio,
     },
     { onConflict: "id" },
   );

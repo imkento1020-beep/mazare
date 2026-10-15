@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { VibePost } from "@/lib/home/types";
-import { formatPostedAt } from "@/lib/home/types";
+import { formatRelativePostedAt } from "@/lib/home/formatRelativePostedAt";
+import ReelCaption from "@/components/home/reels/ReelCaption";
 import { extractAreaFromAddress } from "@/lib/geo/area";
 import { getDistanceLabel, type GeoPoint } from "@/lib/geo/haversine";
 import { formatGuestPostBodyForDisplay } from "@/lib/guest-post/composeBody";
@@ -71,6 +72,8 @@ function MediaLayer({ post }: { post: VibePost }) {
       <img
         src={images[0]}
         alt=""
+        loading="lazy"
+        decoding="async"
         className="pointer-events-none absolute inset-0 h-full w-full object-cover"
       />
     );
@@ -338,12 +341,12 @@ export default function GuestPostFeedCard({
                   <Link
                     href={shopLink}
                     onClick={(e) => e.stopPropagation()}
-                    className="cursor-pointer border-b border-white/30 text-[13px] font-bold text-[#eeeaf4] transition hover:border-[#ff3d00]/60 hover:text-[#ff3d00]"
+                    className="cursor-pointer border-b border-white/30 text-base font-black text-[#eeeaf4] transition hover:border-[#ff3d00]/60 hover:text-[#ff3d00]"
                   >
                     {shop.name}
                   </Link>
                 ) : (
-                  <p className="text-[13px] font-bold text-[#eeeaf4]">
+                  <p className="text-base font-black text-[#eeeaf4]">
                     {shop.name}
                   </p>
                 )}
@@ -357,8 +360,8 @@ export default function GuestPostFeedCard({
           )}
 
           {comment && (
-            <div className="rounded-r-md border-l-2 border-[#ff3d00] bg-white/[0.06] px-2.5 py-1.5">
-              <p className="text-xs leading-normal text-[#eeeaf4]">{comment}</p>
+            <div className="pointer-events-auto rounded-r-md border-l-2 border-[#ff3d00] bg-white/[0.06] px-2.5 py-1.5">
+              <ReelCaption text={comment} />
             </div>
           )}
         </div>
@@ -372,7 +375,7 @@ export default function GuestPostFeedCard({
 
       {post.posted_at && (
         <p className="px-1 pt-1.5 text-[10px] text-[#9994a8]">
-          {formatPostedAt(post.posted_at)}
+          {formatRelativePostedAt(post.posted_at)}
         </p>
       )}
 

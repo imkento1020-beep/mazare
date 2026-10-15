@@ -8,4 +8,5 @@ export type GuestProfile = {
   display_name: string;
   email: string;
   tonight_social_mood: TonightSocialMoodId | null;
+  bio: string | null;
 };

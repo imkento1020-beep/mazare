@@ -21,14 +21,10 @@ export function shopThumbnailUrl(shop: Shop): string | null {
   return null;
 }
 
-export async function buildShopSearchIndex(
+export function buildShopSearchIndexFromShops(
   posts: VibePost[],
-): Promise<{ items: ShopSearchItem[]; error: string | null }> {
-  const shopsResult = await fetchShopsFromDb();
-  if (shopsResult.error || !shopsResult.data) {
-    return { items: [], error: shopsResult.error ?? "お店の取得に失敗しました" };
-  }
-
+  shops: Shop[],
+): ShopSearchItem[] {
   const recentByShop = new Map<string, VibePost[]>();
   for (const post of posts) {
     if (!post.is_guest_post || !isWithinRecentPostsWindow(post.posted_at)) continue;
@@ -37,7 +33,7 @@ export async function buildShopSearchIndex(
     recentByShop.set(post.shop_id, list);
   }
 
-  const items: ShopSearchItem[] = shopsResult.data.map((shop) => {
+  const items: ShopSearchItem[] = shops.map((shop) => {
     const shopPosts = recentByShop.get(shop.id) ?? [];
     shopPosts.sort((a, b) => {
       const ta = a.posted_at ? new Date(a.posted_at).getTime() : 0;
@@ -57,7 +53,21 @@ export async function buildShopSearchIndex(
 
   items.sort((a, b) => b.tonightPostCount - a.tonightPostCount || a.shop.name.localeCompare(b.shop.name, "ja"));
 
-  return { items, error: null };
+  return items;
+}
+
+export async function buildShopSearchIndex(
+  posts: VibePost[],
+): Promise<{ items: ShopSearchItem[]; error: string | null }> {
+  const shopsResult = await fetchShopsFromDb();
+  if (shopsResult.error || !shopsResult.data) {
+    return { items: [], error: shopsResult.error ?? "お店の取得に失敗しました" };
+  }
+
+  return {
+    items: buildShopSearchIndexFromShops(posts, shopsResult.data),
+    error: null,
+  };
 }
 
 export function filterShopSearchItems(

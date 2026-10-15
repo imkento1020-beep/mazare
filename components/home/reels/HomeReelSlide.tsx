@@ -14,6 +14,7 @@ import {
 import VibePostCommentSheet from "@/components/comments/VibePostCommentSheet";
 import { usePostViewTracking } from "@/lib/home/usePostViewTracking";
 import ReelCaption from "@/components/home/reels/ReelCaption";
+import InterestHeartBurst from "@/components/home/reels/InterestHeartBurst";
 import {
   FeedCommentIcon,
   FeedGlassIcon,
@@ -98,9 +99,11 @@ export default function HomeReelSlide({
 }: HomeReelSlideProps) {
   const viewRef = usePostViewTracking(post.id);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const lastTapRef = useRef(0);
   const [muted, setMuted] = useState(true);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [liveComments, setLiveComments] = useState(commentCount);
+  const [heartBurst, setHeartBurst] = useState(0);
 
   useEffect(() => {
     setLiveComments(commentCount);
@@ -147,23 +150,41 @@ export default function HomeReelSlide({
 
   const waveColor = interested ? "#ff3d00" : "#ffffff";
 
+  function handleMediaTap() {
+    const now = Date.now();
+    if (now - lastTapRef.current < 320) {
+      lastTapRef.current = 0;
+      if (!interestLoading && !interested) {
+        setHeartBurst((n) => n + 1);
+        onInterest();
+      } else if (interested) {
+        setHeartBurst((n) => n + 1);
+      }
+      return;
+    }
+    lastTapRef.current = now;
+  }
+
   return (
     <article
       ref={viewRef}
       className="relative h-full w-full overflow-hidden bg-[#111118]"
+      onClick={handleMediaTap}
     >
+      <InterestHeartBurst trigger={heartBurst} />
       {isVideo && videoUrl ? (
         <button
           type="button"
           className="absolute inset-0"
           aria-label={muted ? "音声をオン" : "ミュート"}
-          onClick={() =>
+          onClick={(e) => {
+            e.stopPropagation();
             setMuted((m) => {
               const next = !m;
               if (videoRef.current) videoRef.current.muted = next;
               return next;
-            })
-          }
+            });
+          }}
         >
           <video
             ref={videoRef}
@@ -240,7 +261,10 @@ export default function HomeReelSlide({
           label="今夜行くかも"
           count={interestCount}
           disabled={interestLoading}
-          onClick={onInterest}
+          onClick={() => {
+            if (!interested) setHeartBurst((n) => n + 1);
+            onInterest();
+          }}
         >
           <FeedWaveIcon color={waveColor} />
         </ActionButton>
@@ -284,7 +308,7 @@ export default function HomeReelSlide({
               <Link
                 href={`/shop/${shop.id}`}
                 onClick={(e) => e.stopPropagation()}
-                className="block text-lg font-extrabold leading-tight text-[#eeeaf4]"
+                className="block text-xl font-black leading-tight text-[#eeeaf4]"
               >
                 {shop.name}
               </Link>

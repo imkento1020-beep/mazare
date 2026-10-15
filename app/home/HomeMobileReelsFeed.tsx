@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { invalidateCachedPrefix } from "@/lib/cache/clientCache";
 import { supabase } from "@/lib/supabase";
 import {
   fetchHomeReelsFeed,
@@ -20,6 +22,7 @@ import LoadingScreen from "@/components/layout/LoadingScreen";
 import type { User } from "@supabase/supabase-js";
 
 export default function HomeMobileReelsFeed() {
+  const searchParams = useSearchParams();
   const { openAuthPrompt } = useAuthPrompt();
   const { user: authUser, ready: authReady } = useAnonymousAuth();
   const [user, setUser] = useState<User | null>(null);
@@ -66,16 +69,25 @@ export default function HomeMobileReelsFeed() {
       const { data, error: feedError } = await fetchHomeReelsFeed();
       if (feedError) setError(feedError);
       setPosts(data);
-      await loadCounts(data.map((p) => p.id));
+
+      const priorityIds = data.slice(0, 5).map((p) => p.id);
+      void loadCounts(priorityIds);
+      if (data.length > 5) {
+        window.setTimeout(() => {
+          void loadCounts(data.slice(5).map((p) => p.id));
+        }, 400);
+      }
 
       if (activeUser) {
-        const { data: rows } = await supabase
+        void supabase
           .from("interests")
           .select("vibe_post_id")
-          .eq("user_id", activeUser.id);
-        setInterestedPostIds(
-          new Set((rows ?? []).map((r) => r.vibe_post_id)),
-        );
+          .eq("user_id", activeUser.id)
+          .then(({ data: rows }) => {
+            setInterestedPostIds(
+              new Set((rows ?? []).map((r) => r.vibe_post_id)),
+            );
+          });
       } else {
         setInterestedPostIds(new Set());
       }
@@ -93,6 +105,17 @@ export default function HomeMobileReelsFeed() {
     userRef.current = authUser;
     void reloadFeed(authUser);
   }, [authReady, authUser, reloadFeed]);
+
+  useEffect(() => {
+    const shouldRefresh =
+      searchParams.get("posted") === "1" ||
+      (typeof window !== "undefined" &&
+        sessionStorage.getItem("mazare_feed_refresh") === "1");
+    if (!shouldRefresh) return;
+    sessionStorage.removeItem("mazare_feed_refresh");
+    invalidateCachedPrefix("browse-vibe-posts");
+    void reloadFeed(userRef.current);
+  }, [searchParams, reloadFeed]);
 
   useEffect(() => {
     let cancelled = false;

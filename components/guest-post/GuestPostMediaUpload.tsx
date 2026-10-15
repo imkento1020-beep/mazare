@@ -17,7 +17,8 @@ export default function GuestPostMediaUpload({
   videoFile,
   onChange,
 }: GuestPostMediaUploadProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   function handlePick(event: React.ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(event.target.files ?? []);
@@ -48,24 +49,42 @@ export default function GuestPostMediaUpload({
       <h2 className="text-lg font-black">写真・動画</h2>
 
       <input
-        ref={inputRef}
+        ref={galleryRef}
         type="file"
         accept={MEDIA_ACCEPT}
         multiple
         className="sr-only"
         onChange={handlePick}
       />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*,video/*"
+        capture="environment"
+        className="sr-only"
+        onChange={handlePick}
+      />
 
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        className="flex w-full flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-white/15 bg-[#080810] px-4 py-8 transition hover:border-[#ff3d00]/40 hover:bg-[#0d0d14]"
-      >
-        <span aria-hidden>
-          <UploadIcon size={32} color="#5a5668" />
-        </span>
-        <span className="text-sm font-bold text-[#eeeaf4]">アップロード</span>
-      </button>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => galleryRef.current?.click()}
+          className="flex flex-col items-center justify-center gap-2 rounded-[12px] border border-white/15 bg-[#080810] px-3 py-6 transition hover:border-[#ff3d00]/40"
+        >
+          <UploadIcon size={28} color="#9994a8" />
+          <span className="text-xs font-bold text-[#eeeaf4]">ライブラリ</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => cameraRef.current?.click()}
+          className="flex flex-col items-center justify-center gap-2 rounded-[12px] border border-[#ff3d00]/35 bg-[#ff3d00]/10 px-3 py-6 transition hover:border-[#ff3d00]/55"
+        >
+          <span className="text-xs font-bold uppercase tracking-wider text-[#ff3d00]">
+            CAM
+          </span>
+          <span className="text-xs font-bold text-[#ff3d00]">その場で撮影</span>
+        </button>
+      </div>
 
       <p className="text-center text-[10px] leading-relaxed text-[#5a5668]">
         写真は最大3枚 · 動画は30秒まで

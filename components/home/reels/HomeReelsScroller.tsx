@@ -95,7 +95,7 @@ export default function HomeReelsScroller({
   return (
     <div
       ref={scrollRef}
-      className="scrollbar-hidden mx-auto h-[calc(100dvh-84px)] w-full max-w-[480px] snap-y snap-mandatory overflow-y-scroll bg-[#080810]"
+      className="scrollbar-hidden mx-auto h-[calc(100dvh-84px)] w-full max-w-[480px] snap-y snap-mandatory scroll-smooth overflow-y-scroll bg-[#080810]"
     >
       {posts.map((post) => (
         <section key={post.id} data-reel-id={post.id} className={SLIDE_CLASS}>

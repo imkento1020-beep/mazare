@@ -17,7 +17,9 @@ import GuestPostInsightsPanel from "@/components/profile/GuestPostInsightsPanel"
 import ProfileHero from "@/components/profile/ProfileHero";
 import TonightSocialMoodBadge from "@/components/profile/TonightSocialMoodBadge";
 import { findTonightSocialMood } from "@/lib/profile/tonightSocialMood";
-import MyPageTabBar, { type MyPageTab } from "@/components/mypage/MyPageTabBar";
+import PublicProfileTabBar, {
+  type PublicProfileTab,
+} from "@/components/profile/PublicProfileTabBar";
 import type { VibePost } from "@/lib/home/types";
 
 type PublicProfileClientProps = {
@@ -31,7 +33,7 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
   const [posts, setPosts] = useState<VibePost[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
-  const [tab, setTab] = useState<MyPageTab>("posts");
+  const [tab, setTab] = useState<PublicProfileTab>("posts");
   const insights = useMemo(() => computeGuestPostInsights(posts), [posts]);
 
   useEffect(() => {
@@ -115,7 +117,7 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
         />
 
         <div className="mt-2 rounded-2xl border border-white/[0.07] bg-[#111118] px-1">
-          <MyPageTabBar active={tab} onChange={setTab} postCount={posts.length} />
+          <PublicProfileTabBar active={tab} onChange={setTab} postCount={posts.length} />
         </div>
 
         {tab === "posts" && (

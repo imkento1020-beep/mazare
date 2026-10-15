@@ -67,24 +67,42 @@ export default function HomeDesktopFeed({
     if (feedError) setError(feedError);
     setRecentPosts(data);
     setFeedItems(buildRecentShopFeed(data));
+
     const postIds = data.map((p) => p.id);
-    const [counts, commentMap] = await Promise.all([
-      fetchInterestCountsByPostIds(postIds),
-      fetchCommentCountsByPostIds(postIds),
-    ]);
-    setInterestCounts(counts);
-    setCommentCounts(commentMap);
+    const loadEngagement = async (ids: string[]) => {
+      const [counts, commentMap] = await Promise.all([
+        fetchInterestCountsByPostIds(ids),
+        fetchCommentCountsByPostIds(ids),
+      ]);
+      setInterestCounts((prev) => {
+        const next = new Map(prev);
+        counts.forEach((v, k) => next.set(k, v));
+        return next;
+      });
+      setCommentCounts((prev) => {
+        const next = new Map(prev);
+        commentMap.forEach((v, k) => next.set(k, v));
+        return next;
+      });
+    };
+    void loadEngagement(postIds.slice(0, 12));
+    if (postIds.length > 12) {
+      window.setTimeout(() => void loadEngagement(postIds.slice(12)), 300);
+    }
 
     if (activeUser) {
-      const { data: myInterests } = await supabase
-        .from("interests")
-        .select("vibe_post_id")
-        .eq("user_id", activeUser.id);
-      setInterestedPostIds(
-        new Set((myInterests ?? []).map((row) => row.vibe_post_id)),
-      );
-      const tonight = await fetchTonightInterests(activeUser.id);
-      setTonightInterests(tonight.data);
+      void Promise.all([
+        supabase
+          .from("interests")
+          .select("vibe_post_id")
+          .eq("user_id", activeUser.id),
+        fetchTonightInterests(activeUser.id),
+      ]).then(([interestsRes, tonight]) => {
+        setInterestedPostIds(
+          new Set((interestsRes.data ?? []).map((row) => row.vibe_post_id)),
+        );
+        setTonightInterests(tonight.data);
+      });
     }
   }, []);
 

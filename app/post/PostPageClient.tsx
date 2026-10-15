@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { invalidateCachedPrefix } from "@/lib/cache/clientCache";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import GoogleAttribution from "@/components/places/GoogleAttribution";
@@ -34,6 +36,7 @@ type PostPageClientProps = {
 export default function PostPageClient({
   googleMapsApiKey,
 }: PostPageClientProps) {
+  const router = useRouter();
   const { openFormalRegistrationPrompt } = useAuthPrompt();
   const { user, ready: authReady, authError } = useAnonymousAuth();
   const { apiKey: mapsApiKey, loading: mapsKeyLoading } =
@@ -181,6 +184,10 @@ export default function PostPageClient({
       return;
     }
 
+    invalidateCachedPrefix("browse-vibe-posts");
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("mazare_feed_refresh", "1");
+    }
     setSuccessShopName(selectedPlace.name);
     setBodyText("");
     setNightOut({
@@ -219,12 +226,13 @@ export default function PostPageClient({
           {successShopName && (
             <p className="mt-2 text-xs text-[#9994a8]">{successShopName}</p>
           )}
-          <Link
-            href="/home"
+          <button
+            type="button"
+            onClick={() => router.push("/home?posted=1")}
             className="mt-8 inline-flex rounded-[14px] bg-[#ff3d00] px-6 py-3 text-sm font-bold text-white"
           >
             ホームへ
-          </Link>
+          </button>
         </main>
         <BottomNav />
       </div>

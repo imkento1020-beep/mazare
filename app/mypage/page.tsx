@@ -19,6 +19,14 @@ import TonightSocialMoodPicker from "@/components/profile/TonightSocialMoodPicke
 import ProfileHero from "@/components/profile/ProfileHero";
 import ProfileSection from "@/components/profile/ProfileSection";
 import MyPageTabBar, { type MyPageTab } from "@/components/mypage/MyPageTabBar";
+import DrinkLogStatsCard from "@/components/mypage/DrinkLogStatsCard";
+import DrinkLogViewToggle, {
+  type DrinkLogView,
+} from "@/components/mypage/DrinkLogViewToggle";
+import MyPostGrid from "@/components/mypage/MyPostGrid";
+import DrinkLogCalendar from "@/components/mypage/DrinkLogCalendar";
+import { computeDrinkLogMonthStats } from "@/lib/profile/drinkLogStats";
+import MyPageSkeleton from "@/components/ui/MyPageSkeleton";
 import {
   acceptStaffInviteWithRole,
   fetchPendingInvitesForEmail,
@@ -30,17 +38,16 @@ import {
   removeFavoriteShop,
   type FavoriteShop,
 } from "@/lib/favorites/api";
-import { fetchLiveShopIds, fetchVibePosts } from "@/lib/home/api";
+import {
+  deriveLiveShopIdsFromPosts,
+  fetchBrowseVibePostsBundleCached,
+} from "@/lib/home/api";
 import { formatPostedAt } from "@/lib/home/types";
 import type { InterestRow, TodayInterestRow, VibePost } from "@/lib/home/types";
 import GuestLayout from "@/components/layout/GuestLayout";
 import { HeartIcon } from "@/components/icons/MazareIcons";
-import LoadingScreen from "@/components/layout/LoadingScreen";
 import FavoriteShopCard from "@/components/favorites/FavoriteShopCard";
 import TonightInterestCard from "@/components/interests/TonightInterestCard";
-import GuestPostHistorySection from "@/components/profile/GuestPostHistorySection";
-import GuestPostInsightsPanel from "@/components/profile/GuestPostInsightsPanel";
-import { computeGuestPostInsights } from "@/lib/profile/postInsights";
 import type { GuestProfile } from "@/lib/mypage/types";
 import type { User } from "@supabase/supabase-js";
 
@@ -64,12 +71,13 @@ export default function MyPage() {
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [tab, setTab] = useState<MyPageTab>("posts");
+  const [tab, setTab] = useState<MyPageTab>("drink_log");
+  const [drinkLogView, setDrinkLogView] = useState<DrinkLogView>("grid");
   const [socialMood, setSocialMood] = useState<TonightSocialMoodId | null>(null);
   const [moodSaving, setMoodSaving] = useState(false);
   const [moodError, setMoodError] = useState<string | null>(null);
-  const postInsights = useMemo(
-    () => computeGuestPostInsights(myPosts),
+  const drinkLogStats = useMemo(
+    () => computeDrinkLogMonthStats(myPosts),
     [myPosts],
   );
 
@@ -86,30 +94,28 @@ export default function MyPage() {
 
       setUser(session.user);
 
-      await syncPendingStaffInviteNotifications();
+      void syncPendingStaffInviteNotifications();
 
       const [
         profileResult,
         interestsResult,
         todayInterestsResult,
         interestStats,
-        postsResult,
+        browseResult,
         myPostsResult,
         invitesResult,
         favoritesResult,
-        liveIds,
       ] = await Promise.all([
           fetchGuestProfile(session.user),
           fetchUserInterests(session.user.id),
           fetchTonightInterests(session.user.id),
           fetchUserInterestStats(session.user.id),
-          fetchVibePosts(),
+          fetchBrowseVibePostsBundleCached(),
           fetchUserGuestPosts(session.user.id),
           session.user.email
             ? fetchPendingInvitesForEmail(session.user.email)
             : Promise.resolve({ data: [], error: null }),
           fetchUserFavorites(session.user.id),
-          fetchLiveShopIds(),
         ]);
 
       setProfile(profileResult.data);
@@ -117,13 +123,14 @@ export default function MyPage() {
       setInterests(interestsResult.data);
       setTodayInterests(todayInterestsResult.data);
       setStats(interestStats);
-      setSidebarPosts(postsResult.data ?? []);
+      const sidebar = browseResult.data?.posts ?? [];
+      setSidebarPosts(sidebar);
+      setLiveShopIds(deriveLiveShopIdsFromPosts(sidebar));
       setMyPosts(myPostsResult.data);
       if (myPostsResult.error) setMyPostsError(myPostsResult.error);
       setStaffInvites(invitesResult.data);
       if (favoritesResult.error) setFavoriteError(favoritesResult.error);
       setFavorites(favoritesResult.data);
-      setLiveShopIds(liveIds);
       setLoading(false);
     }
 
@@ -225,7 +232,19 @@ export default function MyPage() {
     router.replace("/");
   }
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return (
+      <GuestLayout
+        mobileTitle="マイページ"
+        menuOnly
+        showFilters={false}
+        showRightSidebar={false}
+        showMobileSearch={false}
+      >
+        <MyPageSkeleton />
+      </GuestLayout>
+    );
+  }
 
   const displayName = profile?.display_name ?? "ゲスト";
 
@@ -243,13 +262,13 @@ export default function MyPage() {
       <ProfileHero
         displayName={displayName}
         avatarUrl={profile?.profile_image}
-        metaLine={user?.email}
         mood={socialMood}
         stats={[
           { value: myPosts.length, label: "投稿" },
           { value: stats.totalInterests, label: "行くかも" },
           { value: stats.visitedShops, label: "行った店" },
         ]}
+        metaLine={profile?.bio ?? user?.email ?? undefined}
         actions={
           <>
             <Link
@@ -269,31 +288,55 @@ export default function MyPage() {
       />
 
       <div className="mt-2 rounded-2xl border border-white/[0.07] bg-[#111118] px-1">
-        <MyPageTabBar
-          active={tab}
-          onChange={setTab}
-          postCount={myPosts.length}
-        />
+        <MyPageTabBar active={tab} onChange={setTab} />
       </div>
 
-      {tab === "posts" && (
-        <div id="my-posts" className="mt-4">
+      {tab === "drink_log" && (
+        <div id="drink-log" className="mt-4 space-y-4 pb-4">
           {myPostsError && (
-            <p className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
               {myPostsError}
             </p>
           )}
-          <GuestPostInsightsPanel insights={postInsights} className="mt-0 mb-4" />
-          <GuestPostHistorySection
-            posts={myPosts}
-            showPostLink
-            allowEdit
-            emptyMessage="まだ投稿がありません。今夜のお店をシェアしてみましょう。"
-          />
+          <DrinkLogStatsCard stats={drinkLogStats} />
+          <DrinkLogViewToggle view={drinkLogView} onChange={setDrinkLogView} />
+          {drinkLogView === "grid" ? (
+            <MyPostGrid posts={myPosts} />
+          ) : (
+            <DrinkLogCalendar posts={myPosts} />
+          )}
         </div>
       )}
 
-      {tab === "profile" && (
+      {tab === "tonight" && (
+        <div className="mt-4 space-y-4 pb-4">
+          <ProfileSection
+            title="今夜の行くかも"
+            description="17:00〜翌5:00に追加したお店"
+            actionHref="/tonight"
+            actionLabel="詳細"
+          >
+            <div className="space-y-2">
+              {todayInterests.length === 0 ? (
+                <p className="rounded-2xl border border-white/[0.07] bg-[#111118] p-5 text-sm text-[#9994a8]">
+                  今夜の行くかもはまだありません。ホームで気になる投稿から追加してみましょう。
+                </p>
+              ) : (
+                todayInterests.map((item) => (
+                  <TonightInterestCard
+                    key={item.id}
+                    item={item}
+                    onCancel={handleCancelTodayInterest}
+                    canceling={cancelingInterestId === item.id}
+                  />
+                ))
+              )}
+            </div>
+          </ProfileSection>
+        </div>
+      )}
+
+      {tab === "account" && (
         <div className="mt-4 space-y-8 pb-4">
       <section className="rounded-2xl border border-white/[0.07] bg-[#111118] p-5">
         <TonightSocialMoodPicker
@@ -382,31 +425,6 @@ export default function MyPage() {
                 live={liveShopIds.has(item.shop_id)}
                 onRemove={() => handleRemoveFavorite(item.shop_id)}
                 removing={removingFavoriteId === item.shop_id}
-              />
-            ))
-          )}
-        </div>
-      </ProfileSection>
-
-      <ProfileSection
-        title="今夜の行くかも"
-        description="17:00〜翌5:00に追加したお店"
-        actionHref="/tonight"
-        actionLabel="一覧"
-        className="scroll-mt-24"
-      >
-        <div id="today-interests" className="space-y-2">
-          {todayInterests.length === 0 ? (
-            <p className="rounded-2xl border border-white/[0.07] bg-[#111118] p-5 text-sm text-[#9994a8]">
-              今夜の行くかもはまだありません。気になる投稿から追加してみましょう。
-            </p>
-          ) : (
-            todayInterests.map((item) => (
-              <TonightInterestCard
-                key={item.id}
-                item={item}
-                onCancel={handleCancelTodayInterest}
-                canceling={cancelingInterestId === item.id}
               />
             ))
           )}
