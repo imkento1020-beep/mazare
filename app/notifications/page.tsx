@@ -10,6 +10,7 @@ import {
   markNotificationRead,
   syncPendingStaffInviteNotifications,
 } from "@/lib/notifications/api";
+import { dispatchNotificationsRead } from "@/lib/notifications/events";
 import {
   formatNotificationTime,
   type Notification,
@@ -62,8 +63,22 @@ export default function NotificationsPage() {
       await syncPendingStaffInviteNotifications();
 
       const { data, error: fetchError } = await fetchNotifications(50);
-      setNotifications(data);
       if (fetchError) setError(fetchError);
+
+      const hasUnread = data.some((item) => !item.read_at);
+      if (hasUnread) {
+        await markAllNotificationsRead();
+        const readAt = new Date().toISOString();
+        setNotifications(
+          data.map((item) => ({
+            ...item,
+            read_at: item.read_at ?? readAt,
+          })),
+        );
+        dispatchNotificationsRead();
+      } else {
+        setNotifications(data);
+      }
       setLoading(false);
 
       channel = supabase
@@ -114,6 +129,7 @@ export default function NotificationsPage() {
         read_at: item.read_at ?? new Date().toISOString(),
       })),
     );
+    dispatchNotificationsRead();
   }
 
   if (loading || !modeReady) return <LoadingScreen />;

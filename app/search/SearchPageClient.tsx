@@ -215,9 +215,6 @@ export default function SearchPageClient() {
                 </SearchFilterChip>
               ))}
             </SearchFilterGroup>
-            <p className="text-[11px] leading-relaxed text-[#5a5668]">
-              ジャンル・エリアはサイドバー（PC）またはフィルターボタン（スマホ）から変更できます
-            </p>
           </SearchFilterSheet>
         )}
 
@@ -278,9 +275,11 @@ export default function SearchPageClient() {
               </p>
             )}
           </div>
-          <span className="rounded-full bg-[#18181f] px-3 py-1 text-xs font-bold tabular-nums text-[#ff3d00]">
-            {resultCount}件
-          </span>
+          {mode === "posts" && (
+            <span className="rounded-full bg-[#18181f] px-3 py-1 text-xs font-bold tabular-nums text-[#ff3d00]">
+              {resultCount}件
+            </span>
+          )}
         </div>
 
         {mode === "shops" ? (

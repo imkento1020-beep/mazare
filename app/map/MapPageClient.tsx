@@ -191,11 +191,31 @@ export default function MapPageClient({
           }}
         />
 
-        <div className="absolute left-4 top-4 z-10 max-w-[min(100%,320px)]">
-          <MapActivityWindowFilter
-            value={activityWindowId}
-            onChange={setActivityWindowId}
-          />
+        <div className="absolute inset-x-4 top-4 z-10 flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <MapActivityWindowFilter
+              value={activityWindowId}
+              onChange={setActivityWindowId}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              void getDevicePositionOnUserGesture()
+                .then((coords) => {
+                  setUserLocation({
+                    lat: coords.latitude,
+                    lng: coords.longitude,
+                  });
+                })
+                .catch(() => {
+                  // 許可ダイアログまたは設定変更が必要
+                });
+            }}
+            className="shrink-0 rounded-full border border-white/10 bg-[#111118] px-4 py-2 text-xs font-bold shadow-lg"
+          >
+            現在地
+          </button>
         </div>
 
         {!mapsKeyLoading && !resolvedMapsApiKey && (
@@ -209,25 +229,6 @@ export default function MapPageClient({
             {loadError}
           </div>
         )}
-
-        <button
-          type="button"
-          onClick={() => {
-            void getDevicePositionOnUserGesture()
-              .then((coords) => {
-                setUserLocation({
-                  lat: coords.latitude,
-                  lng: coords.longitude,
-                });
-              })
-              .catch(() => {
-                // 許可ダイアログまたは設定変更が必要
-              });
-          }}
-          className="absolute right-4 top-4 z-10 rounded-full border border-white/10 bg-[#111118] px-4 py-2 text-xs font-bold"
-        >
-          現在地
-        </button>
 
         <MapActivitySheet
           activity={selectedActivity}

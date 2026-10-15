@@ -285,7 +285,7 @@ export default function HomeReelSlide({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#080810]/95 via-[#080810]/55 to-transparent px-4 pb-5 pt-24">
         <div className="pointer-events-auto space-y-2.5 pr-14">
           <div className="flex flex-wrap gap-1.5">
-            {isRecentTonight && (cups != null || post.drink_name) && (
+            {(cups != null || post.drink_name) && (
               <span className="inline-flex items-center rounded-full border border-[#ffaa00]/35 bg-[#ffaa00]/12 px-2.5 py-1 text-[10px] font-bold text-[#ffaa00]">
                 {cups != null && `今夜${cups}杯目`}
                 {cups != null && post.drink_name && " · "}

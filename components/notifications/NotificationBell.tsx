@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   fetchNotifications,
   fetchUnreadNotificationCount,
@@ -19,6 +19,7 @@ import BellIcon from "@/components/icons/BellIcon";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { isRegisteredUser } from "@/lib/auth/anonymous";
+import { NOTIFICATIONS_READ_EVENT } from "@/lib/notifications/events";
 
 type NotificationBellProps = {
   className?: string;
@@ -26,6 +27,7 @@ type NotificationBellProps = {
 
 export default function NotificationBell({ className = "" }: NotificationBellProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAnonymousAuth();
   const { openFormalRegistrationPrompt } = useAuthPrompt();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -56,7 +58,23 @@ export default function NotificationBell({ className = "" }: NotificationBellPro
   }
 
   useEffect(() => {
-    loadNotifications();
+    void loadNotifications();
+  }, [pathname]);
+
+  useEffect(() => {
+    function handleNotificationsRead() {
+      setUnreadCount(0);
+      setNotifications((prev) =>
+        prev.map((item) => ({
+          ...item,
+          read_at: item.read_at ?? new Date().toISOString(),
+        })),
+      );
+    }
+
+    window.addEventListener(NOTIFICATIONS_READ_EVENT, handleNotificationsRead);
+    return () =>
+      window.removeEventListener(NOTIFICATIONS_READ_EVENT, handleNotificationsRead);
   }, []);
 
   useEffect(() => {
@@ -205,7 +223,10 @@ export default function NotificationBell({ className = "" }: NotificationBellPro
           <div className="border-t border-white/7 px-4 py-2.5 text-center">
             <Link
               href="/notifications"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                setUnreadCount(0);
+              }}
               className="text-xs font-semibold text-[#9994a8] hover:text-[#eeeaf4]"
             >
               すべて見る
