@@ -5,6 +5,7 @@ import type { MapShopActivity } from "@/lib/feed/recentFeed";
 
 type MapActivitySheetProps = {
   activity: MapShopActivity | null;
+  windowLabel: string;
   open: boolean;
   interestLoading?: boolean;
   interested?: boolean;
@@ -14,6 +15,7 @@ type MapActivitySheetProps = {
 
 export default function MapActivitySheet({
   activity,
+  windowLabel,
   open,
   interestLoading,
   interested,
@@ -29,7 +31,7 @@ export default function MapActivitySheet({
           <div>
             <h3 className="text-lg font-black">{activity.shop.name}</h3>
             <p className="mt-1 text-xs text-[#9994a8]">
-              直近24時間 · 投稿 {activity.postCount}件 · ユニーク{" "}
+              {windowLabel} · 投稿 {activity.postCount}件 · ユニーク{" "}
               {activity.uniquePosterCount}人
             </p>
           </div>

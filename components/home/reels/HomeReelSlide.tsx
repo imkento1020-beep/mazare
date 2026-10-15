@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { HomeReelsPost } from "@/lib/home/fetchHomeReelsFeed";
 import { formatRelativePostedAt } from "@/lib/home/formatRelativePostedAt";
+import { isWithinRecentPostsWindow } from "@/lib/home/recentWindow";
 import { extractAreaFromAddress } from "@/lib/geo/area";
 import { getDistanceLabel, type GeoPoint } from "@/lib/geo/haversine";
 import { formatGuestPostBodyForDisplay } from "@/lib/guest-post/composeBody";
@@ -118,6 +119,7 @@ export default function HomeReelSlide({
   const area = shop?.address ? extractAreaFromAddress(shop.address) : null;
   const distance = shop ? getDistanceLabel(userLocation, shop) : null;
   const when = formatRelativePostedAt(post.posted_at);
+  const isRecentTonight = isWithinRecentPostsWindow(post.posted_at);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -249,7 +251,7 @@ export default function HomeReelSlide({
             )}
           </div>
         </div>
-        {when && (
+        {isRecentTonight && (
           <span className="shrink-0 rounded-full border border-[#ff3d00]/40 bg-[#ff3d00]/15 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#ff3d00]">
             Tonight
           </span>
@@ -283,7 +285,7 @@ export default function HomeReelSlide({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#080810]/95 via-[#080810]/55 to-transparent px-4 pb-5 pt-24">
         <div className="pointer-events-auto space-y-2.5 pr-14">
           <div className="flex flex-wrap gap-1.5">
-            {(cups != null || post.drink_name) && (
+            {isRecentTonight && (cups != null || post.drink_name) && (
               <span className="inline-flex items-center rounded-full border border-[#ffaa00]/35 bg-[#ffaa00]/12 px-2.5 py-1 text-[10px] font-bold text-[#ffaa00]">
                 {cups != null && `今夜${cups}杯目`}
                 {cups != null && post.drink_name && " · "}

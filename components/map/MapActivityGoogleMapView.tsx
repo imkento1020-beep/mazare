@@ -17,7 +17,7 @@ export type ActivityMapShop = {
   address: string;
   latitude?: number | null;
   longitude?: number | null;
-  uniquePosterCount: number;
+  postCount: number;
 };
 
 type MapActivityGoogleMapViewProps = {
@@ -34,7 +34,7 @@ const TIER1_FILL_OPACITY = 0.4;
 function pinStyle(tier: 1 | 2 | 3, selected: boolean) {
   if (tier === 1) {
     return {
-      scale: 12,
+      scale: 14,
       fill: "#ffaa00",
       fillOpacity: TIER1_FILL_OPACITY,
       stroke: selected ? "#ffffff" : "#ffaa00",
@@ -42,9 +42,9 @@ function pinStyle(tier: 1 | 2 | 3, selected: boolean) {
     };
   }
   if (tier === 2) {
-    return { scale: 18, fill: "#ffaa00", stroke: "#ffffff", z: 2 };
+    return { scale: 20, fill: "#ffaa00", stroke: "#ffffff", z: 2 };
   }
-  return { scale: 26, fill: "#ff3d00", stroke: "#ffffff", z: 3 };
+  return { scale: 28, fill: "#ff3d00", stroke: "#ffffff", z: 3 };
 }
 
 function createIcon(options: ReturnType<typeof pinStyle>) {
@@ -128,7 +128,7 @@ export default function MapActivityGoogleMapView({
     if (!mapReady || !map) return;
 
     const visible = shops.filter((shop) => {
-      const tier = mapPinTier(shop.uniquePosterCount);
+      const tier = mapPinTier(shop.postCount);
       return tier > 0 && shop.latitude != null && shop.longitude != null;
     });
 
@@ -147,7 +147,9 @@ export default function MapActivityGoogleMapView({
     const bounds = new google.maps.LatLngBounds();
 
     for (const shop of visible) {
-      const tier = mapPinTier(shop.uniquePosterCount) as 1 | 2 | 3;
+      const tier = mapPinTier(shop.postCount) as 1 | 2 | 3;
+      const countLabel =
+        shop.postCount > 99 ? "99+" : String(shop.postCount);
       const position = {
         lat: Number(shop.latitude),
         lng: Number(shop.longitude),
@@ -171,8 +173,14 @@ export default function MapActivityGoogleMapView({
         marker = new google.maps.Marker({
           map,
           position,
-          title: shop.name,
+          title: `${shop.name}（投稿 ${shop.postCount}件）`,
           icon: createIcon(style),
+          label: {
+            text: countLabel,
+            color: "#ffffff",
+            fontSize: tier === 1 ? "10px" : "12px",
+            fontWeight: "700",
+          },
           zIndex: style.z,
         });
         marker.addListener("click", () => {
@@ -182,6 +190,13 @@ export default function MapActivityGoogleMapView({
       } else {
         marker.setPosition(position);
         marker.setIcon(createIcon(style));
+        marker.setLabel({
+          text: countLabel,
+          color: "#ffffff",
+          fontSize: tier === 1 ? "10px" : "12px",
+          fontWeight: "700",
+        });
+        marker.setTitle(`${shop.name}（投稿 ${shop.postCount}件）`);
         marker.setZIndex(style.z);
         marker.setMap(map);
       }

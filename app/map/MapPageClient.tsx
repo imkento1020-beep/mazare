@@ -6,13 +6,20 @@ import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import MapActivityGoogleMapView from "@/components/map/MapActivityGoogleMapView";
 import MapActivitySheet from "@/components/map/MapActivitySheet";
+import MapActivityWindowFilter from "@/components/map/MapActivityWindowFilter";
 import GoogleAttribution from "@/components/places/GoogleAttribution";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 import {
   buildMapShopActivity,
   fetchRecentVibePosts,
-  type MapShopActivity,
 } from "@/lib/feed/recentFeed";
+import type { VibePost } from "@/lib/home/types";
+import {
+  DEFAULT_MAP_ACTIVITY_WINDOW_ID,
+  mapActivityWindowLabel,
+  mapActivityWindowMs,
+  type MapActivityWindowId,
+} from "@/lib/map/mapActivityWindow";
 import { notifyPostInterestCreated } from "@/lib/notifications/api";
 import type { User } from "@supabase/supabase-js";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -27,7 +34,9 @@ export default function MapPageClient({
   googleMapsApiKey,
   setupHint,
 }: MapPageClientProps) {
-  const [activities, setActivities] = useState<MapShopActivity[]>([]);
+  const [posts, setPosts] = useState<VibePost[]>([]);
+  const [activityWindowId, setActivityWindowId] =
+    useState<MapActivityWindowId>(DEFAULT_MAP_ACTIVITY_WINDOW_ID);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -42,10 +51,18 @@ export default function MapPageClient({
     useGoogleMapsApiKey(googleMapsApiKey);
   const { location: deviceLocation } = useUserLocation();
 
+  const windowMs = mapActivityWindowMs(activityWindowId);
+  const windowLabel = mapActivityWindowLabel(activityWindowId);
+
+  const activities = useMemo(
+    () => buildMapShopActivity(posts, windowMs),
+    [posts, windowMs],
+  );
+
   const reload = useCallback(async () => {
     const { data, error } = await fetchRecentVibePosts();
     if (error) setLoadError(error);
-    setActivities(buildMapShopActivity(data));
+    setPosts(data);
     setLoading(false);
   }, []);
 
@@ -87,6 +104,14 @@ export default function MapPageClient({
     });
   }, [deviceLocation]);
 
+  useEffect(() => {
+    if (!selectedId) return;
+    if (!activities.some((a) => a.shopId === selectedId)) {
+      setSelectedId(null);
+      setSheetOpen(false);
+    }
+  }, [activities, selectedId]);
+
   const mapShops = useMemo(
     () =>
       activities.map((item) => ({
@@ -95,7 +120,7 @@ export default function MapPageClient({
         address: item.shop.address,
         latitude: item.shop.latitude,
         longitude: item.shop.longitude,
-        uniquePosterCount: item.uniquePosterCount,
+        postCount: item.postCount,
       })),
     [activities],
   );
@@ -166,14 +191,21 @@ export default function MapPageClient({
           }}
         />
 
+        <div className="absolute left-4 top-4 z-10 max-w-[min(100%,320px)]">
+          <MapActivityWindowFilter
+            value={activityWindowId}
+            onChange={setActivityWindowId}
+          />
+        </div>
+
         {!mapsKeyLoading && !resolvedMapsApiKey && (
-          <div className="pointer-events-none absolute inset-x-4 top-4 z-10 rounded-xl border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
+          <div className="pointer-events-none absolute inset-x-4 top-28 z-10 rounded-xl border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
             Google Maps API キーが読み込まれていません。{setupHint}
           </div>
         )}
 
         {loadError && (
-          <div className="absolute inset-x-4 top-4 z-10 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-400">
+          <div className="absolute inset-x-4 top-28 z-10 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-400">
             {loadError}
           </div>
         )}
@@ -199,6 +231,7 @@ export default function MapPageClient({
 
         <MapActivitySheet
           activity={selectedActivity}
+          windowLabel={windowLabel}
           open={sheetOpen}
           interested={
             selectedActivity

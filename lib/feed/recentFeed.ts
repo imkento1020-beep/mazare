@@ -251,7 +251,10 @@ export type MapShopActivity = {
   latestPostId: string;
 };
 
-export function buildMapShopActivity(posts: VibePost[]): MapShopActivity[] {
+export function buildMapShopActivity(
+  posts: VibePost[],
+  windowMs: number,
+): MapShopActivity[] {
   const byShop = new Map<
     string,
     {
@@ -262,7 +265,10 @@ export function buildMapShopActivity(posts: VibePost[]): MapShopActivity[] {
   >();
 
   for (const post of posts) {
-    if (!isWithinRecentPostsWindow(post.posted_at)) continue;
+    if (!post.posted_at) continue;
+    const t = new Date(post.posted_at).getTime();
+    const now = Date.now();
+    if (t < now - windowMs || t > now) continue;
     const shop = post.shops;
     if (!shop) continue;
 
@@ -279,6 +285,11 @@ export function buildMapShopActivity(posts: VibePost[]): MapShopActivity[] {
   const activities: MapShopActivity[] = [];
 
   for (const [shopId, entry] of byShop) {
+    entry.posts.sort(
+      (a, b) =>
+        new Date(b.posted_at ?? 0).getTime() -
+        new Date(a.posted_at ?? 0).getTime(),
+    );
     const latest = entry.posts[0];
     if (!latest) continue;
     activities.push({
@@ -294,9 +305,10 @@ export function buildMapShopActivity(posts: VibePost[]): MapShopActivity[] {
   return activities;
 }
 
-export function mapPinTier(uniquePosterCount: number): 0 | 1 | 2 | 3 {
-  if (uniquePosterCount <= 0) return 0;
-  if (uniquePosterCount <= 3) return 1;
-  if (uniquePosterCount <= 9) return 2;
+/** 地図ピンのサイズ段階（選択時間内の投稿数ベース） */
+export function mapPinTier(postCount: number): 0 | 1 | 2 | 3 {
+  if (postCount <= 0) return 0;
+  if (postCount <= 3) return 1;
+  if (postCount <= 9) return 2;
   return 3;
 }

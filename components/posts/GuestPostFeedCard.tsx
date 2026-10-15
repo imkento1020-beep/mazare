@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { VibePost } from "@/lib/home/types";
 import { formatRelativePostedAt } from "@/lib/home/formatRelativePostedAt";
+import { isWithinRecentPostsWindow } from "@/lib/home/recentWindow";
 import ReelCaption from "@/components/home/reels/ReelCaption";
 import { extractAreaFromAddress } from "@/lib/geo/area";
 import { getDistanceLabel, type GeoPoint } from "@/lib/geo/haversine";
@@ -200,8 +201,11 @@ export default function GuestPostFeedCard({
   const { hasMedia } = postMediaSources(post);
   const waveIconColor = interested ? "#ff3d00" : "#ffffff";
 
+  const isRecentTonight = isWithinRecentPostsWindow(post.posted_at);
   const amberPillParts: string[] = [];
-  if (cupTotal != null) amberPillParts.push(`今夜${cupTotal}杯目`);
+  if (isRecentTonight && cupTotal != null) {
+    amberPillParts.push(`今夜${cupTotal}杯目`);
+  }
   if (post.drink_name) amberPillParts.push(post.drink_name);
   const amberPill = amberPillParts.join(" · ");
 
