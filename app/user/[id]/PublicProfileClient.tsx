@@ -20,6 +20,7 @@ import { findTonightSocialMood } from "@/lib/profile/tonightSocialMood";
 import PublicProfileTabBar, {
   type PublicProfileTab,
 } from "@/components/profile/PublicProfileTabBar";
+import MotionPanel from "@/components/ui/MotionPanel";
 import type { VibePost } from "@/lib/home/types";
 
 type PublicProfileClientProps = {
@@ -120,6 +121,7 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
           <PublicProfileTabBar active={tab} onChange={setTab} postCount={posts.length} />
         </div>
 
+        <MotionPanel panelKey={tab}>
         {tab === "posts" && (
           <div className="mt-4">
             <GuestPostInsightsPanel insights={insights} className="mt-0 mb-4" />
@@ -166,6 +168,7 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
             </div>
           </section>
         )}
+        </MotionPanel>
       </div>
     </GuestLayout>
   );

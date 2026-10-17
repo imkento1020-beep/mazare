@@ -54,7 +54,7 @@ function NavItem({
         aria-current={active ? "page" : undefined}
       >
         <span
-          className={`mt-[-20px] flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#ff3d00] ${
+          className={`mt-[-20px] flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#ff3d00] transition-shadow duration-300 ease-out ${
             active
               ? "shadow-[0_4px_24px_rgba(255,61,0,0.6)]"
               : "shadow-[0_4px_16px_rgba(255,61,0,0.4)]"
@@ -81,7 +81,7 @@ function NavItem({
     >
       <BottomNavIcon icon={item.icon} color={color} size={24} />
       <span
-        className={`text-[9px] leading-tight ${
+        className={`text-[9px] leading-tight transition-colors duration-200 ease-out ${
           active ? "font-bold text-[#ff3d00]" : "font-medium text-[#5a5668]"
         }`}
       >

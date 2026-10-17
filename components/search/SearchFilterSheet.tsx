@@ -42,7 +42,7 @@ export function SearchFilterChip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border px-3.5 py-2 text-xs font-bold transition ${
+      className={`rounded-full border px-3.5 py-2 text-xs font-bold transition-colors duration-200 ease-out ${
         active ? activeClass : "border-white/10 bg-[#18181f] text-[#9994a8] hover:border-white/20 hover:text-[#eeeaf4]"
       }`}
     >

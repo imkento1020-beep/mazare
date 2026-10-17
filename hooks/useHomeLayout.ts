@@ -1,22 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 export type HomeLayoutMode = "mobile" | "desktop";
 
 /** Tailwind `md` — home uses reels below this width. */
 const DESKTOP_QUERY = "(min-width: 768px)";
 
-export function useHomeLayout(): HomeLayoutMode | null {
-  const [mode, setMode] = useState<HomeLayoutMode | null>(null);
+function subscribe(onStoreChange: () => void) {
+  const media = window.matchMedia(DESKTOP_QUERY);
+  media.addEventListener("change", onStoreChange);
+  return () => media.removeEventListener("change", onStoreChange);
+}
 
-  useEffect(() => {
-    const media = window.matchMedia(DESKTOP_QUERY);
-    const sync = () => setMode(media.matches ? "desktop" : "mobile");
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
+function getSnapshot(): HomeLayoutMode {
+  return window.matchMedia(DESKTOP_QUERY).matches ? "desktop" : "mobile";
+}
 
-  return mode;
+function getServerSnapshot(): HomeLayoutMode {
+  return "mobile";
+}
+
+export function useHomeLayout(): HomeLayoutMode {
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

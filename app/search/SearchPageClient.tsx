@@ -16,6 +16,7 @@ import SearchModeToggle, {
 } from "@/components/search/SearchModeToggle";
 import SearchShopCard from "@/components/search/SearchShopCard";
 import GuestPostFeedCard from "@/components/posts/GuestPostFeedCard";
+import MotionPanel from "@/components/ui/MotionPanel";
 import TonightSocialMoodBadge from "@/components/profile/TonightSocialMoodBadge";
 import {
   TONIGHT_SOCIAL_MOODS,
@@ -282,50 +283,52 @@ export default function SearchPageClient() {
           )}
         </div>
 
-        {mode === "shops" ? (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {filteredShops.length === 0 ? (
-              <EmptySearch />
-            ) : (
-              filteredShops.map((item) => (
-                <SearchShopCard
-                  key={item.shop.id}
-                  item={item}
-                  live={liveShopIds.has(item.shop.id)}
-                />
-              ))
-            )}
-          </div>
-        ) : (
-          <div className="grid gap-5 sm:grid-cols-2">
-            {filteredPosts.length === 0 ? (
-              <EmptySearch />
-            ) : (
-              filteredPosts.map((post) => (
-                <article
-                  key={post.id}
-                  className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111118]"
-                >
-                  {post.author_tonight_social_mood && (
-                    <div className="border-b border-white/[0.06] px-3 py-2">
-                      <TonightSocialMoodBadge
-                        mood={post.author_tonight_social_mood}
-                        size="md"
-                      />
-                    </div>
-                  )}
-                  <GuestPostFeedCard
-                    post={post}
-                    tonightTotalCups={tonightCupTotals.get(post.id) ?? null}
-                    interestCount={interestCounts.get(post.id) ?? 0}
-                    commentCount={commentCounts.get(post.id) ?? 0}
-                    showActions={false}
+        <MotionPanel panelKey={mode}>
+          {mode === "shops" ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {filteredShops.length === 0 ? (
+                <EmptySearch />
+              ) : (
+                filteredShops.map((item) => (
+                  <SearchShopCard
+                    key={item.shop.id}
+                    item={item}
+                    live={liveShopIds.has(item.shop.id)}
                   />
-                </article>
-              ))
-            )}
-          </div>
-        )}
+                ))
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2">
+              {filteredPosts.length === 0 ? (
+                <EmptySearch />
+              ) : (
+                filteredPosts.map((post) => (
+                  <article
+                    key={post.id}
+                    className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111118]"
+                  >
+                    {post.author_tonight_social_mood && (
+                      <div className="border-b border-white/[0.06] px-3 py-2">
+                        <TonightSocialMoodBadge
+                          mood={post.author_tonight_social_mood}
+                          size="md"
+                        />
+                      </div>
+                    )}
+                    <GuestPostFeedCard
+                      post={post}
+                      tonightTotalCups={tonightCupTotals.get(post.id) ?? null}
+                      interestCount={interestCounts.get(post.id) ?? 0}
+                      commentCount={commentCounts.get(post.id) ?? 0}
+                      showActions={false}
+                    />
+                  </article>
+                ))
+              )}
+            </div>
+          )}
+        </MotionPanel>
       </div>
     </GuestLayout>
   );

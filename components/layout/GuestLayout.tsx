@@ -154,7 +154,7 @@ export default function GuestLayout({
               aria-label="閉じる"
               onClick={() => setMobileFiltersOpen(false)}
             />
-            <div className="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-white/7 bg-[#111118] px-4 pb-24 pt-4">
+            <div className="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-white/7 bg-[#111118] px-4 pb-24 pt-4 animate-[mazare-sheet-up_0.32s_cubic-bezier(0.32,0.72,0,1)_both]">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-base font-bold">フィルター</h2>
                 <button

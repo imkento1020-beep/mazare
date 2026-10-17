@@ -1,5 +1,7 @@
 "use client";
 
+import { useSegmentIndicator } from "@/components/ui/useSegmentIndicator";
+
 export type SegmentedTab<T extends string> = {
   id: T;
   label: string;
@@ -22,28 +24,41 @@ export default function SegmentedTabs<T extends string>({
   variant = "underline",
   className = "",
 }: SegmentedTabsProps<T>) {
+  const { containerRef, rect } = useSegmentIndicator(active);
+
   if (variant === "pill") {
     return (
       <div
-        className={`flex rounded-2xl border border-white/[0.08] bg-[#0d0d12] p-1 ${className}`}
+        ref={containerRef}
+        className={`relative flex rounded-2xl border border-white/[0.08] bg-[#0d0d12] p-1 ${className}`}
       >
+        <span
+          aria-hidden
+          className="mazare-segment-indicator pointer-events-none absolute bottom-1 top-1 rounded-xl bg-[#ff3d00] shadow-[0_4px_20px_rgba(255,61,0,0.35)]"
+          style={{
+            left: rect.left,
+            width: rect.width,
+            opacity: rect.ready ? 1 : 0,
+          }}
+        />
         {tabs.map((tab) => {
           const isActive = active === tab.id;
           return (
             <button
               key={tab.id}
               type="button"
+              data-segment-id={tab.id}
               onClick={() => onChange(tab.id)}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold transition ${
+              className={`relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-bold transition-colors duration-200 ease-out ${
                 isActive
-                  ? "bg-[#ff3d00] text-white shadow-[0_4px_20px_rgba(255,61,0,0.35)]"
+                  ? "text-white"
                   : "text-[#9994a8] hover:text-[#eeeaf4]"
               }`}
             >
               {tab.label}
               {tab.badge != null && tab.badge !== "" && (
                 <span
-                  className={`tabular-nums text-[11px] font-extrabold ${
+                  className={`tabular-nums text-[11px] font-extrabold transition-colors duration-200 ${
                     isActive ? "text-white/90" : "text-[#5a5668]"
                   }`}
                 >
@@ -58,16 +73,26 @@ export default function SegmentedTabs<T extends string>({
   }
 
   return (
-    <div className={`border-b border-white/[0.08] ${className}`}>
-      <div className="flex">
+    <div className={`relative border-b border-white/[0.08] ${className}`}>
+      <div ref={containerRef} className="relative flex">
+        <span
+          aria-hidden
+          className="mazare-segment-indicator pointer-events-none absolute bottom-0 h-0.5 rounded-full bg-[#ff3d00]"
+          style={{
+            left: rect.left + 12,
+            width: Math.max(0, rect.width - 24),
+            opacity: rect.ready ? 1 : 0,
+          }}
+        />
         {tabs.map((tab) => {
           const isActive = active === tab.id;
           return (
             <button
               key={tab.id}
               type="button"
+              data-segment-id={tab.id}
               onClick={() => onChange(tab.id)}
-              className={`relative flex flex-1 items-center justify-center gap-1.5 py-3.5 text-sm font-bold transition ${
+              className={`relative z-10 flex flex-1 items-center justify-center gap-1.5 px-3 py-3.5 text-sm font-bold transition-colors duration-200 ease-out ${
                 isActive ? "text-[#eeeaf4]" : "text-[#5a5668] hover:text-[#9994a8]"
               }`}
             >
@@ -76,12 +101,6 @@ export default function SegmentedTabs<T extends string>({
                 <span className="tabular-nums text-xs font-extrabold text-[#9994a8]">
                   {tab.badge}
                 </span>
-              )}
-              {isActive && (
-                <span
-                  className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-[#ff3d00]"
-                  aria-hidden
-                />
               )}
             </button>
           );

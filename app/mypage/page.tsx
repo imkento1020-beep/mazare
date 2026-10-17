@@ -23,6 +23,7 @@ import DrinkLogStatsCard from "@/components/mypage/DrinkLogStatsCard";
 import DrinkLogViewToggle, {
   type DrinkLogView,
 } from "@/components/mypage/DrinkLogViewToggle";
+import MotionPanel from "@/components/ui/MotionPanel";
 import MyPostGrid from "@/components/mypage/MyPostGrid";
 import DrinkLogCalendar from "@/components/mypage/DrinkLogCalendar";
 import { computeDrinkLogMonthStats } from "@/lib/profile/drinkLogStats";
@@ -291,6 +292,7 @@ export default function MyPage() {
         <MyPageTabBar active={tab} onChange={setTab} />
       </div>
 
+      <MotionPanel panelKey={tab}>
       {tab === "drink_log" && (
         <div id="drink-log" className="mt-4 space-y-4 pb-4">
           {myPostsError && (
@@ -300,11 +302,13 @@ export default function MyPage() {
           )}
           <DrinkLogStatsCard stats={drinkLogStats} />
           <DrinkLogViewToggle view={drinkLogView} onChange={setDrinkLogView} />
-          {drinkLogView === "grid" ? (
-            <MyPostGrid posts={myPosts} />
-          ) : (
-            <DrinkLogCalendar posts={myPosts} />
-          )}
+          <MotionPanel panelKey={drinkLogView}>
+            {drinkLogView === "grid" ? (
+              <MyPostGrid posts={myPosts} />
+            ) : (
+              <DrinkLogCalendar posts={myPosts} />
+            )}
+          </MotionPanel>
         </div>
       )}
 
@@ -471,6 +475,7 @@ export default function MyPage() {
       </button>
         </div>
       )}
+      </MotionPanel>
       </div>
     </GuestLayout>
   );

@@ -27,7 +27,7 @@ export default function MapActivityWindowFilter({
               key={window.id}
               type="button"
               onClick={() => onChange(window.id)}
-              className={`rounded-xl px-2.5 py-1.5 text-[11px] font-bold transition ${
+              className={`rounded-xl px-2.5 py-1.5 text-[11px] font-bold transition-colors duration-200 ease-out ${
                 active
                   ? "bg-[#ff3d00] text-white shadow-[0_2px_12px_rgba(255,61,0,0.35)]"
                   : "text-[#9994a8] hover:bg-white/5 hover:text-[#eeeaf4]"
