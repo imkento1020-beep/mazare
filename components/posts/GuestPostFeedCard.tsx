@@ -22,6 +22,7 @@ import {
   FeedWaveIcon,
 } from "@/components/icons/FeedActionIcons";
 import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
+import { resolvePostMedia } from "@/lib/guest-post/resolvePostMedia";
 import { supabase } from "@/lib/supabase";
 
 type GuestPostFeedCardProps = {
@@ -43,26 +44,162 @@ function authorInitial(name: string | null | undefined) {
   return trimmed.charAt(0).toUpperCase();
 }
 
-function postMediaSources(post: VibePost) {
-  const isVideo = post.media_type === "video" && Boolean(post.video_url);
-  const images = (post.images ?? []).filter(
-    (src) => src.startsWith("http") || src.startsWith("data:"),
+function FeedPreviewVideo({
+  src,
+  className = "",
+}: {
+  src: string;
+  className?: string;
+}) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    const video = videoRef.current;
+    if (!root || !video) return;
+    video.muted = true;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          void video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: 0.35 },
+    );
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [src]);
+
+  return (
+    <div ref={rootRef} className={`h-full w-full ${className}`.trim()}>
+      <video
+        ref={videoRef}
+        src={src}
+        className="pointer-events-none h-full w-full object-cover"
+        muted
+        playsInline
+        loop
+        autoPlay
+        preload="auto"
+      />
+    </div>
   );
-  return { isVideo, videoUrl: post.video_url, images, hasMedia: isVideo || images.length > 0 };
 }
 
 function MediaLayer({ post }: { post: VibePost }) {
-  const { isVideo, videoUrl, images } = postMediaSources(post);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const { mode, videoUrl, images } = resolvePostMedia(post);
 
-  if (isVideo && videoUrl) {
+  const slideCount =
+    mode === "mixed"
+      ? (videoUrl ? 1 : 0) + images.length
+      : mode === "video"
+        ? 1
+        : images.length;
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el || slideCount <= 1) return;
+    const index = Math.round(el.scrollLeft / el.clientWidth);
+    setActiveIndex(Math.min(index, slideCount - 1));
+  }
+
+  if (mode === "mixed" && videoUrl) {
     return (
-      <video
-        src={videoUrl}
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-        muted
-        playsInline
-        preload="metadata"
-      />
+      <div className="absolute inset-0">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex h-full snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <div className="relative h-full w-full shrink-0 snap-center">
+            <FeedPreviewVideo src={videoUrl} />
+          </div>
+          {images.map((src, index) => (
+            <div
+              key={`${src}-${index}`}
+              className="relative h-full w-full shrink-0 snap-center"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="pointer-events-none h-full w-full object-cover"
+              />
+            </div>
+          ))}
+        </div>
+        {slideCount > 1 && (
+          <>
+            <div className="pointer-events-none absolute bottom-14 left-1/2 flex -translate-x-1/2 gap-1.5">
+              {Array.from({ length: slideCount }).map((_, index) => (
+                <span
+                  key={index}
+                  className={`h-1.5 rounded-full transition-all ${
+                    index === activeIndex ? "w-4 bg-white" : "w-1.5 bg-white/40"
+                  }`}
+                />
+              ))}
+            </div>
+            <div className="pointer-events-none absolute right-3 top-12 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+              {activeIndex + 1}/{slideCount}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (mode === "video" && videoUrl) {
+    return (
+      <div className="absolute inset-0">
+        <FeedPreviewVideo src={videoUrl} />
+      </div>
+    );
+  }
+
+  if (images.length > 1) {
+    return (
+      <div className="absolute inset-0">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex h-full snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {images.map((src, index) => (
+            <div
+              key={`${src}-${index}`}
+              className="relative h-full w-full shrink-0 snap-center"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt=""
+                loading={index === 0 ? "lazy" : "lazy"}
+                decoding="async"
+                className="pointer-events-none h-full w-full object-cover"
+              />
+            </div>
+          ))}
+        </div>
+        <div className="pointer-events-none absolute bottom-14 left-1/2 flex -translate-x-1/2 gap-1.5">
+          {images.map((_, index) => (
+            <span
+              key={index}
+              className={`h-1.5 rounded-full transition-all ${
+                index === activeIndex ? "w-4 bg-white" : "w-1.5 bg-white/40"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
     );
   }
 
@@ -93,8 +230,7 @@ function MediaExpandOverlay({
   post: VibePost;
   onClose: () => void;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const { isVideo, videoUrl, images } = postMediaSources(post);
+  const { mode, videoUrl, images } = resolvePostMedia(post);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -103,12 +239,15 @@ function MediaExpandOverlay({
     };
   }, []);
 
-  useEffect(() => {
-    if (!isVideo || !videoRef.current) return;
-    void videoRef.current.play().catch(() => {
-      // autoplay blocked
-    });
-  }, [isVideo]);
+  const slides: { kind: "video" | "image"; url: string }[] = [];
+  if (mode === "mixed" && videoUrl) {
+    slides.push({ kind: "video", url: videoUrl });
+    for (const url of images) slides.push({ kind: "image", url });
+  } else if (mode === "video" && videoUrl) {
+    slides.push({ kind: "video", url: videoUrl });
+  } else {
+    for (const url of images) slides.push({ kind: "image", url });
+  }
 
   return (
     <div
@@ -118,25 +257,31 @@ function MediaExpandOverlay({
       aria-modal="true"
       aria-label="メディア拡大表示"
     >
-      <div className="flex h-full w-full max-h-[100dvh] max-w-[100vw] items-center justify-center p-4">
-        {isVideo && videoUrl ? (
-          <video
-            ref={videoRef}
-            src={videoUrl}
-            className="max-h-full max-w-full object-contain"
-            controls
-            playsInline
-            autoPlay
-          />
-        ) : images[0] ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={images[0]}
-            alt=""
-            className="max-h-full max-w-full object-contain"
-            style={{ touchAction: "pinch-zoom" }}
-          />
-        ) : null}
+      <div className="flex h-full w-full max-h-[100dvh] max-w-[100vw] snap-x snap-mandatory items-center overflow-x-auto">
+        {slides.map((slide, index) => (
+          <div
+            key={`${slide.url}-${index}`}
+            className="flex h-full w-full shrink-0 snap-center items-center justify-center p-4"
+          >
+            {slide.kind === "video" ? (
+              <video
+                src={slide.url}
+                className="max-h-full max-w-full object-contain"
+                controls
+                playsInline
+                autoPlay
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={slide.url}
+                alt=""
+                className="max-h-full max-w-full object-contain"
+                style={{ touchAction: "pinch-zoom" }}
+              />
+            )}
+          </div>
+        ))}
       </div>
       <p className="pointer-events-none absolute bottom-8 left-0 right-0 text-center text-xs text-white/50">
         タップして戻る
@@ -197,7 +342,7 @@ export default function GuestPostFeedCard({
   const area = shop?.address ? extractAreaFromAddress(shop.address) : "—";
   const distance = shop ? getDistanceLabel(userLocation, shop) : null;
   const shopLink = shopHref ?? (shop?.id ? `/shop/${shop.id}` : undefined);
-  const { hasMedia } = postMediaSources(post);
+  const { hasMedia } = resolvePostMedia(post);
   const waveIconColor = interested ? "#ff3d00" : "#ffffff";
 
   const amberPillParts: string[] = [];

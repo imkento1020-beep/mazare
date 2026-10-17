@@ -12,6 +12,7 @@ import {
   getTonightCupDisplay,
   getVisitOrder,
 } from "@/lib/guest-post/nightOut";
+import { resolvePostMedia } from "@/lib/guest-post/resolvePostMedia";
 import VibePostCommentSheet from "@/components/comments/VibePostCommentSheet";
 import { usePostViewTracking } from "@/lib/home/usePostViewTracking";
 import ReelCaption from "@/components/home/reels/ReelCaption";
@@ -43,11 +44,19 @@ function authorInitial(name: string | null | undefined) {
 }
 
 function mediaOf(post: HomeReelsPost) {
-  const isVideo = post.media_type === "video" && Boolean(post.video_url);
-  const images = (post.images ?? []).filter(
-    (src) => src.startsWith("http") || src.startsWith("data:"),
-  );
-  return { isVideo, videoUrl: post.video_url, images };
+  const resolved = resolvePostMedia(post);
+  if (resolved.mode === "mixed" && resolved.videoUrl) {
+    return {
+      isVideo: true,
+      videoUrl: resolved.videoUrl,
+      images: resolved.images,
+    };
+  }
+  return {
+    isVideo: resolved.mode === "video",
+    videoUrl: resolved.videoUrl,
+    images: resolved.images,
+  };
 }
 
 function ActionButton({

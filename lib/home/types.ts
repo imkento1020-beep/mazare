@@ -27,7 +27,7 @@ export type VibePost = {
   images?: string[] | null;
   video_url?: string | null;
   hashtags?: string[] | null;
-  media_type?: "image" | "video" | null;
+  media_type?: "image" | "video" | "mixed" | null;
   is_guest_post?: boolean;
   author_id?: string | null;
   posted_at?: string | null;

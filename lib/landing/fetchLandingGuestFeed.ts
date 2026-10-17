@@ -1,4 +1,5 @@
 import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
+import { parseMediaTypeField } from "@/lib/guest-post/parseMediaTypeField";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
 import { extractAreaFromAddress } from "@/lib/geo/area";
 import type { Shop, VibePost } from "@/lib/home/types";
@@ -38,19 +39,19 @@ function mapGuestPostRow(row: Record<string, unknown>): VibePost {
   const shop =
     shopEntry && typeof shopEntry === "object" ? (shopEntry as Shop) : null;
 
+  const images = Array.isArray(row.images) ? row.images.map(String) : [];
+  const video_url = typeof row.video_url === "string" ? row.video_url : null;
+
   return {
     id: String(row.id),
     shop_id: String(row.shop_id),
     comment: String(row.comment ?? ""),
     moods: Array.isArray(row.moods) ? row.moods.map(String) : [],
-    images: Array.isArray(row.images) ? row.images.map(String) : [],
-    video_url: typeof row.video_url === "string" ? row.video_url : null,
+    images,
+    video_url,
     posted_at: typeof row.posted_at === "string" ? row.posted_at : null,
     hashtags: Array.isArray(row.hashtags) ? row.hashtags.map(String) : [],
-    media_type:
-      row.media_type === "image" || row.media_type === "video"
-        ? row.media_type
-        : null,
+    media_type: parseMediaTypeField(row.media_type, images, video_url),
     is_guest_post: Boolean(row.is_guest_post),
     author_id: typeof row.author_id === "string" ? row.author_id : null,
     shops: shop,
@@ -161,7 +162,10 @@ export async function fetchLandingFeedPosts(): Promise<LandingFeedPost[]> {
   const items = await fetchLandingGuestFeed();
   return items.map(({ post, interestCount }) => {
     const images = (post.images ?? []).filter(Boolean);
-    const videoUrl = post.video_url ?? null;
+    const videoUrl =
+      post.media_type === "video" || (post.video_url && images.length === 0)
+        ? (post.video_url ?? null)
+        : null;
     return {
       id: post.id,
       shopName: post.shops?.name?.trim() || "お店",

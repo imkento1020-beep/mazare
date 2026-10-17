@@ -68,32 +68,32 @@ export async function createGuestVibePost(input: {
   const nightOut = normalizeNightOutInput(input.nightOut);
   const comment = (input.comment ?? "").trim().slice(0, 140);
 
-  let mediaType: "image" | "video" | null = null;
+  let mediaType: "image" | "video" | "mixed" | null = null;
   let images: string[] = [];
   let videoUrl: string | null = null;
 
-  if (input.imageFiles?.length && input.videoFile) {
-    return { postId: null, error: "写真と動画は同時に添付できません" };
-  }
+  const imageFiles = input.imageFiles ?? [];
+  const hasImages = imageFiles.length > 0;
+  const hasVideo = Boolean(input.videoFile);
 
-  if (input.imageFiles?.length) {
+  if (hasImages) {
     const uploaded = await uploadGuestPostImages({
       userId: input.userId,
-      files: input.imageFiles,
+      files: imageFiles,
     });
     if (uploaded.error) return { postId: null, error: uploaded.error };
     images = uploaded.urls;
     mediaType = "image";
   }
 
-  if (input.videoFile) {
+  if (hasVideo && input.videoFile) {
     const uploaded = await uploadGuestPostVideo({
       userId: input.userId,
       file: input.videoFile,
     });
     if (uploaded.error) return { postId: null, error: uploaded.error };
     videoUrl = uploaded.url;
-    mediaType = "video";
+    mediaType = hasImages ? "mixed" : "video";
   }
 
   const { data, error } = await supabase

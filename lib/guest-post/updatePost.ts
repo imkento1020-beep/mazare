@@ -118,28 +118,36 @@ export async function updateGuestVibePost(input: {
     ((input.imageFiles?.length ?? 0) > 0 || Boolean(input.videoFile));
 
   if (wantsNewMedia) {
-    if (input.imageFiles?.length && input.videoFile) {
-      return { error: "写真と動画は同時に添付できません" };
-    }
+    const imageFiles = input.imageFiles ?? [];
+    const hasImages = imageFiles.length > 0;
+    const hasVideo = Boolean(input.videoFile);
 
-    if (input.imageFiles?.length) {
+    if (hasImages) {
       const uploaded = await uploadGuestPostImages({
         userId: input.userId,
-        files: input.imageFiles,
+        files: imageFiles,
       });
       if (uploaded.error) return { error: uploaded.error };
       images = uploaded.urls;
-      videoUrl = null;
-      mediaType = "image";
-    } else if (input.videoFile) {
+      if (!hasVideo) {
+        videoUrl = null;
+        mediaType = "image";
+      }
+    }
+
+    if (hasVideo && input.videoFile) {
       const uploaded = await uploadGuestPostVideo({
         userId: input.userId,
         file: input.videoFile,
       });
       if (uploaded.error) return { error: uploaded.error };
       videoUrl = uploaded.url;
-      images = [];
-      mediaType = "video";
+      if (!hasImages) {
+        images = [];
+        mediaType = "video";
+      } else {
+        mediaType = "mixed";
+      }
     }
   }
 

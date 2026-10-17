@@ -3,7 +3,6 @@ import type { VibePost } from "@/lib/home/types";
 import { FeedGlassIcon } from "@/components/icons/FeedActionIcons";
 
 function gridThumb(post: VibePost): string | null {
-  if (post.media_type === "video" && post.video_url) return null;
   const img = (post.images ?? []).find(
     (s) => s.startsWith("http") || s.startsWith("data:"),
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { UploadIcon } from "@/components/icons/MazareIcons";
 
 const MEDIA_ACCEPT =
@@ -12,6 +12,21 @@ type GuestPostMediaUploadProps = {
   onChange: (images: File[], video: File | null) => void;
 };
 
+function useFileObjectUrls(files: File[]) {
+  const urls = useMemo(
+    () => files.map((file) => URL.createObjectURL(file)),
+    [files],
+  );
+
+  useEffect(() => {
+    return () => {
+      for (const url of urls) URL.revokeObjectURL(url);
+    };
+  }, [urls]);
+
+  return urls;
+}
+
 export default function GuestPostMediaUpload({
   imageFiles,
   videoFile,
@@ -19,6 +34,17 @@ export default function GuestPostMediaUpload({
 }: GuestPostMediaUploadProps) {
   const galleryRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+  const imagePreviewUrls = useFileObjectUrls(imageFiles);
+
+  const videoPreviewUrl = useMemo(() => {
+    if (!videoFile) return null;
+    return URL.createObjectURL(videoFile);
+  }, [videoFile]);
+
+  useEffect(() => {
+    if (!videoPreviewUrl) return;
+    return () => URL.revokeObjectURL(videoPreviewUrl);
+  }, [videoPreviewUrl]);
 
   function handlePick(event: React.ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(event.target.files ?? []);
@@ -26,27 +52,61 @@ export default function GuestPostMediaUpload({
 
     if (picked.length === 0) return;
 
-    const video = picked.find((file) => file.type.startsWith("video/"));
-    if (video) {
-      onChange([], video);
-      return;
+    const pickedVideo = picked.find((file) => file.type.startsWith("video/"));
+    const pickedImages = picked.filter((file) => file.type.startsWith("image/"));
+
+    let nextVideo = videoFile;
+    let nextImages = [...imageFiles];
+
+    if (pickedVideo) {
+      nextVideo = pickedVideo;
     }
 
-    const images = picked
-      .filter((file) => file.type.startsWith("image/"))
-      .slice(0, 3);
-    onChange(images, null);
+    if (pickedImages.length > 0) {
+      nextImages = [...nextImages, ...pickedImages].slice(0, 3);
+    }
+
+    onChange(nextImages, nextVideo);
   }
 
-  const selectionLabel = videoFile
-    ? "動画を選択中"
-    : imageFiles.length > 0
-      ? `写真 ${imageFiles.length}枚を選択中`
-      : null;
+  function removeImage(index: number) {
+    onChange(
+      imageFiles.filter((_, i) => i !== index),
+      videoFile,
+    );
+  }
+
+  function removeVideo() {
+    onChange(imageFiles, null);
+  }
+
+  const hasMedia = Boolean(videoFile) || imageFiles.length > 0;
 
   return (
     <div className="space-y-3 rounded-[16px] border border-[#ff3d00]/25 bg-[#111118] p-5">
-      <h2 className="text-lg font-black">写真・動画</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg font-black">写真・動画</h2>
+        <div className="flex flex-wrap gap-2">
+          <span
+            className={`rounded-full px-2.5 py-1 text-[11px] font-bold tabular-nums ${
+              videoFile
+                ? "bg-[#ff3d00]/15 text-[#ff3d00]"
+                : "bg-[#18181f] text-[#5a5668]"
+            }`}
+          >
+            動画 {videoFile ? 1 : 0}/1
+          </span>
+          <span
+            className={`rounded-full px-2.5 py-1 text-[11px] font-bold tabular-nums ${
+              imageFiles.length > 0
+                ? "bg-[#ffaa00]/15 text-[#ffaa00]"
+                : "bg-[#18181f] text-[#5a5668]"
+            }`}
+          >
+            写真 {imageFiles.length}/3
+          </span>
+        </div>
+      </div>
 
       <input
         ref={galleryRef}
@@ -87,12 +147,64 @@ export default function GuestPostMediaUpload({
       </div>
 
       <p className="text-center text-[10px] leading-relaxed text-[#5a5668]">
-        写真は最大3枚 · 動画は30秒まで
+        写真は最大3枚 · 動画は1本（30秒まで）· 一緒に投稿できます
       </p>
 
-      {selectionLabel && (
-        <p className="text-center text-xs font-medium text-[#9994a8]">
-          {selectionLabel}
+      {hasMedia ? (
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-[#9994a8]">選択中のメディア</p>
+          <div className="flex flex-wrap gap-2">
+            {videoPreviewUrl && (
+              <div className="relative h-24 w-[4.5rem] overflow-hidden rounded-xl border border-[#ff3d00]/40 bg-black">
+                <video
+                  src={videoPreviewUrl}
+                  className="h-full w-full object-cover"
+                  muted
+                  playsInline
+                  preload="metadata"
+                />
+                <span className="absolute left-1 top-1 rounded bg-[#ff3d00] px-1 py-0.5 text-[8px] font-bold text-white">
+                  動画
+                </span>
+                <button
+                  type="button"
+                  onClick={removeVideo}
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-[10px] font-bold text-white"
+                  aria-label="動画を削除"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+            {imagePreviewUrls.map((url, index) => (
+              <div
+                key={url}
+                className="relative h-24 w-[4.5rem] overflow-hidden rounded-xl border border-white/15 bg-[#080810]"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+                <span className="absolute left-1 top-1 rounded bg-[#ffaa00] px-1 py-0.5 text-[8px] font-bold text-[#080810]">
+                  写真{index + 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-[10px] font-bold text-white"
+                  aria-label={`写真${index + 1}を削除`}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="rounded-xl border border-dashed border-white/10 bg-[#080810] px-4 py-6 text-center text-xs text-[#5a5668]">
+          まだメディアが選択されていません
         </p>
       )}
     </div>

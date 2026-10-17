@@ -55,17 +55,20 @@ export default function GuestPostComposePreview({
 
   const normalized = normalizeNightOutInput(nightOut);
   const draftFromFiles = {
-    media_type: videoPreviewUrl
-      ? ("video" as const)
-      : imageUrls.length > 0
-        ? ("image" as const)
-        : null,
+    media_type:
+      videoPreviewUrl && imageUrls.length > 0
+        ? ("mixed" as const)
+        : videoPreviewUrl
+          ? ("video" as const)
+          : imageUrls.length > 0
+            ? ("image" as const)
+            : null,
     images: imageUrls,
     video_url: videoPreviewUrl,
   };
 
-  const useExisting =
-    !draftFromFiles.media_type && existingPost?.media_type;
+  const hasDraftMedia = Boolean(draftFromFiles.media_type);
+  const useExisting = !hasDraftMedia && existingPost?.media_type;
 
   const draftPost: VibePost = {
     id: existingPost?.id ?? "preview",
@@ -85,12 +88,36 @@ export default function GuestPostComposePreview({
     ...normalized,
   };
 
+  const mediaSummary =
+    draftFromFiles.media_type === "mixed"
+      ? "動画1本 · 写真あり"
+      : draftFromFiles.media_type === "video"
+        ? "動画1本"
+        : draftFromFiles.media_type === "image"
+          ? `写真${imageUrls.length}枚`
+          : useExisting
+            ? "既存のメディア"
+            : null;
+
   return (
     <div>
-      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#5a5668]">
-        プレビュー
-      </p>
-      <GuestPostFeedCard post={draftPost} showActions={false} />
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#5a5668]">
+          プレビュー
+        </p>
+        {mediaSummary && (
+          <p className="text-[11px] font-bold text-[#9994a8]">{mediaSummary}</p>
+        )}
+      </div>
+      {!hasDraftMedia && !useExisting ? (
+        <div className="rounded-2xl border border-dashed border-white/10 bg-[#111118] px-6 py-10 text-center">
+          <p className="text-sm text-[#5a5668]">
+            写真または動画を選ぶと、ここに投稿カードのプレビューが表示されます
+          </p>
+        </div>
+      ) : (
+        <GuestPostFeedCard post={draftPost} showActions={false} />
+      )}
     </div>
   );
 }
