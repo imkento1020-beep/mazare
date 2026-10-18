@@ -11,7 +11,7 @@ type RouteTransitionProps = {
 export default function RouteTransition({ children }: RouteTransitionProps) {
   const pathname = usePathname();
   return (
-    <div key={pathname} className="mazare-route-enter min-h-0 flex-1">
+    <div key={pathname} className="mazare-route-enter flex min-h-dvh flex-col">
       {children}
     </div>
   );
