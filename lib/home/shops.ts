@@ -5,20 +5,51 @@ export const SHOP_SELECT_BASE =
   "id, name, address, genre, open_hours, cover_image, cover_images, owner_id, staff_ids, created_at";
 
 export const SHOP_SELECT_WITH_COORDS = `${SHOP_SELECT_BASE}, latitude, longitude`;
+export const SHOP_SELECT_WITH_COORDS_AND_STATION = `${SHOP_SELECT_WITH_COORDS}, nearest_station`;
+
+function isMissingShopsColumnError(message: string, columns: string[]) {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("column") && normalized.includes("shops")) {
+    return columns.some((col) => normalized.includes(col.toLowerCase()));
+  }
+  return columns.some((col) => normalized.includes(col.toLowerCase()));
+}
 
 function isMissingCoordinateColumnError(message: string) {
-  const normalized = message.toLowerCase();
-  return (
-    normalized.includes("latitude") ||
-    normalized.includes("longitude") ||
-    (normalized.includes("column") && normalized.includes("shops"))
-  );
+  return isMissingShopsColumnError(message, ["latitude", "longitude"]);
+}
+
+function isMissingNearestStationColumnError(message: string) {
+  return isMissingShopsColumnError(message, ["nearest_station"]);
 }
 
 export async function fetchShopsFromDb(): Promise<{
   data: Shop[] | null;
   error: string | null;
 }> {
+  const withStation = await supabase
+    .from("shops")
+    .select(SHOP_SELECT_WITH_COORDS_AND_STATION);
+
+  if (!withStation.error) {
+    return { data: (withStation.data ?? []) as Shop[], error: null };
+  }
+
+  if (isMissingNearestStationColumnError(withStation.error.message)) {
+    const withCoords = await supabase.from("shops").select(SHOP_SELECT_WITH_COORDS);
+    if (!withCoords.error) {
+      return { data: (withCoords.data ?? []) as Shop[], error: null };
+    }
+    if (isMissingCoordinateColumnError(withCoords.error.message)) {
+      const fallback = await supabase.from("shops").select(SHOP_SELECT_BASE);
+      if (fallback.error) {
+        return { data: null, error: fallback.error.message };
+      }
+      return { data: (fallback.data ?? []) as Shop[], error: null };
+    }
+    return { data: null, error: withCoords.error.message };
+  }
+
   const withCoords = await supabase.from("shops").select(SHOP_SELECT_WITH_COORDS);
 
   if (!withCoords.error) {
@@ -61,8 +92,12 @@ export async function fetchShopByIdFromDb(id: string): Promise<{
   error: string | null;
 }> {
   return fetchShopRow(
+    supabase
+      .from("shops")
+      .select(SHOP_SELECT_WITH_COORDS_AND_STATION)
+      .eq("id", id)
+      .maybeSingle(),
     supabase.from("shops").select(SHOP_SELECT_WITH_COORDS).eq("id", id).maybeSingle(),
-    supabase.from("shops").select(SHOP_SELECT_BASE).eq("id", id).maybeSingle(),
   );
 }
 

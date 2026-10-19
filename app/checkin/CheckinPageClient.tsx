@@ -8,8 +8,6 @@ import GoogleAttribution from "@/components/places/GoogleAttribution";
 import GeolocationPermissionHelp from "@/components/geo/GeolocationPermissionHelp";
 import { CheckinOutlineIcon } from "@/components/icons/CreateActionIcons";
 import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
-import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
-import { ensureAnonymousSession } from "@/lib/auth/anonymous";
 import { createCheckin } from "@/lib/checkins/api";
 import { getDisplayName, syncGuestDisplayName } from "@/lib/mypage/api";
 import type { PlaceSummary } from "@/lib/places/types";
@@ -19,6 +17,9 @@ import {
 } from "@/lib/places/clientPlaces";
 import { loadNearbyFromUserGesture } from "@/lib/places/loadNearbyFromUserGesture";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
+import { useRequireRegisteredRedirect } from "@/hooks/useRequireRegisteredRedirect";
+import LoadingScreen from "@/components/layout/LoadingScreen";
+import { isRegisteredUser } from "@/lib/auth/anonymous";
 
 type CheckinPageClientProps = {
   googleMapsApiKey: string;
@@ -29,7 +30,8 @@ export default function CheckinPageClient({
 }: CheckinPageClientProps) {
   const { apiKey: mapsApiKey, loading: mapsKeyLoading } =
     useGoogleMapsApiKey(googleMapsApiKey);
-  const { user, ready: authReady, authError } = useAnonymousAuth();
+  const { ready: authAllowed, user } = useRequireRegisteredRedirect("/checkin");
+  const authReady = authAllowed;
   const [places, setPlaces] = useState<PlaceSummary[]>([]);
   const [userCoords, setUserCoords] = useState<{
     latitude: number;
@@ -100,24 +102,15 @@ export default function CheckinPageClient({
     setSubmitting(true);
     setError(null);
 
-    let activeUser = user;
-    if (!activeUser) {
-      const session = await ensureAnonymousSession();
-      activeUser = session.user;
-      if (!activeUser) {
-        setSubmitting(false);
-        setError(
-          session.error ??
-            "ログインの準備に失敗しました。ページを再読み込みしてお試しください。",
-        );
-        return;
-      }
+    if (!isRegisteredUser(user)) {
+      setSubmitting(false);
+      return;
     }
 
-    await syncGuestDisplayName(activeUser.id, getDisplayName(activeUser));
+    await syncGuestDisplayName(user.id, getDisplayName(user));
 
     const { error: checkinError } = await createCheckin({
-      userId: activeUser.id,
+      userId: user.id,
       shopId: selectedShopId,
     });
 
@@ -129,6 +122,10 @@ export default function CheckinPageClient({
     }
 
     setSuccessShopName(selectedPlace.name);
+  }
+
+  if (!authAllowed) {
+    return <LoadingScreen />;
   }
 
   if (successShopName) {
@@ -183,12 +180,6 @@ export default function CheckinPageClient({
             Google Maps API キーが未設定です。
           </p>
         )}
-        {authReady && !user && authError && (
-          <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-400">
-            {authError}
-          </p>
-        )}
-
         <form onSubmit={handleSearch} className="mt-6 flex gap-2">
           <input
             value={searchQuery}

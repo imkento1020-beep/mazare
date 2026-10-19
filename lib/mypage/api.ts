@@ -242,7 +242,7 @@ export async function fetchUserGuestPosts(userId: string): Promise<{
       drink_cups,
       drink_count,
       party_size,
-      shops ( id, name, address, genre, open_hours, latitude, longitude )
+      shops ( id, name, address, genre, open_hours, latitude, longitude, nearest_station )
     `,
     )
     .eq("author_id", userId)

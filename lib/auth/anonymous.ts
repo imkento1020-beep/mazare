@@ -5,7 +5,9 @@ export function isAnonymousUser(user: User | null | undefined) {
   return Boolean(user?.is_anonymous);
 }
 
-export function isRegisteredUser(user: User | null | undefined) {
+export function isRegisteredUser(
+  user: User | null | undefined,
+): user is User {
   return Boolean(user && !user.is_anonymous);
 }
 

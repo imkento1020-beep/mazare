@@ -24,6 +24,13 @@ import { notifyPostInterestCreated } from "@/lib/notifications/api";
 import type { User } from "@supabase/supabase-js";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { getDevicePositionOnUserGesture } from "@/lib/geo/getDevicePosition";
+import { getPostCardLocationLabel } from "@/lib/geo/postCardLocation";
+import {
+  mergeShopNearestStations,
+  useEnrichShopNearestStations,
+} from "@/hooks/useEnrichShopNearestStations";
+import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
+import { isRegisteredUser } from "@/lib/auth/anonymous";
 
 type MapPageClientProps = {
   googleMapsApiKey: string;
@@ -34,6 +41,7 @@ export default function MapPageClient({
   googleMapsApiKey,
   setupHint,
 }: MapPageClientProps) {
+  const { openAuthPrompt } = useAuthPrompt();
   const [posts, setPosts] = useState<VibePost[]>([]);
   const [activityWindowId, setActivityWindowId] =
     useState<MapActivityWindowId>(DEFAULT_MAP_ACTIVITY_WINDOW_ID);
@@ -128,9 +136,36 @@ export default function MapPageClient({
   const selectedActivity =
     activities.find((item) => item.shopId === selectedId) ?? null;
 
+  const mapShopsForEnrichment = useMemo(
+    () => activities.map((item) => item.shop),
+    [activities],
+  );
+  const stationMap = useEnrichShopNearestStations(mapShopsForEnrichment);
+
+  const selectedLocationLabel = useMemo(() => {
+    if (!selectedActivity) return null;
+    const shop = mergeShopNearestStations(
+      selectedActivity.shop,
+      stationMap,
+    );
+    return getPostCardLocationLabel(
+      userLocation
+        ? { latitude: userLocation.lat, longitude: userLocation.lng }
+        : null,
+      shop,
+    );
+  }, [selectedActivity, stationMap, userLocation]);
+
   async function handleInterest() {
     if (!selectedActivity) return;
-    if (!user) return;
+    if (!isRegisteredUser(user)) {
+      openAuthPrompt({
+        title: "ログインして「今夜行くかも」",
+        description: "地図からお店に「今夜行くかも」を送るにはログインが必要です。",
+        returnPath: "/map",
+      });
+      return;
+    }
 
     const postId = selectedActivity.latestPostId;
     const interested = interestedPostIds.has(postId);
@@ -233,6 +268,7 @@ export default function MapPageClient({
         <MapActivitySheet
           activity={selectedActivity}
           windowLabel={windowLabel}
+          locationLabel={selectedLocationLabel}
           open={sheetOpen}
           interested={
             selectedActivity

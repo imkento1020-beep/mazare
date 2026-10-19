@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { PlaceSummary } from "@/lib/places/types";
+import { ensureNearestStationForShop } from "@/lib/shops/ensureNearestStation";
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -38,6 +39,12 @@ export async function ensureShopFromPlace(
     };
 
     if (existing.data?.id && isCacheFresh(existing.data.cached_at)) {
+      void ensureNearestStationForShop({
+        id: existing.data.id,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        nearest_station: null,
+      });
       return { shopId: existing.data.id, error: null };
     }
 
@@ -51,6 +58,12 @@ export async function ensureShopFromPlace(
       if (updated.error) {
         return { shopId: "", error: updated.error.message };
       }
+      void ensureNearestStationForShop({
+        id: updated.data.id,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        nearest_station: null,
+      });
       return { shopId: updated.data.id, error: null };
     }
 
@@ -64,6 +77,12 @@ export async function ensureShopFromPlace(
       return { shopId: "", error: inserted.error.message };
     }
 
+    void ensureNearestStationForShop({
+      id: inserted.data.id,
+      latitude: place.latitude,
+      longitude: place.longitude,
+      nearest_station: null,
+    });
     return { shopId: inserted.data.id, error: null };
   } catch (error) {
     return {

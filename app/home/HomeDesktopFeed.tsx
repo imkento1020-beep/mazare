@@ -23,6 +23,12 @@ import GuestLayout from "@/components/layout/GuestLayout";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 import type { User } from "@supabase/supabase-js";
+import { isRegisteredUser } from "@/lib/auth/anonymous";
+import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
+import {
+  mergeShopNearestStations,
+  useEnrichShopNearestStations,
+} from "@/hooks/useEnrichShopNearestStations";
 
 type HomeDesktopFeedProps = {
   googleMapsApiKey: string;
@@ -32,6 +38,7 @@ export default function HomeDesktopFeed({
   googleMapsApiKey,
 }: HomeDesktopFeedProps) {
   const { apiKey: resolvedMapsApiKey } = useGoogleMapsApiKey(googleMapsApiKey);
+  const { openAuthPrompt } = useAuthPrompt();
   const { user: authUser, ready: authReady } = useAnonymousAuth();
   const [user, setUser] = useState<User | null>(null);
   const userRef = useRef<User | null>(null);
@@ -166,6 +173,10 @@ export default function HomeDesktopFeed({
     [recentPosts],
   );
 
+  const stationMap = useEnrichShopNearestStations(
+    useMemo(() => feedItems.map((item) => item.shop), [feedItems]),
+  );
+
   const filteredFeed = useMemo(() => {
     const q = search.trim().toLowerCase();
     return feedItems.filter((item) => {
@@ -180,7 +191,15 @@ export default function HomeDesktopFeed({
   async function handleInterest(item: RecentShopFeedItem) {
     const post = item.latestPost;
     if (submittingId) return;
-    if (!user) return;
+    if (!isRegisteredUser(user)) {
+      openAuthPrompt({
+        title: "ログインして「今夜行くかも」",
+        description:
+          "気になる投稿に「今夜行くかも」を送るにはログインが必要です。",
+        returnPath: "/home",
+      });
+      return;
+    }
 
     const interested = interestedPostIds.has(post.id);
     setSubmittingId(post.id);
@@ -309,10 +328,13 @@ export default function HomeDesktopFeed({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {filteredFeed.map((item) => (
+          {filteredFeed.map((item) => {
+            const shop =
+              mergeShopNearestStations(item.shop, stationMap) ?? item.shop;
+            return (
             <RecentShopCard
               key={item.shop.id}
-              item={item}
+              item={{ ...item, shop }}
               onInterest={() => void handleInterest(item)}
               interested={interestedPostIds.has(item.latestPost.id)}
               interestLoading={submittingId === item.latestPost.id}
@@ -323,7 +345,8 @@ export default function HomeDesktopFeed({
               commentCount={commentCounts.get(item.latestPost.id) ?? 0}
               userLocation={userLocation}
             />
-          ))}
+            );
+          })}
         </div>
       )}
     </GuestLayout>

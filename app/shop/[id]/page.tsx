@@ -35,7 +35,11 @@ import {
   getDisplayName,
   syncGuestDisplayName,
 } from "@/lib/mypage/api";
-import { getDistanceLabel } from "@/lib/geo/haversine";
+import { getPostCardLocationLabel } from "@/lib/geo/postCardLocation";
+import {
+  mergeShopNearestStations,
+  useEnrichShopNearestStations,
+} from "@/hooks/useEnrichShopNearestStations";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import CheckinAvatarStack from "@/components/checkins/CheckinAvatarStack";
 import BackButton from "@/components/layout/BackButton";
@@ -48,6 +52,8 @@ import PostInterestLabel from "@/components/posts/PostInterestLabel";
 import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
 import { fetchInterestCountsByPostIds } from "@/lib/interests/postInterestCounts";
 import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
+import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
+import { isRegisteredUser } from "@/lib/auth/anonymous";
 import type { User } from "@supabase/supabase-js";
 import GenreIcon from "@/components/icons/GenreIcon";
 import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
@@ -95,6 +101,7 @@ export default function ShopDetailPage() {
   const params = useParams();
   const shopId = params.id as string;
   const { location: userLocation } = useUserLocation();
+  const { openAuthPrompt } = useAuthPrompt();
 
   const [user, setUser] = useState<User | null>(null);
   const [shop, setShop] = useState<Shop | null>(null);
@@ -115,6 +122,21 @@ export default function ShopDetailPage() {
   const tonightCupTotals = useMemo(
     () => buildTonightCumulativeCupTotals(posts),
     [posts],
+  );
+  const stationMap = useEnrichShopNearestStations(shop ? [shop] : []);
+  const enrichedShop = useMemo(
+    () => mergeShopNearestStations(shop, stationMap) ?? shop,
+    [shop, stationMap],
+  );
+  const postsForDisplay = useMemo(
+    () =>
+      enrichedShop
+        ? posts.map((post) => ({
+            ...post,
+            shops: post.shops ?? enrichedShop,
+          }))
+        : posts,
+    [posts, enrichedShop],
   );
   const [postInterestCounts, setPostInterestCounts] = useState<
     Map<string, number>
@@ -198,7 +220,14 @@ export default function ShopDetailPage() {
 
   async function handleInterestToggle() {
     if (!latestPost || submitting) return;
-    if (!user) return;
+    if (!isRegisteredUser(user)) {
+      openAuthPrompt({
+        title: "ログインして「今夜行くかも」",
+        description: "このお店に「今夜行くかも」を送るにはログインが必要です。",
+        returnPath: `/shop/${shopId}`,
+      });
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
@@ -317,7 +346,7 @@ export default function ShopDetailPage() {
   }
 
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.address)}`;
-  const distance = getDistanceLabel(userLocation, shop);
+  const locationLabel = getPostCardLocationLabel(userLocation, enrichedShop);
 
   return (
     <GuestLayout
@@ -357,8 +386,7 @@ export default function ShopDetailPage() {
           <span className="mt-0.5 shrink-0">
             <FeedPinIcon size={14} color="#9994a8" />
           </span>
-          {shop.address}
-          {distance ? ` · ${distance}` : ""}
+          {locationLabel !== "—" ? locationLabel : shop.address}
         </p>
         <ShopOpenHours hours={shop.open_hours} className="mt-3" />
 
@@ -425,7 +453,7 @@ export default function ShopDetailPage() {
                 今夜の発信はまだありません
               </p>
             ) : (
-              posts.map((post) => (
+              postsForDisplay.map((post) => (
                 <ShopVibePostItem
                   key={post.id}
                   post={post}

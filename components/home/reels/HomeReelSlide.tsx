@@ -5,8 +5,7 @@ import Link from "next/link";
 import type { HomeReelsPost } from "@/lib/home/fetchHomeReelsFeed";
 import { formatRelativePostedAt } from "@/lib/home/formatRelativePostedAt";
 import { isWithinRecentPostsWindow } from "@/lib/home/recentWindow";
-import { extractAreaFromAddress } from "@/lib/geo/area";
-import { getDistanceLabel, type GeoPoint } from "@/lib/geo/haversine";
+import { getPostCardLocationLabel, type GeoPoint } from "@/lib/geo/postCardLocation";
 import { formatGuestPostBodyForDisplay } from "@/lib/guest-post/composeBody";
 import {
   getTonightCupDisplay,
@@ -125,8 +124,7 @@ export default function HomeReelSlide({
   const cups = getTonightCupDisplay(post, tonightTotalCups);
   const caption = formatGuestPostBodyForDisplay(post.comment, post.hashtags);
   const name = post.author_display_name?.trim() || "ゲスト";
-  const area = shop?.address ? extractAreaFromAddress(shop.address) : null;
-  const distance = shop ? getDistanceLabel(userLocation, shop) : null;
+  const locationLabel = getPostCardLocationLabel(userLocation, shop);
   const when = formatRelativePostedAt(post.posted_at);
   const isRecentTonight = isWithinRecentPostsWindow(post.posted_at);
 
@@ -323,10 +321,10 @@ export default function HomeReelSlide({
               >
                 {shop.name}
               </Link>
-              {(area || distance) && (
+              {locationLabel !== "—" && (
                 <p className="flex items-center gap-1 text-[11px] text-[#9994a8]">
                   <FeedPinIcon />
-                  {[area, distance].filter(Boolean).join(" · ")}
+                  {locationLabel}
                 </p>
               )}
             </>

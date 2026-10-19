@@ -15,6 +15,8 @@ import LoadingScreen from "@/components/layout/LoadingScreen";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui/styles";
 import UserIcon from "@/components/icons/UserIcon";
 import type { User } from "@supabase/supabase-js";
+import { isRegisteredUser } from "@/lib/auth/anonymous";
+import { getLoginPathWithReturn } from "@/lib/auth/authPaths";
 
 export default function MyPageEditPage() {
   const router = useRouter();
@@ -32,8 +34,8 @@ export default function MyPageEditPage() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session?.user) {
-        router.replace("/login");
+      if (!isRegisteredUser(session?.user)) {
+        router.replace(getLoginPathWithReturn("/mypage/edit"));
         return;
       }
 

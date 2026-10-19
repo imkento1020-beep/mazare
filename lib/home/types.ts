@@ -9,6 +9,7 @@ export type Shop = {
   open_hours: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  nearest_station?: string | null;
   google_place_id?: string | null;
   cached_at?: string | null;
   cover_image?: string | null;

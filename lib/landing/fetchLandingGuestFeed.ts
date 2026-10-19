@@ -1,7 +1,12 @@
 import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
 import { parseMediaTypeField } from "@/lib/guest-post/parseMediaTypeField";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
-import { extractAreaFromAddress } from "@/lib/geo/area";
+import { getPostCardLocationLabel } from "@/lib/geo/postCardLocation";
+import { ensureNearestStationsForShops } from "@/lib/shops/ensureNearestStation";
+import {
+  POST_CARD_SHOP_RELATION,
+  POST_CARD_SHOP_RELATION_LEGACY,
+} from "@/lib/home/postCardShopFields";
 import type { Shop, VibePost } from "@/lib/home/types";
 import { createSupabaseAnonServerClient } from "@/lib/supabase/serverAnon";
 
@@ -30,8 +35,13 @@ const GUEST_POST_SELECT = `
   drink_cups,
   drink_count,
   party_size,
-  shops ( id, name, address, genre, open_hours, latitude, longitude )
+  ${POST_CARD_SHOP_RELATION}
 `;
+
+const GUEST_POST_SELECT_LEGACY = GUEST_POST_SELECT.replace(
+  POST_CARD_SHOP_RELATION,
+  POST_CARD_SHOP_RELATION_LEGACY,
+);
 
 function mapGuestPostRow(row: Record<string, unknown>): VibePost {
   const shopRaw = row.shops;
@@ -97,7 +107,7 @@ export async function fetchLandingGuestFeed(): Promise<LandingGuestFeedItem[]> {
     const supabase = createSupabaseAnonServerClient();
     const nowIso = new Date().toISOString();
 
-    const { data: rows, error } = await supabase
+    const primary = await supabase
       .from("vibe_posts")
       .select(GUEST_POST_SELECT)
       .eq("is_guest_post", true)
@@ -105,14 +115,51 @@ export async function fetchLandingGuestFeed(): Promise<LandingGuestFeedItem[]> {
       .order("posted_at", { ascending: false })
       .limit(10);
 
-    if (error || !rows?.length) {
+    let rows: unknown[] | null = primary.data as unknown[] | null;
+    let fetchError = primary.error;
+
+    if (fetchError?.message?.includes("nearest_station")) {
+      const retry = await supabase
+        .from("vibe_posts")
+        .select(GUEST_POST_SELECT_LEGACY)
+        .eq("is_guest_post", true)
+        .lte("posted_at", nowIso)
+        .order("posted_at", { ascending: false })
+        .limit(10);
+      rows = retry.data as unknown[] | null;
+      fetchError = retry.error;
+    }
+
+    if (fetchError || !rows?.length) {
       return [];
     }
 
     let posts = rows.map((row) =>
-      mapGuestPostRow(row as Record<string, unknown>),
+      mapGuestPostRow(row as unknown as Record<string, unknown>),
     );
     posts = await attachAuthorDisplayNames(posts);
+
+    const uniqueShops = [
+      ...new Map(
+        posts
+          .map((post) => post.shops)
+          .filter((shop): shop is Shop => Boolean(shop))
+          .map((shop) => [shop.id, shop]),
+      ).values(),
+    ];
+    const stations = await ensureNearestStationsForShops(uniqueShops);
+    posts = posts.map((post) =>
+      post.shops
+        ? {
+            ...post,
+            shops: {
+              ...post.shops,
+              nearest_station:
+                stations[post.shops.id] ?? post.shops.nearest_station,
+            },
+          }
+        : post,
+    );
 
     const postIds = posts.map((post) => post.id);
     const interestByPost = new Map<string, number>();
@@ -169,7 +216,7 @@ export async function fetchLandingFeedPosts(): Promise<LandingFeedPost[]> {
     return {
       id: post.id,
       shopName: post.shops?.name?.trim() || "お店",
-      area: extractAreaFromAddress(post.shops?.address),
+      area: getPostCardLocationLabel(null, post.shops),
       interestCount,
       imageUrl: images[0] ?? null,
       videoUrl,

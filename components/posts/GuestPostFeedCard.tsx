@@ -5,8 +5,7 @@ import Link from "next/link";
 import type { VibePost } from "@/lib/home/types";
 import { formatRelativePostedAt } from "@/lib/home/formatRelativePostedAt";
 import ReelCaption from "@/components/home/reels/ReelCaption";
-import { extractAreaFromAddress } from "@/lib/geo/area";
-import { getDistanceLabel, type GeoPoint } from "@/lib/geo/haversine";
+import { getPostCardLocationLabel, type GeoPoint } from "@/lib/geo/postCardLocation";
 import { formatGuestPostBodyForDisplay } from "@/lib/guest-post/composeBody";
 import {
   getTonightCupDisplay,
@@ -339,8 +338,7 @@ export default function GuestPostFeedCard({
   const cupTotal = getTonightCupDisplay(post, tonightTotalCups);
   const comment = formatGuestPostBodyForDisplay(post.comment, post.hashtags);
   const displayName = post.author_display_name?.trim() || "ゲスト";
-  const area = shop?.address ? extractAreaFromAddress(shop.address) : "—";
-  const distance = shop ? getDistanceLabel(userLocation, shop) : null;
+  const locationLabel = getPostCardLocationLabel(userLocation, shop);
   const shopLink = shopHref ?? (shop?.id ? `/shop/${shop.id}` : undefined);
   const { hasMedia } = resolvePostMedia(post);
   const waveIconColor = interested ? "#ff3d00" : "#ffffff";
@@ -500,8 +498,7 @@ export default function GuestPostFeedCard({
               </div>
               <p className="flex items-center gap-1 text-[11px] text-[#9994a8]">
                 <FeedPinIcon size={12} color="#9994a8" />
-                {area}
-                {distance ? ` · ${distance}` : ""}
+                {locationLabel}
               </p>
             </div>
           )}

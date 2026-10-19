@@ -20,6 +20,12 @@ import HomeReelsScroller from "@/components/home/reels/HomeReelsScroller";
 import BottomNav from "@/components/BottomNav";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import type { User } from "@supabase/supabase-js";
+import { isRegisteredUser } from "@/lib/auth/anonymous";
+import {
+  mergeShopNearestStations,
+  useEnrichShopNearestStations,
+} from "@/hooks/useEnrichShopNearestStations";
+import type { Shop } from "@/lib/home/types";
 
 export default function HomeMobileReelsFeed() {
   const searchParams = useSearchParams();
@@ -209,10 +215,11 @@ export default function HomeMobileReelsFeed() {
     const shop = post.shops;
     if (!shop) return;
 
-    if (!user) {
+    if (!isRegisteredUser(user)) {
       openAuthPrompt({
-        title: "ログインして「行くかも」",
-        description: "気になる投稿に「行くかも」を送るにはログインが必要です。",
+        title: "ログインして「今夜行くかも」",
+        description:
+          "気になる投稿に「今夜行くかも」を送るにはログインが必要です。",
         returnPath: "/home",
       });
       return;
@@ -269,6 +276,25 @@ export default function HomeMobileReelsFeed() {
     void loadCounts([post.id]);
   }
 
+  const stationMap = useEnrichShopNearestStations(
+    useMemo(
+      () =>
+        posts
+          .map((post) => post.shops)
+          .filter((shop): shop is Shop => Boolean(shop)),
+      [posts],
+    ),
+  );
+
+  const enrichedPosts = useMemo(
+    () =>
+      posts.map((post) => ({
+        ...post,
+        shops: mergeShopNearestStations(post.shops, stationMap) ?? post.shops,
+      })),
+    [posts, stationMap],
+  );
+
   if (loading) return <LoadingScreen />;
 
   return (
@@ -280,7 +306,7 @@ export default function HomeMobileReelsFeed() {
       )}
 
       <HomeReelsScroller
-        posts={posts}
+        posts={enrichedPosts}
         tonightCupTotals={tonightCupTotals}
         interestCounts={interestCounts}
         commentCounts={commentCounts}

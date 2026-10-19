@@ -85,7 +85,11 @@ GRANT UPDATE, DELETE ON public.vibe_posts TO authenticated;
 -- 6b. スタッフ招待のサイト内通知 → supabase/staff-invite-notifications.sql を別途実行
 -- 7. チェックイン (checkins) → supabase/checkins.sql を別途実行
 -- 8. 店舗座標 → supabase/shops-coordinates.sql を別途実行
+-- 9. 最寄り駅キャッシュ → supabase/shops-nearest-station.sql
 -- ============================================================
+
+ALTER TABLE public.shops
+  ADD COLUMN IF NOT EXISTS nearest_station TEXT;
 
 -- ============================================================
 -- 6. 確認

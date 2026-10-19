@@ -1,21 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
-import { ensureAnonymousSession } from "@/lib/auth/anonymous";
+import { isRegisteredUser } from "@/lib/auth/anonymous";
+import LoginRequiredPanel from "@/components/auth/LoginRequiredPanel";
 import {
   fetchCommentsForPost,
   insertComment,
 } from "@/lib/comments/api";
 import type { VibePostComment } from "@/lib/comments/types";
 import { formatPostedAt } from "@/lib/home/types";
-import {
-  getLoginPathWithReturn,
-  getFormalSignupPathWithReturn,
-} from "@/lib/auth/authPaths";
 import { FeedCommentIcon } from "@/components/icons/FeedActionIcons";
 import { CloseIcon } from "@/components/icons/MazareIcons";
 
@@ -137,17 +133,12 @@ export default function VibePostCommentSheet({
     if (!open || !authReady) return;
 
     async function resolveViewer() {
-      let activeUser = user;
-      if (!activeUser) {
-        const session = await ensureAnonymousSession();
-        activeUser = session.user;
-      }
-      if (!activeUser) return;
+      if (!isRegisteredUser(user)) return;
 
       const { data } = await supabase
         .from("profiles")
         .select("display_name")
-        .eq("id", activeUser.id)
+        .eq("id", user!.id)
         .maybeSingle();
 
       const name =
@@ -174,20 +165,14 @@ export default function VibePostCommentSheet({
     setSubmitting(true);
     setError(null);
 
-    let activeUser = user;
-    if (!activeUser) {
-      const session = await ensureAnonymousSession();
-      activeUser = session.user;
-    }
-
-    if (!activeUser) {
+    if (!isRegisteredUser(user)) {
       setSubmitting(false);
       return;
     }
 
     const result = await insertComment({
       vibePostId,
-      userId: activeUser.id,
+      userId: user.id,
       content: draft,
     });
 
@@ -213,9 +198,7 @@ export default function VibePostCommentSheet({
   if (!open) return null;
 
   const returnPath = pathname || "/home";
-  const loginHref = getLoginPathWithReturn(returnPath);
-  const signupHref = getFormalSignupPathWithReturn(returnPath);
-  const canComment = Boolean(user);
+  const canComment = isRegisteredUser(user);
 
   return (
     <div className="fixed inset-0 z-[110] flex flex-col justify-end">
@@ -297,25 +280,13 @@ export default function VibePostCommentSheet({
 
         <footer className="shrink-0 border-t border-white/[0.07] px-4 py-3">
           {!canComment && authReady ? (
-            <div className="rounded-[12px] bg-[#18181f] px-4 py-4 text-center">
-              <p className="text-sm text-[#9994a8]">
-                コメントするにはログインが必要です
-              </p>
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-center">
-                <Link
-                  href={loginHref}
-                  className="rounded-[12px] bg-[#ff3d00] px-4 py-2.5 text-sm font-bold text-white"
-                >
-                  ログイン
-                </Link>
-                <Link
-                  href={signupHref}
-                  className="rounded-[12px] border border-white/12 px-4 py-2.5 text-sm font-bold text-[#eeeaf4]"
-                >
-                  新規登録
-                </Link>
-              </div>
-            </div>
+            <LoginRequiredPanel
+              compact
+              returnPath={returnPath}
+              title="コメントするにはログイン"
+              description="投稿へのコメントを書く・読むにはアカウントが必要です。"
+              className="border-0 bg-[#18181f] py-5"
+            />
           ) : (
             <div className="flex items-center gap-2">
               <CommentAvatar

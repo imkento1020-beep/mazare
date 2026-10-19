@@ -58,8 +58,13 @@ export default function NotificationBell({ className = "" }: NotificationBellPro
   }
 
   useEffect(() => {
+    if (!isRegisteredUser(user)) {
+      setUnreadCount(0);
+      setNotifications([]);
+      return;
+    }
     void loadNotifications();
-  }, [pathname]);
+  }, [pathname, user]);
 
   useEffect(() => {
     function handleNotificationsRead() {

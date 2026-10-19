@@ -13,8 +13,7 @@ import GenreIcon from "@/components/icons/GenreIcon";
 import MoodTag from "@/components/icons/MoodTag";
 import { ClockMeta } from "@/components/icons/InlineMeta";
 import { usePostViewTracking } from "@/lib/home/usePostViewTracking";
-import { extractAreaFromAddress } from "@/lib/geo/area";
-import { getDistanceLabel, type GeoPoint } from "@/lib/geo/haversine";
+import { getPostCardLocationLabel, type GeoPoint } from "@/lib/geo/postCardLocation";
 import type { CheckinUser } from "@/lib/checkins/api";
 import CheckinAvatarStack from "@/components/checkins/CheckinAvatarStack";
 import PostImageCarousel from "./PostImageCarousel";
@@ -172,8 +171,7 @@ function ShopMeta({
   genre: string;
   userLocation?: GeoPoint | null;
 }) {
-  const area = extractAreaFromAddress(shop.address);
-  const distance = getDistanceLabel(userLocation, shop);
+  const locationLabel = getPostCardLocationLabel(userLocation, shop);
 
   return (
     <>
@@ -188,8 +186,7 @@ function ShopMeta({
       <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[#9994a8]">
         <span className="inline-flex items-center gap-1">
           <FeedPinIcon size={12} color="#9994a8" />
-          {area}
-          {distance ? ` · ${distance}` : ""}
+          {locationLabel}
         </span>
         <ClockMeta>{formatOpenHours(shop.open_hours)}</ClockMeta>
       </p>

@@ -51,6 +51,8 @@ import FavoriteShopCard from "@/components/favorites/FavoriteShopCard";
 import TonightInterestCard from "@/components/interests/TonightInterestCard";
 import type { GuestProfile } from "@/lib/mypage/types";
 import type { User } from "@supabase/supabase-js";
+import { isRegisteredUser } from "@/lib/auth/anonymous";
+import LoginRequiredPanel from "@/components/auth/LoginRequiredPanel";
 
 export default function MyPage() {
   const router = useRouter();
@@ -88,7 +90,8 @@ export default function MyPage() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session?.user) {
+      if (!session?.user || !isRegisteredUser(session.user)) {
+        setUser(session?.user ?? null);
         setLoading(false);
         return;
       }
@@ -243,6 +246,32 @@ export default function MyPage() {
         showMobileSearch={false}
       >
         <MyPageSkeleton />
+      </GuestLayout>
+    );
+  }
+
+  if (!isRegisteredUser(user)) {
+    return (
+      <GuestLayout
+        mobileTitle="マイページ"
+        menuOnly
+        showFilters={false}
+        showRightSidebar={false}
+        showMobileSearch={false}
+      >
+        <div className="mx-auto max-w-lg px-2 pt-6">
+          <LoginRequiredPanel
+            returnPath="/mypage"
+            title="マイページ"
+            description="飲みログやプロフィール、お気に入りのお店を管理するにはログインしてください。"
+          />
+          <Link
+            href="/home"
+            className="mt-6 block text-center text-sm font-semibold text-[#9994a8] hover:text-[#eeeaf4]"
+          >
+            ホームに戻る
+          </Link>
+        </div>
       </GuestLayout>
     );
   }

@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import GuestPostFeedCard from "@/components/posts/GuestPostFeedCard";
 import type { LandingGuestFeedItem } from "@/lib/landing/fetchLandingGuestFeed";
+import type { Shop } from "@/lib/home/types";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import {
+  mergeShopNearestStations,
+  useEnrichShopNearestStations,
+} from "@/hooks/useEnrichShopNearestStations";
 
 type LandingLiveFeedProps = {
   items: LandingGuestFeedItem[];
@@ -13,6 +20,17 @@ export default function LandingLiveFeed({
   items,
   outfitClassName,
 }: LandingLiveFeedProps) {
+  const { location: userLocation } = useUserLocation();
+
+  const shops = useMemo(
+    () =>
+      items
+        .map((item) => item.post.shops)
+        .filter((shop): shop is Shop => Boolean(shop)),
+    [items],
+  );
+  const stationMap = useEnrichShopNearestStations(shops);
+
   if (items.length === 0) return null;
 
   return (
@@ -38,22 +56,29 @@ export default function LandingLiveFeed({
         </div>
 
         <div className="scrollbar-hidden -mx-4 flex items-start gap-3 overflow-x-auto px-4 pb-1 snap-x snap-mandatory sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
-          {items.map((item) => (
-            <GuestPostFeedCard
-              key={item.post.id}
-              post={item.post}
-              tonightTotalCups={item.tonightTotalCups}
-              interestCount={item.interestCount}
-              commentCount={item.commentCount}
-              showActions
-              shopHref={
-                item.post.shops?.id
-                  ? `/shop/${item.post.shops.id}`
-                  : undefined
-              }
-              className="w-[85vw] max-w-[320px] shrink-0 snap-center sm:w-auto sm:max-w-none"
-            />
-          ))}
+          {items.map((item) => {
+            const post = {
+              ...item.post,
+              shops:
+                mergeShopNearestStations(item.post.shops, stationMap) ??
+                item.post.shops,
+            };
+            return (
+              <GuestPostFeedCard
+                key={item.post.id}
+                post={post}
+                tonightTotalCups={item.tonightTotalCups}
+                interestCount={item.interestCount}
+                commentCount={item.commentCount}
+                userLocation={userLocation}
+                showActions
+                shopHref={
+                  post.shops?.id ? `/shop/${post.shops.id}` : undefined
+                }
+                className="w-[85vw] max-w-[320px] shrink-0 snap-center sm:w-auto sm:max-w-none"
+              />
+            );
+          })}
         </div>
       </div>
     </section>

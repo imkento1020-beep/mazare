@@ -17,8 +17,6 @@ import GuestPostComposePreview from "@/components/guest-post/GuestPostComposePre
 import GuestPostMediaUpload from "@/components/guest-post/GuestPostMediaUpload";
 import { createGuestVibePost } from "@/lib/guest-post/createPost";
 import type { NightOutInput } from "@/lib/guest-post/nightOut";
-import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
-import { ensureAnonymousSession } from "@/lib/auth/anonymous";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { FeedGlassIcon, FeedPinIcon } from "@/components/icons/FeedActionIcons";
 import { FireIcon } from "@/components/icons/MazareIcons";
@@ -28,6 +26,9 @@ import { cachePlacesForPost, searchPlacesByTextClient } from "@/lib/places/clien
 import GeolocationPermissionHelp from "@/components/geo/GeolocationPermissionHelp";
 import { loadNearbyFromUserGesture } from "@/lib/places/loadNearbyFromUserGesture";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
+import { useRequireRegisteredRedirect } from "@/hooks/useRequireRegisteredRedirect";
+import LoadingScreen from "@/components/layout/LoadingScreen";
+import { isRegisteredUser } from "@/lib/auth/anonymous";
 
 type PostPageClientProps = {
   googleMapsApiKey: string;
@@ -38,7 +39,8 @@ export default function PostPageClient({
 }: PostPageClientProps) {
   const router = useRouter();
   const { openFormalRegistrationPrompt } = useAuthPrompt();
-  const { user, ready: authReady, authError } = useAnonymousAuth();
+  const { ready: authAllowed, user } = useRequireRegisteredRedirect("/post");
+  const authReady = authAllowed;
   const { apiKey: mapsApiKey, loading: mapsKeyLoading } =
     useGoogleMapsApiKey(googleMapsApiKey);
   const [places, setPlaces] = useState<PlaceSummary[]>([]);
@@ -146,20 +148,10 @@ export default function PostPageClient({
     setSubmitting(true);
     setError(null);
 
-    let activeUser = user;
-    let sessionError = authError;
-    if (!activeUser) {
-      const session = await ensureAnonymousSession();
-      activeUser = session.user;
-      sessionError = session.error ?? sessionError;
-    }
-
-    if (!activeUser) {
+    const activeUser = user;
+    if (!isRegisteredUser(activeUser)) {
       setSubmitting(false);
-      setError(
-        sessionError ??
-          "ログインの準備に失敗しました。ページを再読み込みしてお試しください。",
-      );
+      router.replace("/login?next=%2Fpost");
       return;
     }
 
@@ -210,6 +202,10 @@ export default function PostPageClient({
     }
   }
 
+  if (!authAllowed) {
+    return <LoadingScreen />;
+  }
+
   if (successShopName) {
     return (
       <div className="flex min-h-dvh flex-col bg-[#080810] text-[#eeeaf4]">
@@ -250,12 +246,6 @@ export default function PostPageClient({
             Google Maps API キーが未設定です。Vercel の環境変数を確認してください。
           </p>
         )}
-        {authReady && !user && authError && (
-          <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-400">
-            {authError}
-          </p>
-        )}
-
         <form onSubmit={handleSearch} className="mt-6 flex gap-2">
           <input
             value={searchQuery}

@@ -1,5 +1,9 @@
 import { supabase } from "@/lib/supabase";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
+import {
+  POST_CARD_SHOP_RELATION,
+  POST_CARD_SHOP_RELATION_LEGACY,
+} from "@/lib/home/postCardShopFields";
 import type { Shop, VibePost } from "@/lib/home/types";
 
 export type HomeReelsPost = VibePost & {
@@ -24,8 +28,13 @@ const SELECT = `
   drink_cups,
   drink_count,
   party_size,
-  shops ( id, name, address, genre, open_hours, latitude, longitude )
+  ${POST_CARD_SHOP_RELATION}
 `;
+
+const SELECT_LEGACY = SELECT.replace(
+  POST_CARD_SHOP_RELATION,
+  POST_CARD_SHOP_RELATION_LEGACY,
+);
 
 function mapRow(row: Record<string, unknown>): HomeReelsPost {
   const shopRaw = row.shops;
@@ -97,7 +106,7 @@ export async function fetchHomeReelsFeed(): Promise<{
 }> {
   const nowIso = new Date().toISOString();
 
-  const { data: rows, error } = await supabase
+  const primary = await supabase
     .from("vibe_posts")
     .select(SELECT)
     .eq("is_guest_post", true)
@@ -105,9 +114,26 @@ export async function fetchHomeReelsFeed(): Promise<{
     .order("posted_at", { ascending: false })
     .limit(50);
 
-  if (error) return { data: [], error: error.message };
+  let rows: unknown[] | null = primary.data as unknown[] | null;
+  let fetchError = primary.error;
 
-  let posts = (rows ?? []).map((row) => mapRow(row as Record<string, unknown>));
+  if (fetchError?.message?.includes("nearest_station")) {
+    const retry = await supabase
+      .from("vibe_posts")
+      .select(SELECT_LEGACY)
+      .eq("is_guest_post", true)
+      .lte("posted_at", nowIso)
+      .order("posted_at", { ascending: false })
+      .limit(50);
+    rows = retry.data as unknown[] | null;
+    fetchError = retry.error;
+  }
+
+  if (fetchError) return { data: [], error: fetchError.message };
+
+  let posts = (rows ?? []).map((row) =>
+    mapRow(row as unknown as Record<string, unknown>),
+  );
   posts = await attachAuthors(posts);
   return { data: posts, error: null };
 }
