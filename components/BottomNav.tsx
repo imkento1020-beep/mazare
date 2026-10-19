@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppMode } from "@/hooks/useAppMode";
 import BottomNavIcon from "@/components/icons/BottomNavIcon";
 import CameraIcon from "@/components/icons/CameraIcon";
+import CreateActionSheet from "@/components/navigation/CreateActionSheet";
 import {
   GUEST_BOTTOM_NAV,
   OWNER_BOTTOM_NAV,
@@ -23,6 +24,7 @@ function isGuestAppPath(pathname: string) {
     pathname.startsWith("/tonight") ||
     pathname.startsWith("/search") ||
     pathname.startsWith("/post") ||
+    pathname.startsWith("/checkin") ||
     pathname.startsWith("/trending") ||
     pathname.startsWith("/nearby") ||
     pathname.startsWith("/favorites") ||
@@ -39,12 +41,43 @@ function isOwnerAppPath(pathname: string) {
 function NavItem({
   item,
   pathname,
+  onOpenCreateSheet,
 }: {
   item: BottomNavItem;
   pathname: string;
+  onOpenCreateSheet: () => void;
 }) {
   const active = isActivePath(pathname, item.href);
   const color = active ? ACTIVE : INACTIVE;
+
+  if (item.center && item.opensCreateSheet) {
+    return (
+      <button
+        type="button"
+        onClick={onOpenCreateSheet}
+        className="flex min-w-[48px] flex-col items-center gap-1 px-1 pb-2 pt-0"
+        aria-label="投稿またはチェックイン"
+        aria-haspopup="dialog"
+      >
+        <span
+          className={`mt-[-20px] flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#ff3d00] transition-shadow duration-300 ease-out ${
+            active
+              ? "shadow-[0_4px_24px_rgba(255,61,0,0.6)]"
+              : "shadow-[0_4px_16px_rgba(255,61,0,0.4)]"
+          }`}
+        >
+          <CameraIcon size={24} color="#ffffff" />
+        </span>
+        <span
+          className={`text-[9px] leading-tight ${
+            active ? "font-bold text-[#ff3d00]" : "font-medium text-[#5a5668]"
+          }`}
+        >
+          {item.label}
+        </span>
+      </button>
+    );
+  }
 
   if (item.center) {
     return (
@@ -94,6 +127,7 @@ function NavItem({
 export default function BottomNav() {
   const pathname = usePathname();
   const { mode, roles, setMode, ready } = useAppMode();
+  const [createSheetOpen, setCreateSheetOpen] = useState(false);
 
   useEffect(() => {
     if (pathname.startsWith("/owner")) setMode("owner");
@@ -103,6 +137,7 @@ export default function BottomNav() {
       pathname.startsWith("/tonight") ||
       pathname.startsWith("/search") ||
       pathname.startsWith("/post") ||
+      pathname.startsWith("/checkin") ||
       pathname.startsWith("/trending") ||
       pathname.startsWith("/nearby") ||
       pathname.startsWith("/favorites") ||
@@ -112,6 +147,10 @@ export default function BottomNav() {
       setMode("guest");
     }
   }, [pathname, setMode]);
+
+  useEffect(() => {
+    setCreateSheetOpen(false);
+  }, [pathname]);
 
   if (!ready) return null;
 
@@ -134,12 +173,23 @@ export default function BottomNav() {
   if (!items) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[100] border-t border-white/[0.07] bg-[rgba(8,8,16,0.92)] pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-[20px] md:hidden">
-      <div className="mx-auto flex h-16 max-w-[480px] items-end justify-around px-1">
-        {items.map((item) => (
-          <NavItem key={item.href} item={item} pathname={pathname} />
-        ))}
-      </div>
-    </nav>
+    <>
+      <nav className="fixed bottom-0 left-0 right-0 z-[100] border-t border-white/[0.07] bg-[rgba(8,8,16,0.92)] pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-[20px] md:hidden">
+        <div className="mx-auto flex h-16 max-w-[480px] items-end justify-around px-1">
+          {items.map((item) => (
+            <NavItem
+              key={item.href}
+              item={item}
+              pathname={pathname}
+              onOpenCreateSheet={() => setCreateSheetOpen(true)}
+            />
+          ))}
+        </div>
+      </nav>
+      <CreateActionSheet
+        open={createSheetOpen}
+        onClose={() => setCreateSheetOpen(false)}
+      />
+    </>
   );
 }

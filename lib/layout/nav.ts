@@ -12,6 +12,8 @@ export type BottomNavItem = {
   href: string;
   icon: BottomNavIconId;
   center?: boolean;
+  /** Opens post / check-in sheet instead of navigating directly */
+  opensCreateSheet?: boolean;
 };
 
 export type GuestSidebarIconId =
@@ -26,7 +28,13 @@ export type OwnerNavIconId = "chart" | "broadcast" | "history" | "settings";
 export const GUEST_BOTTOM_NAV: BottomNavItem[] = [
   { label: "ホーム", href: "/home", icon: "home" },
   { label: "地図", href: "/map", icon: "map" },
-  { label: "投稿", href: "/post", icon: "camera", center: true },
+  {
+    label: "投稿",
+    href: "/post",
+    icon: "camera",
+    center: true,
+    opensCreateSheet: true,
+  },
   { label: "探す", href: "/search", icon: "search" },
   { label: "マイページ", href: "/mypage", icon: "user" },
 ];
@@ -64,7 +72,9 @@ export function isActivePath(pathname: string, href: string) {
   if (href === "/home") return pathname === "/home";
   if (href === "/mypage") return pathname.startsWith("/mypage");
   if (href === "/tonight") return pathname.startsWith("/tonight");
-  if (href === "/post") return pathname.startsWith("/post");
+  if (href === "/post") {
+    return pathname.startsWith("/post") || pathname.startsWith("/checkin");
+  }
   if (href === "/owner/post") return pathname.startsWith("/owner/post");
   if (href === "/trending") return pathname.startsWith("/trending");
   if (href === "/nearby") return pathname.startsWith("/nearby");
