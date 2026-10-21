@@ -1,8 +1,10 @@
 import { extractAreaFromAddress } from "@/lib/geo/area";
+import { haversineDistanceKm, type GeoPoint } from "@/lib/geo/haversine";
 import { formatGenre, type Shop, type VibePost } from "@/lib/home/types";
-import { getShopCoverImages } from "@/lib/home/types";
 import { isWithinRecentPostsWindow } from "@/lib/home/recentWindow";
 import { fetchShopsFromDb } from "@/lib/home/shops";
+
+export const SEARCH_SHOP_DEFAULT_LIMIT = 10;
 
 export type ShopSearchItem = {
   shop: Shop;
@@ -10,32 +12,93 @@ export type ShopSearchItem = {
   latestPost: VibePost | null;
   area: string;
   genreLabel: string;
-  thumbnailUrl: string | null;
 };
 
-export function shopThumbnailUrl(shop: Shop): string | null {
-  const fromCover = getShopCoverImages(shop)[0];
-  if (fromCover?.startsWith("http") || fromCover?.startsWith("data:")) {
-    return fromCover;
-  }
-  return null;
+function shopGenreText(shop: Shop): string {
+  if (Array.isArray(shop.genre)) return shop.genre.map(String).join(" ");
+  return String(shop.genre ?? "");
 }
 
-function firstVibeImageFromPosts(posts: VibePost[]): string | null {
-  for (const post of posts) {
-    if (!Array.isArray(post.images)) continue;
-    for (const url of post.images) {
-      if (typeof url === "string" && (url.startsWith("http") || url.startsWith("data:"))) {
-        return url;
+/** DB のジャンル表示から居酒屋・バー系を優先（Places の nightlifePriorityScore に近い） */
+export function shopNightlifePriorityScore(shop: Shop): number {
+  const text = shopGenreText(shop);
+  if (!text.trim()) return 25;
+
+  const rules: Array<[RegExp, number]> = [
+    [/居酒屋/, 100],
+    [/バー|パブ|クラフト|カクテル|ワインバー|スポーツバー/i, 95],
+    [/クラブ|ナイト/i, 82],
+    [/カラオケ|ライブ/i, 78],
+    [/焼肉|寿司|ラーメン|和食|ダイニング|レストラン/i, 45],
+    [/カフェ|コーヒー/i, 10],
+  ];
+
+  let best = 25;
+  for (const [pattern, score] of rules) {
+    if (pattern.test(text)) best = Math.max(best, score);
+  }
+  return best;
+}
+
+export function isDefaultShopBrowseFilters(filters: {
+  search: string;
+  genres: Set<string>;
+  areas: Set<string>;
+  minTonightPosts: number;
+}): boolean {
+  return (
+    filters.search.trim().length === 0 &&
+    filters.genres.has("すべて") &&
+    filters.areas.has("すべて") &&
+    filters.minTonightPosts === 0
+  );
+}
+
+/** デフォルトのお店一覧: 近い順をベースに、居酒屋・バー系を優先して上限件数まで */
+export function rankShopSearchItemsForDefaultBrowse(
+  items: ShopSearchItem[],
+  userLocation: GeoPoint | null,
+  limit = SEARCH_SHOP_DEFAULT_LIMIT,
+): ShopSearchItem[] {
+  const ranked = items
+    .map((item) => {
+      const lat = item.shop.latitude;
+      const lng = item.shop.longitude;
+      const distanceKm =
+        userLocation != null && lat != null && lng != null
+          ? haversineDistanceKm(userLocation, { latitude: lat, longitude: lng })
+          : null;
+
+      return {
+        item,
+        nightlifeScore: shopNightlifePriorityScore(item.shop),
+        distanceKm,
+      };
+    })
+    .sort((a, b) => {
+      if (b.nightlifeScore !== a.nightlifeScore) {
+        return b.nightlifeScore - a.nightlifeScore;
       }
-    }
-  }
-  return null;
+      if (userLocation && a.distanceKm != null && b.distanceKm != null) {
+        return a.distanceKm - b.distanceKm;
+      }
+      if (a.distanceKm != null && b.distanceKm == null) return -1;
+      if (a.distanceKm == null && b.distanceKm != null) return 1;
+      if (b.item.tonightPostCount !== a.item.tonightPostCount) {
+        return b.item.tonightPostCount - a.item.tonightPostCount;
+      }
+      return a.item.shop.name.localeCompare(b.item.shop.name, "ja");
+    });
+
+  return ranked.slice(0, limit).map((row) => row.item);
 }
 
-/** オーナー画像 → 今夜の投稿写真（Google Places は使わない） */
-export function shopSearchThumbnailUrl(shop: Shop, tonightPosts: VibePost[]): string | null {
-  return shopThumbnailUrl(shop) ?? firstVibeImageFromPosts(tonightPosts);
+export function sortShopSearchItemsByActivity(items: ShopSearchItem[]): ShopSearchItem[] {
+  return [...items].sort(
+    (a, b) =>
+      b.tonightPostCount - a.tonightPostCount ||
+      a.shop.name.localeCompare(b.shop.name, "ja"),
+  );
 }
 
 export function buildShopSearchIndexFromShops(
@@ -50,7 +113,7 @@ export function buildShopSearchIndexFromShops(
     recentByShop.set(post.shop_id, list);
   }
 
-  const items: ShopSearchItem[] = shops.map((shop) => {
+  return shops.map((shop) => {
     const shopPosts = recentByShop.get(shop.id) ?? [];
     shopPosts.sort((a, b) => {
       const ta = a.posted_at ? new Date(a.posted_at).getTime() : 0;
@@ -64,13 +127,8 @@ export function buildShopSearchIndexFromShops(
       latestPost: shopPosts[0] ?? null,
       area: extractAreaFromAddress(shop.address),
       genreLabel: formatGenre(shop.genre),
-      thumbnailUrl: shopSearchThumbnailUrl(shop, shopPosts),
     };
   });
-
-  items.sort((a, b) => b.tonightPostCount - a.tonightPostCount || a.shop.name.localeCompare(b.shop.name, "ja"));
-
-  return items;
 }
 
 export async function buildShopSearchIndex(

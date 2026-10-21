@@ -25,8 +25,13 @@ import {
 import {
   buildShopSearchIndexFromShops,
   filterShopSearchItems,
+  isDefaultShopBrowseFilters,
+  rankShopSearchItemsForDefaultBrowse,
+  sortShopSearchItemsByActivity,
   type ShopSearchItem,
 } from "@/lib/search/shopSearch";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { getDistanceLabel } from "@/lib/geo/haversine";
 import {
   attachAuthorTonightMoods,
   filterPostSearchRows,
@@ -43,6 +48,7 @@ import SearchFilterSheet, {
 
 export default function SearchPageClient() {
   const searchParams = useSearchParams();
+  const { location: userLocation } = useUserLocation();
   const [posts, setPosts] = useState<VibePost[]>([]);
   const [postRows, setPostRows] = useState<PostSearchRow[]>([]);
   const [shopItems, setShopItems] = useState<ShopSearchItem[]>([]);
@@ -96,16 +102,22 @@ export default function SearchPageClient() {
     void load();
   }, []);
 
-  const filteredShops = useMemo(
-    () =>
-      filterShopSearchItems(shopItems, {
-        search,
-        genres,
-        areas,
-        minTonightPosts,
-      }),
-    [shopItems, search, genres, areas, minTonightPosts],
+  const shopFilters = useMemo(
+    () => ({ search, genres, areas, minTonightPosts }),
+    [search, genres, areas, minTonightPosts],
   );
+
+  const filteredShops = useMemo(
+    () => filterShopSearchItems(shopItems, shopFilters),
+    [shopItems, shopFilters],
+  );
+
+  const displayedShops = useMemo(() => {
+    if (isDefaultShopBrowseFilters(shopFilters)) {
+      return rankShopSearchItemsForDefaultBrowse(filteredShops, userLocation);
+    }
+    return sortShopSearchItemsByActivity(filteredShops);
+  }, [filteredShops, shopFilters, userLocation]);
 
   const filteredPosts = useMemo(
     () =>
@@ -168,7 +180,8 @@ export default function SearchPageClient() {
 
   if (loading) return <LoadingScreen />;
 
-  const resultCount = mode === "shops" ? filteredShops.length : filteredPosts.length;
+  const resultCount =
+    mode === "shops" ? displayedShops.length : filteredPosts.length;
 
   return (
     <GuestLayout
@@ -270,11 +283,15 @@ export default function SearchPageClient() {
             <p className="text-sm font-bold text-[#eeeaf4]">
               {mode === "shops" ? "お店一覧" : "投稿一覧"}
             </p>
-            {search.trim() && (
+            {search.trim() ? (
               <p className="mt-0.5 text-xs text-[#9994a8]">
                 「{search.trim()}」で検索中
               </p>
-            )}
+            ) : mode === "shops" && isDefaultShopBrowseFilters(shopFilters) ? (
+              <p className="mt-0.5 text-xs text-[#9994a8]">
+                近くの居酒屋・バーなど {displayedShops.length} 件
+              </p>
+            ) : null}
           </div>
           {mode === "posts" && (
             <span className="rounded-full bg-[#18181f] px-3 py-1 text-xs font-bold tabular-nums text-[#ff3d00]">
@@ -285,15 +302,16 @@ export default function SearchPageClient() {
 
         <MotionPanel panelKey={mode}>
           {mode === "shops" ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {filteredShops.length === 0 ? (
+            <div className="flex flex-col gap-3">
+              {displayedShops.length === 0 ? (
                 <EmptySearch />
               ) : (
-                filteredShops.map((item) => (
+                displayedShops.map((item) => (
                   <SearchShopCard
                     key={item.shop.id}
                     item={item}
                     live={liveShopIds.has(item.shop.id)}
+                    distanceLabel={getDistanceLabel(userLocation, item.shop)}
                   />
                 ))
               )}
