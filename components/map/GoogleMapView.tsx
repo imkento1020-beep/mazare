@@ -319,11 +319,9 @@ export default function GoogleMapView({
           <br />
           2. ブラウザ用 API キーを作成
           <br />
-          3. `.env.local` に{" "}
-          <code className="text-[#9994a8]">
-            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
-          </code>
-          を追加
+          3. `.env.local` に Referer 制限付きブラウザ用キー（
+          <code className="text-[#9994a8]">GOOGLE_MAPS_BROWSER_API_KEY</code>
+          ）を追加
           <br />
           4. 開発サーバーを再起動
         </p>

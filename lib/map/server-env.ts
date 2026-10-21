@@ -1,12 +1,14 @@
-/** サーバーコンポーネント / Route Handler 専用 — 本番は Vercel Environment Variables から読み込む */
+/**
+ * Places REST 等、サーバー専用。クライアントコンポーネントへ渡さないこと。
+ * ブラウザ用は getBrowserGoogleMapsApiKey + /api/maps/config。
+ */
 export function getServerGoogleMapsApiKey() {
-  const serverKey = process.env.GOOGLE_MAPS_API_KEY?.trim();
+  const serverKey =
+    process.env.GOOGLE_MAPS_API_KEY?.trim() ||
+    process.env.GOOGLE_PLACES_API_KEY?.trim();
   if (serverKey) return serverKey;
 
-  const publicKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
-  if (publicKey) return publicKey;
-
-  return "";
+  return process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() || "";
 }
 
 export function getGoogleMapsSetupHint() {
@@ -16,10 +18,13 @@ export function getGoogleMapsSetupHint() {
     process.env.VERCEL === "true";
 
   if (isProduction) {
-    return "Vercel の Project Settings → Environment Variables に NEXT_PUBLIC_GOOGLE_MAPS_API_KEY（または GOOGLE_MAPS_API_KEY）を Production 環境へ設定し、再デプロイしてください。";
+    return (
+      "Vercel に GOOGLE_MAPS_BROWSER_API_KEY（Referer 制限）と GOOGLE_MAPS_API_KEY（サーバー用）を設定し、" +
+      "Google Cloud Console で HTTP リファラに https://mazare.app/* 等を追加してください。"
+    );
   }
 
-  return "`.env.local` に NEXT_PUBLIC_GOOGLE_MAPS_API_KEY を設定後、開発サーバーを再起動してください。";
+  return "`.env.local` に GOOGLE_MAPS_BROWSER_API_KEY または NEXT_PUBLIC_GOOGLE_MAPS_API_KEY を設定後、開発サーバーを再起動してください。";
 }
 
 export function isGoogleMapsConfiguredOnServer() {

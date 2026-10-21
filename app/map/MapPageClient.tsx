@@ -33,14 +33,10 @@ import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { isRegisteredUser } from "@/lib/auth/anonymous";
 
 type MapPageClientProps = {
-  googleMapsApiKey: string;
   setupHint: string;
 };
 
-export default function MapPageClient({
-  googleMapsApiKey,
-  setupHint,
-}: MapPageClientProps) {
+export default function MapPageClient({ setupHint }: MapPageClientProps) {
   const { openAuthPrompt } = useAuthPrompt();
   const [posts, setPosts] = useState<VibePost[]>([]);
   const [activityWindowId, setActivityWindowId] =
@@ -56,7 +52,7 @@ export default function MapPageClient({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const { apiKey: resolvedMapsApiKey, loading: mapsKeyLoading } =
-    useGoogleMapsApiKey(googleMapsApiKey);
+    useGoogleMapsApiKey();
   const { location: deviceLocation } = useUserLocation();
 
   const windowMs = mapActivityWindowMs(activityWindowId);

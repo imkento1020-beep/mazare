@@ -20,15 +20,8 @@ import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 import { ensureAnonymousSession } from "@/lib/auth/anonymous";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 
-type CheckinPageClientProps = {
-  googleMapsApiKey: string;
-};
-
-export default function CheckinPageClient({
-  googleMapsApiKey,
-}: CheckinPageClientProps) {
-  const { apiKey: mapsApiKey, loading: mapsKeyLoading } =
-    useGoogleMapsApiKey(googleMapsApiKey);
+export default function CheckinPageClient() {
+  const { apiKey: mapsApiKey, loading: mapsKeyLoading } = useGoogleMapsApiKey();
   const { user, ready: authReady, authError } = useAnonymousAuth();
   const [places, setPlaces] = useState<PlaceSummary[]>([]);
   const [userCoords, setUserCoords] = useState<{

@@ -87,17 +87,14 @@ export function formatPostedAt(iso: string | null | undefined) {
 export function getShopCoverImages(
   shop: Pick<Shop, "cover_image" | "cover_images" | "cached_photo_url">,
 ): string[] {
-  const cached = shop.cached_photo_url?.trim();
-  if (cached?.startsWith("http")) {
-    return [cached];
-  }
   if (Array.isArray(shop.cover_images) && shop.cover_images.length > 0) {
     return shop.cover_images.filter(Boolean);
   }
   if (typeof shop.cover_image === "string" && shop.cover_image.startsWith("http")) {
-    if (!isPlacesPhotoMediaUrl(shop.cover_image)) {
-      return [shop.cover_image];
+    if (isPlacesPhotoMediaUrl(shop.cover_image)) {
+      return [];
     }
+    return [shop.cover_image];
   }
   return parseCoverImages(
     typeof shop.cover_image === "string" ? shop.cover_image : null,

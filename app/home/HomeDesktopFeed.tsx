@@ -30,14 +30,8 @@ import {
   useEnrichShopNearestStations,
 } from "@/hooks/useEnrichShopNearestStations";
 
-type HomeDesktopFeedProps = {
-  googleMapsApiKey: string;
-};
-
-export default function HomeDesktopFeed({
-  googleMapsApiKey,
-}: HomeDesktopFeedProps) {
-  const { apiKey: resolvedMapsApiKey } = useGoogleMapsApiKey(googleMapsApiKey);
+export default function HomeDesktopFeed() {
+  const { apiKey: resolvedMapsApiKey } = useGoogleMapsApiKey();
   const { openAuthPrompt } = useAuthPrompt();
   const { user: authUser, ready: authReady } = useAnonymousAuth();
   const [user, setUser] = useState<User | null>(null);

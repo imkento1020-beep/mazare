@@ -5,12 +5,9 @@ export const DEFAULT_MAP_CENTER = { lat: 35.6595, lng: 139.7005 };
 
 export const DEFAULT_MAP_ZOOM = 14;
 
+/** クライアントでは apiKey prop または /api/maps/config 経由のキーを使う */
 export function getGoogleMapsApiKey(fallback = "") {
-  return (
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ||
-    fallback ||
-    ""
-  );
+  return fallback.trim();
 }
 
 export function isGoogleMapsConfigured() {

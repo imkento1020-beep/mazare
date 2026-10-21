@@ -31,18 +31,11 @@ import GeolocationPermissionHelp from "@/components/geo/GeolocationPermissionHel
 import { loadNearbyFromUserGesture } from "@/lib/places/loadNearbyFromUserGesture";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 
-type PostPageClientProps = {
-  googleMapsApiKey: string;
-};
-
-export default function PostPageClient({
-  googleMapsApiKey,
-}: PostPageClientProps) {
+export default function PostPageClient() {
   const router = useRouter();
   const { openFormalRegistrationPrompt } = useAuthPrompt();
   const { user, ready: authReady, authError } = useAnonymousAuth();
-  const { apiKey: mapsApiKey, loading: mapsKeyLoading } =
-    useGoogleMapsApiKey(googleMapsApiKey);
+  const { apiKey: mapsApiKey, loading: mapsKeyLoading } = useGoogleMapsApiKey();
   const [places, setPlaces] = useState<PlaceSummary[]>([]);
   const [userCoords, setUserCoords] = useState<{
     latitude: number;

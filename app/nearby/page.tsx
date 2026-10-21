@@ -1,8 +1,5 @@
 import NearbyPageClient from "./NearbyPageClient";
-import {
-  getGoogleMapsSetupHint,
-  getServerGoogleMapsApiKey,
-} from "@/lib/map/server-env";
+import { getGoogleMapsSetupHint } from "@/lib/map/server-env";
 
 export const metadata = {
   title: "近くのお店 | mazare",
@@ -10,10 +7,5 @@ export const metadata = {
 };
 
 export default function NearbyPage() {
-  return (
-    <NearbyPageClient
-      googleMapsApiKey={getServerGoogleMapsApiKey()}
-      setupHint={getGoogleMapsSetupHint()}
-    />
-  );
+  return <NearbyPageClient setupHint={getGoogleMapsSetupHint()} />;
 }

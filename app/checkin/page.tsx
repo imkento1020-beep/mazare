@@ -1,5 +1,4 @@
 import CheckinPageClient from "./CheckinPageClient";
-import { getServerGoogleMapsApiKey } from "@/lib/map/server-env";
 
 export const metadata = {
   title: "チェックイン | mazare",
@@ -7,5 +6,5 @@ export const metadata = {
 };
 
 export default function CheckinPage() {
-  return <CheckinPageClient googleMapsApiKey={getServerGoogleMapsApiKey()} />;
+  return <CheckinPageClient />;
 }

@@ -67,7 +67,9 @@ function genreFallback(genre: string) {
 }
 
 function CoverGallery({ shop, posts }: { shop: Shop; posts: VibePost[] }) {
+  const googleCover = useShopCachedPhoto(shop.id, shop.cached_photo_url);
   const images = [
+    ...(googleCover ? [googleCover] : []),
     ...getShopCoverImages(shop),
     ...posts.flatMap((post) => post.images ?? []),
   ].slice(0, 8);

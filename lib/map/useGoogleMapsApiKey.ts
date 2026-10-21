@@ -7,18 +7,11 @@ type GoogleMapsApiKeyState = {
   loading: boolean;
 };
 
-export function useGoogleMapsApiKey(initialKey: string): GoogleMapsApiKeyState {
-  const trimmedInitial = initialKey.trim();
-  const [apiKey, setApiKey] = useState(trimmedInitial);
-  const [loading, setLoading] = useState(trimmedInitial.length === 0);
+export function useGoogleMapsApiKey(_initialKey = ""): GoogleMapsApiKeyState {
+  const [apiKey, setApiKey] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (trimmedInitial) {
-      setApiKey(trimmedInitial);
-      setLoading(false);
-      return;
-    }
-
     let cancelled = false;
 
     async function fetchApiKey() {
@@ -43,7 +36,7 @@ export function useGoogleMapsApiKey(initialKey: string): GoogleMapsApiKeyState {
     return () => {
       cancelled = true;
     };
-  }, [trimmedInitial]);
+  }, []);
 
   return { apiKey, loading };
 }

@@ -7,13 +7,7 @@ import HomeMobileReelsFeed from "@/app/home/HomeMobileReelsFeed";
 import { useHomeLayout } from "@/hooks/useHomeLayout";
 import { hasCompletedGuestOnboarding } from "@/lib/onboarding/guestOnboarding";
 
-type HomePageClientProps = {
-  googleMapsApiKey: string;
-};
-
-export default function HomePageClient({
-  googleMapsApiKey,
-}: HomePageClientProps) {
+export default function HomePageClient() {
   const router = useRouter();
   const layout = useHomeLayout();
 
@@ -24,7 +18,7 @@ export default function HomePageClient({
   }, [router]);
 
   if (layout === "desktop") {
-    return <HomeDesktopFeed googleMapsApiKey={googleMapsApiKey} />;
+    return <HomeDesktopFeed />;
   }
 
   return <HomeMobileReelsFeed />;

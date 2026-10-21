@@ -20,16 +20,11 @@ import {
   haversineDistanceKm,
 } from "@/lib/geo/haversine";
 type NearbyPageClientProps = {
-  googleMapsApiKey: string;
   setupHint: string;
 };
 
-export default function NearbyPageClient({
-  googleMapsApiKey,
-  setupHint,
-}: NearbyPageClientProps) {
-  const { apiKey: mapsApiKey, loading: mapsKeyLoading } =
-    useGoogleMapsApiKey(googleMapsApiKey);
+export default function NearbyPageClient({ setupHint }: NearbyPageClientProps) {
+  const { apiKey: mapsApiKey, loading: mapsKeyLoading } = useGoogleMapsApiKey();
   const [places, setPlaces] = useState<PlaceSummary[]>([]);
   const [userCoords, setUserCoords] = useState<{
     latitude: number;

@@ -12,11 +12,14 @@ export function getGoogleCloudApiKey() {
   );
 }
 
-/** サーバーから Places REST を叩くとき（Referer 制限のないキーを優先） */
+/** サーバーから Places REST を叩くとき（IP 制限等のサーバー専用キーを優先） */
 export function getServerGooglePlacesApiKey() {
-  return (
+  const serverKey =
     process.env.GOOGLE_PLACES_API_KEY?.trim() ||
-    process.env.GOOGLE_MAPS_API_KEY?.trim() ||
+    process.env.GOOGLE_MAPS_API_KEY?.trim();
+  if (serverKey) return serverKey;
+
+  return (
     process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY?.trim() ||
     process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ||
     ""
@@ -35,9 +38,9 @@ export function getGooglePlacesSetupHint() {
 
   if (isProduction) {
     return (
-      "Vercel の Environment Variables に NEXT_PUBLIC_GOOGLE_MAPS_API_KEY " +
-      "（または NEXT_PUBLIC_GOOGLE_PLACES_API_KEY）を設定し、Google Cloud で " +
-      "「Places API」（従来版）または「Places API (New)」を有効化し、API キー制限に Places を追加してから再デプロイしてください。"
+      "Vercel に GOOGLE_MAPS_API_KEY（サーバー・Places REST 用）と " +
+      "GOOGLE_MAPS_BROWSER_API_KEY または NEXT_PUBLIC_GOOGLE_MAPS_API_KEY（Referer 制限付きブラウザ用）を設定。" +
+      "Google Cloud で Places / Maps JavaScript API を有効化し、キーごとに API 制限を分けてください。"
     );
   }
 

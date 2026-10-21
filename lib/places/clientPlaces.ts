@@ -47,7 +47,7 @@ async function getPlacesLibrary(apiKey: string) {
   const trimmed = apiKey.trim();
   if (!trimmed) {
     throw new Error(
-      "Google Maps API キーが読み込まれていません。Vercel の NEXT_PUBLIC_GOOGLE_MAPS_API_KEY を確認し、再デプロイしてください。",
+      "Google Maps API キーが読み込まれていません。/api/maps/config と GOOGLE_MAPS_BROWSER_API_KEY（Referer 制限）を確認してください。",
     );
   }
   configureGoogleMapsLoader(trimmed);
