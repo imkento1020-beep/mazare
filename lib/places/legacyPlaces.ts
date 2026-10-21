@@ -5,7 +5,7 @@ import {
   NEARBY_ALL_PRIMARY_TYPES,
   rankPlacesByNightlifeThenDistance,
 } from "@/lib/places/nightlifeRank";
-import { isPlacesPhotosEnabled } from "@/lib/places/photosConfig";
+import { isShopDetailPlacesPhotoFetchEnabled } from "@/lib/places/photosConfig";
 import { withPlacesApiRateLimit } from "@/lib/places/rateLimit";
 
 type LegacyPlace = {
@@ -48,7 +48,7 @@ function mapLegacyPlace(
     types: labelsFromGooglePlaceTypes(place.types, 3),
     openHoursText: hours?.length ? hours.join("\n") : null,
     photoUrl:
-      options?.includePhoto && isPlacesPhotosEnabled()
+      options?.includePhoto && isShopDetailPlacesPhotoFetchEnabled()
         ? legacyPhotoUrl(apiKey, place.photos?.[0]?.photo_reference)
         : null,
     shopId: null,

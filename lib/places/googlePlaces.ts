@@ -5,7 +5,7 @@ import {
   PLACES_DETAIL_FIELD_MASK,
   PLACES_SEARCH_FIELD_MASK,
 } from "@/lib/places/config";
-import { isPlacesPhotosEnabled } from "@/lib/places/photosConfig";
+import { isShopDetailPlacesPhotoFetchEnabled } from "@/lib/places/photosConfig";
 import { withPlacesApiRateLimit } from "@/lib/places/rateLimit";
 import { formatPlacesApiError, isNewPlacesApiBlocked } from "@/lib/places/errors";
 import {
@@ -62,7 +62,7 @@ export function mapGooglePlaceToSummary(
     types: labelsFromGooglePlaceTypes(place.types, 3),
     openHoursText: formatHours(place),
     photoUrl:
-      options?.includePhoto && isPlacesPhotosEnabled()
+      options?.includePhoto && isShopDetailPlacesPhotoFetchEnabled()
         ? photoUrlFromReference(apiKey, place.photos?.[0]?.name)
         : null,
     shopId: null,

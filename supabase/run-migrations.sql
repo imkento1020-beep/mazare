@@ -95,7 +95,14 @@ ALTER TABLE public.shops
   ADD COLUMN IF NOT EXISTS cached_photo_url TEXT;
 
 -- ============================================================
--- 6. 確認
+-- 6. interests: authenticated の INSERT/DELETE（行くかも）
+-- ============================================================
+
+GRANT SELECT ON public.interests TO anon;
+GRANT SELECT, INSERT, DELETE, UPDATE ON public.interests TO authenticated;
+
+-- ============================================================
+-- 7. 確認
 -- ============================================================
 
 SELECT

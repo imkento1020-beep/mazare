@@ -8,6 +8,17 @@ export function isPlacesPhotosEnabled(): boolean {
   return false;
 }
 
+/**
+ * 店舗詳細の cached-photo API のみ（検索・一覧とは別）。
+ * サーバー env のみ。未設定時は true（1店1枚 DB キャッシュ）。
+ */
+export function isShopDetailPlacesPhotoFetchEnabled(): boolean {
+  const server = process.env.ENABLE_PLACES_SHOP_DETAIL_PHOTOS?.trim();
+  if (server === "false" || server === "0") return false;
+  if (server === "true" || server === "1") return true;
+  return true;
+}
+
 export function isPlacesPhotoMediaUrl(url: string | null | undefined): boolean {
   if (!url) return false;
   return (

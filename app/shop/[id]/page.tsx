@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
+  fetchLatestVibePostForInterest,
   fetchShopById,
   fetchShopInterestCount,
   fetchShopPosts,
@@ -54,8 +55,8 @@ import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
 import { fetchInterestCountsByPostIds } from "@/lib/interests/postInterestCounts";
 import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
+import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { isRegisteredUser } from "@/lib/auth/anonymous";
-import type { User } from "@supabase/supabase-js";
 import GenreIcon from "@/components/icons/GenreIcon";
 import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
 import { CheckIcon, CheckinIcon } from "@/components/icons/MazareIcons";
@@ -66,10 +67,17 @@ function genreFallback(genre: string) {
   );
 }
 
-function CoverGallery({ shop, posts }: { shop: Shop; posts: VibePost[] }) {
-  const googleCover = useShopCachedPhoto(shop.id, shop.cached_photo_url);
+function CoverGallery({
+  shop,
+  posts,
+  googlePhotoUrl,
+}: {
+  shop: Shop;
+  posts: VibePost[];
+  googlePhotoUrl: string | null;
+}) {
   const images = [
-    ...(googleCover ? [googleCover] : []),
+    ...(googlePhotoUrl ? [googlePhotoUrl] : []),
     ...getShopCoverImages(shop),
     ...posts.flatMap((post) => post.images ?? []),
   ].slice(0, 8);
@@ -105,10 +113,11 @@ export default function ShopDetailPage() {
   const shopId = params.id as string;
   const { location: userLocation } = useUserLocation();
   const { openAuthPrompt } = useAuthPrompt();
+  const { user } = useAnonymousAuth();
 
-  const [user, setUser] = useState<User | null>(null);
   const [shop, setShop] = useState<Shop | null>(null);
   const [posts, setPosts] = useState<VibePost[]>([]);
+  const [interestPost, setInterestPost] = useState<VibePost | null>(null);
   const [sidebarPosts, setSidebarPosts] = useState<VibePost[]>([]);
   const [interestCount, setInterestCount] = useState(0);
   const [interested, setInterested] = useState(false);
@@ -135,17 +144,8 @@ export default function ShopDetailPage() {
     enrichedShop?.id,
     enrichedShop?.cached_photo_url,
   );
-  const shopForGallery = useMemo(
-    () =>
-      enrichedShop
-        ? {
-            ...enrichedShop,
-            cached_photo_url:
-              cachedPhotoUrl ?? enrichedShop.cached_photo_url ?? null,
-          }
-        : enrichedShop,
-    [enrichedShop, cachedPhotoUrl],
-  );
+  const googlePhotoUrl =
+    cachedPhotoUrl?.trim() || enrichedShop?.cached_photo_url?.trim() || null;
   const postsForDisplay = useMemo(
     () =>
       enrichedShop
@@ -165,13 +165,6 @@ export default function ShopDetailPage() {
 
   useEffect(() => {
     async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-
       const [shopResult, postsResult, count, browseResult] = await Promise.all([
         fetchShopById(shopId),
         fetchShopPosts(shopId),
@@ -193,7 +186,13 @@ export default function ShopDetailPage() {
       setPosts(postList);
       setSidebarPosts(browseResult.data?.posts ?? []);
       setInterestCount(count);
-      setLoading(false);
+
+      const tonightAnchor = postList[0] ?? null;
+      const interestTarget =
+        tonightAnchor ??
+        (await fetchLatestVibePostForInterest(shopId)).data ??
+        null;
+      setInterestPost(interestTarget);
 
       const ids = postList.map((post) => post.id);
       void Promise.all([
@@ -204,29 +203,6 @@ export default function ShopDetailPage() {
         setPostCommentCounts(commentByPost);
       });
 
-      const firstPost = postsResult.data?.[0];
-      if (currentUser && firstPost) {
-        const hasInterest = await fetchUserInterestForPost(
-          currentUser.id,
-          firstPost.id,
-        );
-        setInterested(hasInterest);
-      }
-
-      if (currentUser) {
-        const { favorited: isFav } = await isShopFavorited(
-          currentUser.id,
-          shopId,
-        );
-        setFavorited(isFav);
-
-        const alreadyCheckedIn = await hasActiveCheckin(
-          currentUser.id,
-          shopId,
-        );
-        setCheckedIn(alreadyCheckedIn);
-      }
-
       const checkinsResult = await fetchActiveCheckinUsersForShop(shopId);
       setCheckinUsers(checkinsResult.data);
 
@@ -236,8 +212,32 @@ export default function ShopDetailPage() {
     load();
   }, [shopId]);
 
+  useEffect(() => {
+    if (!user || !interestPost) {
+      setInterested(false);
+      return;
+    }
+
+    void fetchUserInterestForPost(user.id, interestPost.id).then(setInterested);
+  }, [user, interestPost]);
+
+  useEffect(() => {
+    if (!user) {
+      setFavorited(false);
+      setCheckedIn(false);
+      return;
+    }
+
+    void (async () => {
+      const { favorited: isFav } = await isShopFavorited(user.id, shopId);
+      setFavorited(isFav);
+      const alreadyCheckedIn = await hasActiveCheckin(user.id, shopId);
+      setCheckedIn(alreadyCheckedIn);
+    })();
+  }, [user, shopId]);
+
   async function handleInterestToggle() {
-    if (!latestPost || submitting) return;
+    if (!interestPost || submitting) return;
     if (!isRegisteredUser(user)) {
       openAuthPrompt({
         title: "ログインして「今夜行くかも」",
@@ -255,14 +255,14 @@ export default function ShopDetailPage() {
           .from("interests")
           .delete()
           .eq("user_id", user.id)
-          .eq("vibe_post_id", latestPost.id)
+          .eq("vibe_post_id", interestPost.id)
       : await (async () => {
           const result = await supabase
             .from("interests")
             .insert({
               user_id: user.id,
               shop_id: shopId,
-              vibe_post_id: latestPost.id,
+              vibe_post_id: interestPost.id,
             })
             .select("id")
             .single();
@@ -380,7 +380,11 @@ export default function ShopDetailPage() {
         <BackButton href="/home" />
       </div>
 
-      <CoverGallery shop={shopForGallery ?? shop} posts={posts} />
+      <CoverGallery
+        shop={enrichedShop ?? shop}
+        posts={posts}
+        googlePhotoUrl={googlePhotoUrl}
+      />
 
       <div className="mx-auto max-w-none pt-5 md:max-w-2xl">
         <div className="flex items-start justify-between gap-3">
@@ -414,7 +418,7 @@ export default function ShopDetailPage() {
           <button
             type="button"
             onClick={handleInterestToggle}
-            disabled={!latestPost || submitting}
+            disabled={!interestPost || submitting}
             className={`w-full rounded-[13px] py-3.5 text-sm font-bold transition disabled:opacity-60 ${
               interested
                 ? "border border-[#00e87a]/40 bg-[#00e87a]/12 text-[#00e87a]"
@@ -426,6 +430,11 @@ export default function ShopDetailPage() {
           <p className="mt-2 text-center text-sm text-[#9994a8]">
             {interestCount}人が行くかも
           </p>
+          {!interestPost && (
+            <p className="mt-1 text-center text-xs text-[#5a5668]">
+              投稿がないため「行くかも」はまだ使えません
+            </p>
+          )}
         </div>
 
         <div className="mt-3">

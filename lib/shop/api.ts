@@ -68,6 +68,49 @@ export async function fetchShopInterestCount(shopId: string): Promise<number> {
   return count ?? 0;
 }
 
+/** 「行くかも」紐づけ用: 今夜以外も含む最新のゲスト投稿 */
+export async function fetchLatestVibePostForInterest(shopId: string): Promise<{
+  data: VibePost | null;
+  error: string | null;
+}> {
+  const { data, error } = await supabase
+    .from("vibe_posts")
+    .select(
+      "id, shop_id, comment, moods, images, posted_at, is_guest_post, hashtags, media_type, video_url, author_id, stop_number, visit_order, drink_name, drink_cups, drink_count, party_size",
+    )
+    .eq("shop_id", shopId)
+    .eq("is_guest_post", true)
+    .lte("posted_at", new Date().toISOString())
+    .order("posted_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return { data: null, error: error.message };
+  if (!data) return { data: null, error: null };
+
+  const post: VibePost = {
+    id: data.id,
+    shop_id: data.shop_id,
+    comment: data.comment,
+    moods: normalizeMoods(data.moods),
+    images: Array.isArray(data.images) ? data.images.map(String) : [],
+    posted_at: data.posted_at ?? null,
+    is_guest_post: data.is_guest_post ?? true,
+    hashtags: Array.isArray(data.hashtags) ? data.hashtags.map(String) : [],
+    media_type:
+      data.media_type === "image" || data.media_type === "video"
+        ? data.media_type
+        : null,
+    video_url: typeof data.video_url === "string" ? data.video_url : null,
+    author_id: typeof data.author_id === "string" ? data.author_id : null,
+    shops: null,
+    ...parseNightOutFromRow(data as Record<string, unknown>),
+  };
+
+  const [withAuthor] = await attachAuthorDisplayNames([post]);
+  return { data: withAuthor ?? post, error: null };
+}
+
 export async function fetchUserInterestForPost(
   userId: string,
   vibePostId: string,
