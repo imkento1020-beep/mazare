@@ -41,6 +41,7 @@ import {
   useEnrichShopNearestStations,
 } from "@/hooks/useEnrichShopNearestStations";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { useShopCachedPhoto } from "@/hooks/useShopCachedPhoto";
 import CheckinAvatarStack from "@/components/checkins/CheckinAvatarStack";
 import BackButton from "@/components/layout/BackButton";
 import PostAuthorBadge from "@/components/posts/PostAuthorBadge";
@@ -127,6 +128,21 @@ export default function ShopDetailPage() {
   const enrichedShop = useMemo(
     () => mergeShopNearestStations(shop, stationMap) ?? shop,
     [shop, stationMap],
+  );
+  const cachedPhotoUrl = useShopCachedPhoto(
+    enrichedShop?.id,
+    enrichedShop?.cached_photo_url,
+  );
+  const shopForGallery = useMemo(
+    () =>
+      enrichedShop
+        ? {
+            ...enrichedShop,
+            cached_photo_url:
+              cachedPhotoUrl ?? enrichedShop.cached_photo_url ?? null,
+          }
+        : enrichedShop,
+    [enrichedShop, cachedPhotoUrl],
   );
   const postsForDisplay = useMemo(
     () =>
@@ -362,7 +378,7 @@ export default function ShopDetailPage() {
         <BackButton href="/home" />
       </div>
 
-      <CoverGallery shop={shop} posts={posts} />
+      <CoverGallery shop={shopForGallery ?? shop} posts={posts} />
 
       <div className="mx-auto max-w-none pt-5 md:max-w-2xl">
         <div className="flex items-start justify-between gap-3">

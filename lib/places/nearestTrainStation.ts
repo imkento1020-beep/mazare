@@ -5,6 +5,7 @@ import {
 } from "@/lib/places/config";
 import { formatPlacesApiError, isNewPlacesApiBlocked } from "@/lib/places/errors";
 import { stationLabelFromPlaceName } from "@/lib/shops/stationName";
+import { withPlacesApiRateLimit } from "@/lib/places/rateLimit";
 
 type GooglePlace = {
   id?: string;
@@ -53,9 +54,8 @@ async function searchNearbyStationsNew(
 
   const batches = await Promise.all(
     STATION_INCLUDED_TYPES.map(async (includedType) => {
-      const response = await fetch(
-        "https://places.googleapis.com/v1/places:searchNearby",
-        {
+      const response = await withPlacesApiRateLimit(() =>
+        fetch("https://places.googleapis.com/v1/places:searchNearby", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -77,7 +77,7 @@ async function searchNearbyStationsNew(
             languageCode: "ja",
             regionCode: "JP",
           }),
-        },
+        }),
       );
 
       if (!response.ok) {
@@ -116,8 +116,10 @@ async function searchNearbyStationsLegacy(
         key: apiKey,
         language: "ja",
       });
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${params.toString()}`,
+      const response = await withPlacesApiRateLimit(() =>
+        fetch(
+          `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${params.toString()}`,
+        ),
       );
       const data = (await response.json()) as {
         status?: string;

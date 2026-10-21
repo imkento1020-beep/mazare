@@ -25,13 +25,12 @@ export async function ensureShopFromPlace(
       return { shopId: "", error: existing.error.message };
     }
 
-    const payload = {
+    const metadataPayload = {
       google_place_id: place.googlePlaceId,
       name: place.name,
       address: place.address,
       genre: place.types,
       open_hours: place.openHoursText,
-      cover_image: place.photoUrl,
       latitude: place.latitude,
       longitude: place.longitude,
       cached_at: new Date().toISOString(),
@@ -51,7 +50,7 @@ export async function ensureShopFromPlace(
     if (existing.data?.id) {
       const updated = await admin
         .from("shops")
-        .update(payload)
+        .update(metadataPayload)
         .eq("id", existing.data.id)
         .select("id")
         .single();
@@ -69,7 +68,7 @@ export async function ensureShopFromPlace(
 
     const inserted = await admin
       .from("shops")
-      .insert(payload)
+      .insert({ ...metadataPayload, cover_image: null })
       .select("id")
       .single();
 

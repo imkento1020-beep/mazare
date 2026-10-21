@@ -1,8 +1,12 @@
 import {
   getGooglePlacesApiKey,
   getGooglePlacesSetupHint,
-  PLACES_FIELD_MASK,
+  PLACES_DETAIL_BASE_FIELD_MASK,
+  PLACES_DETAIL_FIELD_MASK,
+  PLACES_SEARCH_FIELD_MASK,
 } from "@/lib/places/config";
+import { isPlacesPhotosEnabled } from "@/lib/places/photosConfig";
+import { withPlacesApiRateLimit } from "@/lib/places/rateLimit";
 import { formatPlacesApiError, isNewPlacesApiBlocked } from "@/lib/places/errors";
 import {
   fetchPlaceByIdLegacy,
@@ -40,6 +44,7 @@ function formatHours(place: GooglePlace): string | null {
 export function mapGooglePlaceToSummary(
   place: GooglePlace,
   apiKey: string,
+  options?: { includePhoto?: boolean },
 ): PlaceSummary | null {
   const googlePlaceId = place.id?.replace(/^places\//, "") ?? place.id;
   if (!googlePlaceId) return null;
@@ -56,33 +61,40 @@ export function mapGooglePlaceToSummary(
     longitude: lng,
     types: labelsFromGooglePlaceTypes(place.types, 3),
     openHoursText: formatHours(place),
-    photoUrl: photoUrlFromReference(apiKey, place.photos?.[0]?.name),
+    photoUrl:
+      options?.includePhoto && isPlacesPhotosEnabled()
+        ? photoUrlFromReference(apiKey, place.photos?.[0]?.name)
+        : null,
     shopId: null,
   };
 }
 
 async function placesRequest<T>(path: string, body: Record<string, unknown>) {
-  const apiKey = getGooglePlacesApiKey();
-  if (!apiKey) {
-    throw new Error(`Google Places API キーが未設定です。${getGooglePlacesSetupHint()}`);
-  }
+  return withPlacesApiRateLimit(async () => {
+    const apiKey = getGooglePlacesApiKey();
+    if (!apiKey) {
+      throw new Error(
+        `Google Places API キーが未設定です。${getGooglePlacesSetupHint()}`,
+      );
+    }
 
-  const response = await fetch(`https://places.googleapis.com/v1/${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": apiKey,
-      "X-Goog-FieldMask": PLACES_FIELD_MASK,
-    },
-    body: JSON.stringify(body),
+    const response = await fetch(`https://places.googleapis.com/v1/${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": PLACES_SEARCH_FIELD_MASK,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `Places API error (${response.status})`);
+    }
+
+    return (await response.json()) as T;
   });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Places API error (${response.status})`);
-  }
-
-  return (await response.json()) as T;
 }
 
 async function withLegacyFallback<T>(
@@ -211,28 +223,42 @@ export async function searchPlacesByText(query: string): Promise<PlaceSummary[]>
   );
 }
 
-export async function fetchPlaceById(placeId: string): Promise<PlaceSummary | null> {
+export async function fetchPlaceById(
+  placeId: string,
+  options?: { includePhoto?: boolean },
+): Promise<PlaceSummary | null> {
+  const includePhoto = Boolean(options?.includePhoto);
   return withLegacyFallback(
     async () => {
       const apiKey = getGooglePlacesApiKey();
-      const response = await fetch(
-        `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`,
-        {
-          headers: {
-            "X-Goog-Api-Key": apiKey,
-            "X-Goog-FieldMask": PLACES_FIELD_MASK.replace("places.", ""),
+      const fieldMask = includePhoto
+        ? PLACES_DETAIL_FIELD_MASK
+        : PLACES_DETAIL_BASE_FIELD_MASK;
+
+      return withPlacesApiRateLimit(async () => {
+        const response = await fetch(
+          `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`,
+          {
+            headers: {
+              "X-Goog-Api-Key": apiKey,
+              "X-Goog-FieldMask": fieldMask,
+            },
           },
-        },
-      );
+        );
 
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || `Place details error (${response.status})`);
-      }
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || `Place details error (${response.status})`);
+        }
 
-      const place = (await response.json()) as GooglePlace;
-      return mapGooglePlaceToSummary({ ...place, id: placeId }, apiKey);
+        const place = (await response.json()) as GooglePlace;
+        return mapGooglePlaceToSummary(
+          { ...place, id: placeId },
+          apiKey,
+          { includePhoto },
+        );
+      });
     },
-    () => fetchPlaceByIdLegacy(placeId),
+    () => fetchPlaceByIdLegacy(placeId, { includePhoto }),
   );
 }

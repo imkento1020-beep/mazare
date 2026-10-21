@@ -5,7 +5,7 @@ export const SHOP_SELECT_BASE =
   "id, name, address, genre, open_hours, cover_image, cover_images, owner_id, staff_ids, created_at";
 
 export const SHOP_SELECT_WITH_COORDS = `${SHOP_SELECT_BASE}, latitude, longitude`;
-export const SHOP_SELECT_WITH_COORDS_AND_STATION = `${SHOP_SELECT_WITH_COORDS}, nearest_station`;
+export const SHOP_SELECT_WITH_COORDS_AND_STATION = `${SHOP_SELECT_WITH_COORDS}, nearest_station, cached_photo_url`;
 
 function isMissingShopsColumnError(message: string, columns: string[]) {
   const normalized = message.toLowerCase();
@@ -20,7 +20,7 @@ function isMissingCoordinateColumnError(message: string) {
 }
 
 function isMissingNearestStationColumnError(message: string) {
-  return isMissingShopsColumnError(message, ["nearest_station"]);
+  return isMissingShopsColumnError(message, ["nearest_station", "cached_photo_url"]);
 }
 
 export async function fetchShopsFromDb(): Promise<{

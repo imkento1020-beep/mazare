@@ -15,7 +15,6 @@ function placePayload(place: PlaceSummary) {
     address: place.address,
     genre: place.types,
     open_hours: place.openHoursText,
-    cover_image: place.photoUrl,
     latitude: place.latitude,
     longitude: place.longitude,
     cached_at: new Date().toISOString(),
@@ -57,7 +56,7 @@ export async function ensureShopFromPlaceClient(
 
   const inserted = await supabase
     .from("shops")
-    .insert(payload)
+    .insert({ ...payload, cover_image: null })
     .select("id")
     .single();
 

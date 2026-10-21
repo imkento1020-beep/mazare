@@ -17,9 +17,8 @@ import {
 } from "@/lib/places/clientPlaces";
 import { loadNearbyFromUserGesture } from "@/lib/places/loadNearbyFromUserGesture";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
-import { useRequireRegisteredRedirect } from "@/hooks/useRequireRegisteredRedirect";
-import LoadingScreen from "@/components/layout/LoadingScreen";
-import { isRegisteredUser } from "@/lib/auth/anonymous";
+import { ensureAnonymousSession } from "@/lib/auth/anonymous";
+import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 
 type CheckinPageClientProps = {
   googleMapsApiKey: string;
@@ -30,8 +29,7 @@ export default function CheckinPageClient({
 }: CheckinPageClientProps) {
   const { apiKey: mapsApiKey, loading: mapsKeyLoading } =
     useGoogleMapsApiKey(googleMapsApiKey);
-  const { ready: authAllowed, user } = useRequireRegisteredRedirect("/checkin");
-  const authReady = authAllowed;
+  const { user, ready: authReady, authError } = useAnonymousAuth();
   const [places, setPlaces] = useState<PlaceSummary[]>([]);
   const [userCoords, setUserCoords] = useState<{
     latitude: number;
@@ -102,15 +100,24 @@ export default function CheckinPageClient({
     setSubmitting(true);
     setError(null);
 
-    if (!isRegisteredUser(user)) {
-      setSubmitting(false);
-      return;
+    let activeUser = user;
+    if (!activeUser) {
+      const session = await ensureAnonymousSession();
+      activeUser = session.user;
+      if (!activeUser) {
+        setSubmitting(false);
+        setError(
+          session.error ??
+            "ログインの準備に失敗しました。ページを再読み込みしてお試しください。",
+        );
+        return;
+      }
     }
 
-    await syncGuestDisplayName(user.id, getDisplayName(user));
+    await syncGuestDisplayName(activeUser.id, getDisplayName(activeUser));
 
     const { error: checkinError } = await createCheckin({
-      userId: user.id,
+      userId: activeUser.id,
       shopId: selectedShopId,
     });
 
@@ -122,10 +129,6 @@ export default function CheckinPageClient({
     }
 
     setSuccessShopName(selectedPlace.name);
-  }
-
-  if (!authAllowed) {
-    return <LoadingScreen />;
   }
 
   if (successShopName) {
@@ -178,6 +181,11 @@ export default function CheckinPageClient({
         {!mapsKeyLoading && !mapsApiKey && (
           <p className="mt-4 rounded-lg border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
             Google Maps API キーが未設定です。
+          </p>
+        )}
+        {authReady && !user && authError && (
+          <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-400">
+            {authError}
           </p>
         )}
         <form onSubmit={handleSearch} className="mt-6 flex gap-2">

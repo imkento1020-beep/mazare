@@ -91,6 +91,9 @@ GRANT UPDATE, DELETE ON public.vibe_posts TO authenticated;
 ALTER TABLE public.shops
   ADD COLUMN IF NOT EXISTS nearest_station TEXT;
 
+ALTER TABLE public.shops
+  ADD COLUMN IF NOT EXISTS cached_photo_url TEXT;
+
 -- ============================================================
 -- 6. 確認
 -- ============================================================

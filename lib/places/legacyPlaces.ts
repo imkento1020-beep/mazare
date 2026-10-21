@@ -5,6 +5,8 @@ import {
   NEARBY_ALL_PRIMARY_TYPES,
   rankPlacesByNightlifeThenDistance,
 } from "@/lib/places/nightlifeRank";
+import { isPlacesPhotosEnabled } from "@/lib/places/photosConfig";
+import { withPlacesApiRateLimit } from "@/lib/places/rateLimit";
 
 type LegacyPlace = {
   place_id?: string;
@@ -26,7 +28,11 @@ function legacyPhotoUrl(apiKey: string, photoReference: string | undefined) {
   return `https://maps.googleapis.com/maps/api/place/photo?${params.toString()}`;
 }
 
-function mapLegacyPlace(place: LegacyPlace, apiKey: string): PlaceSummary | null {
+function mapLegacyPlace(
+  place: LegacyPlace,
+  apiKey: string,
+  options?: { includePhoto?: boolean },
+): PlaceSummary | null {
   if (!place.place_id) return null;
   const lat = place.geometry?.location?.lat;
   const lng = place.geometry?.location?.lng;
@@ -41,12 +47,16 @@ function mapLegacyPlace(place: LegacyPlace, apiKey: string): PlaceSummary | null
     longitude: lng,
     types: labelsFromGooglePlaceTypes(place.types, 3),
     openHoursText: hours?.length ? hours.join("\n") : null,
-    photoUrl: legacyPhotoUrl(apiKey, place.photos?.[0]?.photo_reference),
+    photoUrl:
+      options?.includePhoto && isPlacesPhotosEnabled()
+        ? legacyPhotoUrl(apiKey, place.photos?.[0]?.photo_reference)
+        : null,
     shopId: null,
   };
 }
 
 async function legacyGet<T>(path: string, params: Record<string, string>) {
+  return withPlacesApiRateLimit(async () => {
   const apiKey = getGooglePlacesApiKey();
   if (!apiKey) {
     throw new Error("Google Places API キーが未設定です");
@@ -69,6 +79,7 @@ async function legacyGet<T>(path: string, params: Record<string, string>) {
   }
 
   return data;
+  });
 }
 
 export async function searchNearbyPlacesLegacy(input: {
@@ -133,16 +144,22 @@ export async function searchPlacesByTextLegacy(query: string): Promise<PlaceSumm
 
 export async function fetchPlaceByIdLegacy(
   placeId: string,
+  options?: { includePhoto?: boolean },
 ): Promise<PlaceSummary | null> {
-  const apiKey = getGooglePlacesApiKey();
+  const includePhoto = Boolean(options?.includePhoto);
+  const fields = includePhoto
+    ? "place_id,name,formatted_address,geometry,types,photos,opening_hours"
+    : "place_id,name,formatted_address,geometry,types,opening_hours";
   const data = await legacyGet<{ result?: LegacyPlace }>(
     "https://maps.googleapis.com/maps/api/place/details/json",
     {
       place_id: placeId,
-      fields: "place_id,name,formatted_address,geometry,types,photos,opening_hours",
+      fields,
     },
   );
 
   if (!data.result) return null;
-  return mapLegacyPlace(data.result, apiKey);
+  return mapLegacyPlace(data.result, getGooglePlacesApiKey(), {
+    includePhoto,
+  });
 }

@@ -15,6 +15,7 @@ export const POST_PAGE_NEARBY_LIMIT = 8;
 /** 投稿画面の検索結果上限 */
 export const POST_PAGE_SEARCH_LIMIT = 10;
 
+/** 投稿・チェックインの店舗候補（Place Photos は取得しない） */
 const PLACE_FIELDS: Array<keyof google.maps.places.Place> = [
   "id",
   "displayName",
@@ -22,7 +23,6 @@ const PLACE_FIELDS: Array<keyof google.maps.places.Place> = [
   "location",
   "types",
   "regularOpeningHours",
-  "photos",
 ];
 
 function displayNameText(place: google.maps.places.Place) {
@@ -80,14 +80,6 @@ async function toPlaceSummary(
   const location = place.location;
   if (!id || !location) return null;
 
-  let photoUrl: string | null = null;
-  try {
-    photoUrl =
-      place.photos?.[0]?.getURI?.({ maxWidth: 800, maxHeight: 800 }) ?? null;
-  } catch {
-    photoUrl = null;
-  }
-
   const hours = place.regularOpeningHours?.weekdayDescriptions;
 
   return {
@@ -98,7 +90,7 @@ async function toPlaceSummary(
     longitude: location.lng(),
     types: labelsFromGooglePlaceTypes(place.types ?? undefined, 3),
     openHoursText: hours?.length ? hours.join("\n") : null,
-    photoUrl,
+    photoUrl: null,
     shopId: null,
   };
 }
@@ -272,27 +264,45 @@ export async function searchPlacesByTextClient(
   }
 }
 
+const cachePlacesInflight = new Map<string, Promise<PlaceSummary[]>>();
+
 export async function cachePlacesForPost(places: PlaceSummary[]) {
   if (places.length === 0) return [];
 
-  try {
-    const response = await fetch("/api/places/cache", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ places }),
-    });
+  const dedupeKey = places
+    .map((place) => place.googlePlaceId)
+    .sort()
+    .join("|");
+  const inflight = cachePlacesInflight.get(dedupeKey);
+  if (inflight) return inflight;
 
-    const json = (await response.json()) as {
-      places?: PlaceSummary[];
-      error?: string;
-    };
+  const promise = (async () => {
+    try {
+      const response = await fetch("/api/places/cache", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ places }),
+      });
 
-    if (response.ok && (json.places?.length ?? 0) > 0) {
-      return json.places ?? [];
+      const json = (await response.json()) as {
+        places?: PlaceSummary[];
+        error?: string;
+      };
+
+      if (response.ok && (json.places?.length ?? 0) > 0) {
+        return json.places ?? [];
+      }
+    } catch {
+      // fall through to client cache
     }
-  } catch {
-    // fall through to client cache
-  }
 
-  return ensureShopsFromPlacesClient(places);
+    return ensureShopsFromPlacesClient(places);
+  })();
+
+  cachePlacesInflight.set(dedupeKey, promise);
+  try {
+    return await promise;
+  } finally {
+    cachePlacesInflight.delete(dedupeKey);
+  }
 }
