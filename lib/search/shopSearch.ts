@@ -21,6 +21,23 @@ export function shopThumbnailUrl(shop: Shop): string | null {
   return null;
 }
 
+function firstVibeImageFromPosts(posts: VibePost[]): string | null {
+  for (const post of posts) {
+    if (!Array.isArray(post.images)) continue;
+    for (const url of post.images) {
+      if (typeof url === "string" && (url.startsWith("http") || url.startsWith("data:"))) {
+        return url;
+      }
+    }
+  }
+  return null;
+}
+
+/** オーナー画像 → 今夜の投稿写真（Google Places は使わない） */
+export function shopSearchThumbnailUrl(shop: Shop, tonightPosts: VibePost[]): string | null {
+  return shopThumbnailUrl(shop) ?? firstVibeImageFromPosts(tonightPosts);
+}
+
 export function buildShopSearchIndexFromShops(
   posts: VibePost[],
   shops: Shop[],
@@ -47,7 +64,7 @@ export function buildShopSearchIndexFromShops(
       latestPost: shopPosts[0] ?? null,
       area: extractAreaFromAddress(shop.address),
       genreLabel: formatGenre(shop.genre),
-      thumbnailUrl: shopThumbnailUrl(shop),
+      thumbnailUrl: shopSearchThumbnailUrl(shop, shopPosts),
     };
   });
 
