@@ -71,7 +71,7 @@ export default function OwnerPostHistorySection({
                     {post.viewCount} 表示
                   </span>
                   <span className="text-xs font-bold text-[#00e87a]">
-                    {post.interestCount} 行くかも
+                    {post.interestCount} いいね
                   </span>
                 </div>
               </div>

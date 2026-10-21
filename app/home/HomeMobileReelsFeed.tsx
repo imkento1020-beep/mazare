@@ -217,9 +217,8 @@ export default function HomeMobileReelsFeed() {
 
     if (!isRegisteredUser(user)) {
       openAuthPrompt({
-        title: "ログインして「今夜行くかも」",
-        description:
-          "気になる投稿に「今夜行くかも」を送るにはログインが必要です。",
+        title: "ログインしていいね",
+        description: "投稿にいいねするにはログインが必要です。",
         returnPath: "/home",
       });
       return;

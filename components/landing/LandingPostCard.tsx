@@ -66,7 +66,7 @@ export default function LandingPostCard({
         <div className="mt-1 flex items-center justify-between gap-2">
           <p className="truncate text-[11px] text-[#9994a8]">{post.area}</p>
           <p className="shrink-0 text-[11px] font-semibold text-[#ffaa00]">
-            行くかも {post.interestCount}
+            いいね {post.interestCount}
           </p>
         </div>
       </div>

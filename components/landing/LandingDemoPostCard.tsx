@@ -4,7 +4,7 @@ import {
   FeedCommentIcon,
   FeedPeopleIcon,
   FeedPinIcon,
-  FeedWaveIcon,
+  PostLikeIcon,
 } from "@/components/icons/FeedActionIcons";
 
 type LandingDemoPostCardProps = {
@@ -60,7 +60,7 @@ export default function LandingDemoPostCard({
 
         <div className="absolute bottom-4 right-3 z-[1] flex flex-col gap-2 opacity-90">
           <span className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-black/35 text-[10px] leading-none backdrop-blur-sm">
-            <FeedWaveIcon size={20} />
+            <PostLikeIcon size={20} />
             <span className="mt-0.5 text-[8px] font-bold text-white">
               {post.interestCount}
             </span>

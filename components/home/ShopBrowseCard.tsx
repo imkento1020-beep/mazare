@@ -97,7 +97,7 @@ export default function ShopBrowseCard({
 
           {interestCount > 0 && (
             <p className="mt-2 text-xs font-semibold text-[#00e87a]">
-              {interestCount} 行くかも
+              {interestCount} いいね
             </p>
           )}
         </div>

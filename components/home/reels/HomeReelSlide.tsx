@@ -22,7 +22,7 @@ import {
   FeedPeopleIcon,
   FeedPinIcon,
   FeedShareIcon,
-  FeedWaveIcon,
+  PostLikeIcon,
 } from "@/components/icons/FeedActionIcons";
 
 type HomeReelSlideProps = {
@@ -267,7 +267,7 @@ export default function HomeReelSlide({
 
       <div className="absolute bottom-[22%] right-3 z-10 flex flex-col items-center gap-3">
         <ActionButton
-          label="今夜行くかも"
+          label="いいね"
           count={interestCount}
           disabled={interestLoading}
           onClick={() => {
@@ -275,7 +275,7 @@ export default function HomeReelSlide({
             onInterest();
           }}
         >
-          <FeedWaveIcon color={waveColor} />
+          <PostLikeIcon color={waveColor} filled={interested} />
         </ActionButton>
         <ActionButton
           label="コメント"

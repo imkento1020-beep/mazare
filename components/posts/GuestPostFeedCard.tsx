@@ -18,7 +18,7 @@ import {
   FeedPeopleIcon,
   FeedPinIcon,
   FeedShareIcon,
-  FeedWaveIcon,
+  PostLikeIcon,
 } from "@/components/icons/FeedActionIcons";
 import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
 import { resolvePostMedia } from "@/lib/guest-post/resolvePostMedia";
@@ -341,7 +341,7 @@ export default function GuestPostFeedCard({
   const locationLabel = getPostCardLocationLabel(userLocation, shop);
   const shopLink = shopHref ?? (shop?.id ? `/shop/${shop.id}` : undefined);
   const { hasMedia } = resolvePostMedia(post);
-  const waveIconColor = interested ? "#ff3d00" : "#ffffff";
+  const likeIconColor = interested ? "#ff3d00" : "#ffffff";
 
   const amberPillParts: string[] = [];
   if (cupTotal != null) {
@@ -420,9 +420,9 @@ export default function GuestPostFeedCard({
                 onInterest?.();
               }}
               className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-black/35 text-[10px] leading-none backdrop-blur-sm disabled:opacity-50"
-              aria-label="今夜行くかも"
+              aria-label="いいね"
             >
-              <FeedWaveIcon size={20} color={waveIconColor} />
+              <PostLikeIcon size={20} color={likeIconColor} filled={interested} />
               {interestCount > 0 && (
                 <span className="mt-0.5 text-[8px] font-bold text-white">
                   {interestCount}
@@ -512,7 +512,7 @@ export default function GuestPostFeedCard({
 
         {interested && showActions && (
           <div className="pointer-events-none absolute right-3 top-3 z-[3] rounded-full bg-[#00e87a]/20 px-2 py-0.5 text-[9px] font-bold text-[#00e87a]">
-            行くかも ✓
+            いいね ✓
           </div>
         )}
       </div>

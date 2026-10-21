@@ -5,6 +5,32 @@ import {
 
 const SW = DEFAULT_ICON_STROKE;
 
+/** 投稿への「いいね」 */
+export function PostLikeIcon({
+  size = 22,
+  color = "#ffffff",
+  filled = false,
+}: SvgIconProps & { filled?: boolean }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 28 28"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M14 24S4 18 4 11.5C4 8.46 6.46 6 9.5 6c1.74 0 3.41 0.9 4.5 2.36C15.09 6.9 16.76 6 18.5 6 21.54 6 24 8.46 24 11.5 24 18 14 24 14 24Z"
+        stroke={color}
+        strokeWidth={SW}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill={filled ? color : "none"}
+      />
+    </svg>
+  );
+}
+
 export function FeedWaveIcon({ size = 22, color = "#ffffff" }: SvgIconProps) {
   return (
     <svg

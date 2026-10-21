@@ -18,7 +18,7 @@ import type { CheckinUser } from "@/lib/checkins/api";
 import CheckinAvatarStack from "@/components/checkins/CheckinAvatarStack";
 import PostImageCarousel from "./PostImageCarousel";
 import PostAuthorBadge from "@/components/posts/PostAuthorBadge";
-import PostInterestLabel from "@/components/posts/PostInterestLabel";
+import PostLikeLabel from "@/components/posts/PostLikeLabel";
 import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
 
 type VibePostCardProps = {
@@ -137,11 +137,11 @@ export default function VibePostCard({
 
         <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
           <div className="min-w-0">
-            <p className="text-sm font-bold text-[#00e87a]">
-              {interestCount}人が行くかも
+            <p className="text-sm font-bold text-[#ff3d00]">
+              {interestCount}件のいいね
             </p>
             <p className="text-[10px] text-[#5a5668]">
-              タップして今夜行く候補に追加
+              タップしていいね
             </p>
           </div>
           <button
@@ -154,7 +154,7 @@ export default function VibePostCard({
                 : "bg-[#ff3d00] text-white shadow-[0_4px_16px_rgba(255,61,0,0.25)] hover:bg-[#e63600]"
             }`}
           >
-            <PostInterestLabel interested={interested} loading={isSubmitting} />
+            <PostLikeLabel liked={interested} loading={isSubmitting} />
           </button>
         </div>
       </div>

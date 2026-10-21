@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FeedWaveIcon } from "@/components/icons/FeedActionIcons";
+import { PostLikeIcon } from "@/components/icons/FeedActionIcons";
 
 type InterestHeartBurstProps = {
   trigger: number;
@@ -25,7 +25,7 @@ export default function InterestHeartBurst({ trigger }: InterestHeartBurstProps)
       aria-hidden
     >
       <span className="animate-[heart-pop_0.85s_ease-out_forwards] drop-shadow-[0_8px_24px_rgba(255,61,0,0.55)]">
-        <FeedWaveIcon size={88} color="#ff3d00" />
+        <PostLikeIcon size={88} color="#ff3d00" filled />
       </span>
     </div>
   );

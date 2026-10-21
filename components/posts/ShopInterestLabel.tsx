@@ -1,14 +1,15 @@
 import { FeedWaveIcon } from "@/components/icons/FeedActionIcons";
 
-type PostInterestLabelProps = {
+type ShopInterestLabelProps = {
   interested: boolean;
   loading?: boolean;
 };
 
-export default function PostInterestLabel({
+/** 店舗ページの「今夜行くかも」 */
+export default function ShopInterestLabel({
   interested,
   loading = false,
-}: PostInterestLabelProps) {
+}: ShopInterestLabelProps) {
   if (loading) {
     return <>送信中...</>;
   }

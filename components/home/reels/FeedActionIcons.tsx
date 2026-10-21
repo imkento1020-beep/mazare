@@ -5,4 +5,5 @@ export {
   FeedPinIcon,
   FeedShareIcon,
   FeedWaveIcon,
+  PostLikeIcon,
 } from "@/components/icons/FeedActionIcons";
