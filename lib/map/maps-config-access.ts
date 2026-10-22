@@ -13,8 +13,8 @@ function urlHostAllowed(url: string): boolean {
   }
 }
 
-/** /api/maps/config — 自サイトからの取得のみ許可 */
-export function isAllowedMapsConfigRequest(request: Request): boolean {
+/** 自サイト（または Vercel プレビュー）からの API 呼び出しのみ許可 */
+export function isAllowedAppApiRequest(request: Request): boolean {
   if (process.env.NODE_ENV === "development") {
     return true;
   }

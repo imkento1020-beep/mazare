@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
+import { isAllowedAppApiRequest } from "@/lib/map/maps-config-access";
 import { ensureShopsFromPlaces } from "@/lib/places/cacheShop";
 import { searchNearbyPlaces } from "@/lib/places/googlePlaces";
 
 export async function POST(request: Request) {
+  if (!isAllowedAppApiRequest(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
     const body = (await request.json()) as {
       latitude?: number;

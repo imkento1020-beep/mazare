@@ -1,9 +1,10 @@
 import { supabase } from "@/lib/supabase";
+import {
+  validateImageFile,
+  validateVideoFile,
+} from "@/lib/upload/mediaValidation";
 
 const BUCKET = "post-media";
-
-const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const VIDEO_TYPES = new Set(["video/mp4", "video/quicktime"]);
 
 export async function uploadGuestPostImages(input: {
   userId: string;
@@ -17,8 +18,9 @@ export async function uploadGuestPostImages(input: {
 
   for (let index = 0; index < input.files.length; index += 1) {
     const file = input.files[index];
-    if (!IMAGE_TYPES.has(file.type)) {
-      return { urls: [], error: "写真は jpg / png / webp のみ対応しています" };
+    const imageError = await validateImageFile(file);
+    if (imageError) {
+      return { urls: [], error: imageError };
     }
 
     const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
@@ -49,8 +51,9 @@ export async function uploadGuestPostVideo(input: {
   userId: string;
   file: File;
 }): Promise<{ url: string | null; error: string | null }> {
-  if (!VIDEO_TYPES.has(input.file.type)) {
-    return { url: null, error: "動画は mp4 / mov のみ対応しています" };
+  const videoError = await validateVideoFile(input.file);
+  if (videoError) {
+    return { url: null, error: videoError };
   }
 
   const durationOk = await validateVideoDuration(input.file, 30);

@@ -3,12 +3,12 @@ import {
   getBrowserGoogleMapsApiKey,
   getBrowserGoogleMapsSetupHint,
 } from "@/lib/map/browser-api-key";
-import { isAllowedMapsConfigRequest } from "@/lib/map/maps-config-access";
+import { isAllowedAppApiRequest } from "@/lib/map/maps-config-access";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  if (!isAllowedMapsConfigRequest(request)) {
+  if (!isAllowedAppApiRequest(request)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { UploadIcon } from "@/components/icons/MazareIcons";
-
-const MEDIA_ACCEPT =
-  "image/jpeg,image/png,image/webp,video/mp4,video/quicktime";
+import {
+  isAllowedImageMime,
+  isAllowedVideoMime,
+  MEDIA_ACCEPT,
+} from "@/lib/upload/mediaValidation";
 
 type GuestPostMediaUploadProps = {
   imageFiles: File[];
@@ -52,8 +54,8 @@ export default function GuestPostMediaUpload({
 
     if (picked.length === 0) return;
 
-    const pickedVideo = picked.find((file) => file.type.startsWith("video/"));
-    const pickedImages = picked.filter((file) => file.type.startsWith("image/"));
+    const pickedVideo = picked.find((file) => isAllowedVideoMime(file.type));
+    const pickedImages = picked.filter((file) => isAllowedImageMime(file.type));
 
     let nextVideo = videoFile;
     let nextImages = [...imageFiles];
@@ -119,7 +121,7 @@ export default function GuestPostMediaUpload({
       <input
         ref={cameraRef}
         type="file"
-        accept="image/*,video/*"
+        accept={MEDIA_ACCEPT}
         capture="environment"
         className="sr-only"
         onChange={handlePick}

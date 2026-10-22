@@ -102,7 +102,33 @@ GRANT SELECT ON public.interests TO anon;
 GRANT SELECT, INSERT, DELETE, UPDATE ON public.interests TO authenticated;
 
 -- ============================================================
--- 7. 確認
+-- 7. Storage: アップロード MIME / サイズ上限
+-- ============================================================
+
+UPDATE storage.buckets
+SET
+  file_size_limit = 83886080,
+  allowed_mime_types = ARRAY[
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'video/mp4',
+    'video/quicktime'
+  ]::text[]
+WHERE id = 'post-media';
+
+UPDATE storage.buckets
+SET
+  file_size_limit = 10485760,
+  allowed_mime_types = ARRAY[
+    'image/jpeg',
+    'image/png',
+    'image/webp'
+  ]::text[]
+WHERE id = 'shop-images';
+
+-- ============================================================
+-- 8. 確認
 -- ============================================================
 
 SELECT

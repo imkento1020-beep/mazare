@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { validateImageBlob } from "@/lib/upload/mediaValidation";
 
 const BUCKET = "shop-images";
 
@@ -11,7 +12,7 @@ function dataUrlToBlob(dataUrl: string) {
   for (let i = 0; i < binary.length; i += 1) {
     bytes[i] = binary.charCodeAt(i);
   }
-  return { blob: new Blob([bytes], { type: mime }), ext };
+  return { blob: new Blob([bytes], { type: mime }), ext, mime };
 }
 
 export async function uploadShopImages(
@@ -32,7 +33,12 @@ export async function uploadShopImages(
       continue;
     }
 
-    const { blob, ext } = dataUrlToBlob(image);
+    const { blob, ext, mime } = dataUrlToBlob(image);
+    const validationError = await validateImageBlob(blob, mime);
+    if (validationError) {
+      return { urls: [], error: validationError };
+    }
+
     const path = `${ownerId}/${Date.now()}-${index}.${ext}`;
 
     const { error: uploadError } = await supabase.storage

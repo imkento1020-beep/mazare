@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
+import { isAllowedAppApiRequest } from "@/lib/map/maps-config-access";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureNearestStationsForShops } from "@/lib/shops/ensureNearestStation";
 
 export async function POST(request: Request) {
+  if (!isAllowedAppApiRequest(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   let body: { shopIds?: unknown };
   try {
     body = (await request.json()) as { shopIds?: unknown };

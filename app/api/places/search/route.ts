@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
+import { isAllowedAppApiRequest } from "@/lib/map/maps-config-access";
 import { ensureShopsFromPlaces } from "@/lib/places/cacheShop";
 import { searchPlacesByText } from "@/lib/places/googlePlaces";
 
 export async function POST(request: Request) {
+  if (!isAllowedAppApiRequest(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
     const body = (await request.json()) as { query?: string };
     const query = body.query?.trim() ?? "";
