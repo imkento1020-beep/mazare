@@ -42,7 +42,6 @@ import {
   useEnrichShopNearestStations,
 } from "@/hooks/useEnrichShopNearestStations";
 import { useUserLocation } from "@/hooks/useUserLocation";
-import { useShopCachedPhoto } from "@/hooks/useShopCachedPhoto";
 import CheckinAvatarStack from "@/components/checkins/CheckinAvatarStack";
 import BackButton from "@/components/layout/BackButton";
 import PostAuthorBadge from "@/components/posts/PostAuthorBadge";
@@ -67,22 +66,16 @@ function genreFallback(genre: string) {
   );
 }
 
-function CoverGallery({
-  shop,
-  posts,
-  googlePhotoUrl,
-}: {
-  shop: Shop;
-  posts: VibePost[];
-  googlePhotoUrl: string | null;
-}) {
-  const images = [
-    ...(googlePhotoUrl ? [googlePhotoUrl] : []),
+function CoverGallery({ shop, posts }: { shop: Shop; posts: VibePost[] }) {
+  const [googlePhotoFailed, setGooglePhotoFailed] = useState(false);
+  const extraImages = [
     ...getShopCoverImages(shop),
     ...posts.flatMap((post) => post.images ?? []),
-  ].slice(0, 8);
+  ].slice(0, 7);
+  const googlePhotoSrc = `/api/shops/${shop.id}/photo`;
+  const showGooglePhoto = !googlePhotoFailed;
 
-  if (images.length === 0) {
+  if (!showGooglePhoto && extraImages.length === 0) {
     return (
       <div className="flex h-[240px] items-center justify-center bg-gradient-to-br from-[#1a0a00] to-[#2d1200]">
         {genreFallback(formatGenre(shop.genre))}
@@ -92,7 +85,18 @@ function CoverGallery({
 
   return (
     <div className="flex h-[240px] snap-x snap-mandatory overflow-x-auto">
-      {images.map((src, index) => (
+      {showGooglePhoto ? (
+        <div className="h-[240px] w-full shrink-0 snap-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={googlePhotoSrc}
+            alt=""
+            className="h-full w-full object-cover"
+            onError={() => setGooglePhotoFailed(true)}
+          />
+        </div>
+      ) : null}
+      {extraImages.map((src, index) => (
         <div key={`${src}-${index}`} className="h-[240px] w-full shrink-0 snap-center">
           {src.startsWith("data:") || src.startsWith("http") ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -140,12 +144,6 @@ export default function ShopDetailPage() {
     () => mergeShopNearestStations(shop, stationMap) ?? shop,
     [shop, stationMap],
   );
-  const cachedPhotoUrl = useShopCachedPhoto(
-    enrichedShop?.id,
-    enrichedShop?.cached_photo_url,
-  );
-  const googlePhotoUrl =
-    cachedPhotoUrl?.trim() || enrichedShop?.cached_photo_url?.trim() || null;
   const postsForDisplay = useMemo(
     () =>
       enrichedShop
@@ -380,11 +378,7 @@ export default function ShopDetailPage() {
         <BackButton href="/home" />
       </div>
 
-      <CoverGallery
-        shop={enrichedShop ?? shop}
-        posts={posts}
-        googlePhotoUrl={googlePhotoUrl}
-      />
+      <CoverGallery shop={enrichedShop ?? shop} posts={posts} />
 
       <div className="mx-auto max-w-none pt-5 md:max-w-2xl">
         <div className="flex items-start justify-between gap-3">

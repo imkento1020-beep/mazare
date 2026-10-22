@@ -95,14 +95,28 @@ export async function fetchShopByIdFromDb(id: string): Promise<{
   data: Shop | null;
   error: string | null;
 }> {
-  return fetchShopRow(
-    supabase
-      .from("shops")
-      .select(SHOP_SELECT_WITH_COORDS_AND_STATION)
-      .eq("id", id)
-      .maybeSingle(),
-    supabase.from("shops").select(SHOP_SELECT_WITH_COORDS).eq("id", id).maybeSingle(),
-  );
+  const withStation = await supabase
+    .from("shops")
+    .select(SHOP_SELECT_WITH_COORDS_AND_STATION)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!withStation.error) {
+    return { data: withStation.data as Shop | null, error: null };
+  }
+
+  if (isMissingNearestStationColumnError(withStation.error.message)) {
+    return fetchShopRow(
+      supabase
+        .from("shops")
+        .select(SHOP_SELECT_WITH_COORDS)
+        .eq("id", id)
+        .maybeSingle(),
+      supabase.from("shops").select(SHOP_SELECT_BASE).eq("id", id).maybeSingle(),
+    );
+  }
+
+  return { data: null, error: withStation.error.message };
 }
 
 export async function fetchOwnerShopFromDb(ownerId: string): Promise<{
