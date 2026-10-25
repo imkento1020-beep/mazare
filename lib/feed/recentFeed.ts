@@ -312,3 +312,27 @@ export function mapPinTier(postCount: number): 0 | 1 | 2 | 3 {
   if (postCount <= 9) return 2;
   return 3;
 }
+
+export function buildMapShopActivityFromCheckins(
+  shops: Shop[],
+  checkinCounts: Map<string, number>,
+): MapShopActivity[] {
+  const activities: MapShopActivity[] = [];
+
+  for (const shop of shops) {
+    const count = checkinCounts.get(shop.id) ?? 0;
+    if (count <= 0) continue;
+    if (shop.latitude == null || shop.longitude == null) continue;
+
+    activities.push({
+      shopId: shop.id,
+      shop,
+      uniquePosterCount: count,
+      postCount: count,
+      latestHashtags: [],
+      latestPostId: "",
+    });
+  }
+
+  return activities.sort((a, b) => b.postCount - a.postCount);
+}

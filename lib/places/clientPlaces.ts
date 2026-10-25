@@ -8,12 +8,13 @@ import { labelsFromGooglePlaceTypes } from "@/lib/home/genreDisplay";
 import {
   NEARBY_ALL_PRIMARY_TYPES,
   rankPlacesByNightlifeThenDistance,
+  rankPlacesByTextQuery,
 } from "@/lib/places/nightlifeRank";
 
 /** 投稿画面の近くのお店候補（GPS） */
 export const POST_PAGE_NEARBY_LIMIT = 8;
 /** 投稿画面の検索結果上限 */
-export const POST_PAGE_SEARCH_LIMIT = 10;
+export const POST_PAGE_SEARCH_LIMIT = 20;
 
 /** 投稿・チェックインの店舗候補（Place Photos は取得しない） */
 const PLACE_FIELDS: Array<keyof google.maps.places.Place> = [
@@ -221,47 +222,99 @@ export async function searchNearbyPlacesClient(
   }
 }
 
+async function searchPlacesByTextServer(
+  query: string,
+  limit: number,
+  origin?: { latitude: number; longitude: number },
+): Promise<PlaceSummary[] | null> {
+  try {
+    const response = await fetch("/api/places/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    });
+    const json = (await response.json()) as {
+      places?: PlaceSummary[];
+      error?: string;
+    };
+    if (!response.ok) {
+      throw new Error(json.error ?? `検索 API エラー (${response.status})`);
+    }
+    const places = json.places ?? [];
+    return rankPlacesByTextQuery(places, query, origin ?? null, limit);
+  } catch {
+    return null;
+  }
+}
+
+async function searchPlacesByTextClientLibrary(
+  apiKey: string,
+  query: string,
+  limit: number,
+  origin?: { latitude: number; longitude: number },
+): Promise<PlaceSummary[]> {
+  const capped = Math.min(Math.max(limit, 5), 20);
+
+  const { Place } = (await getPlacesLibrary(apiKey)) as google.maps.PlacesLibrary;
+  const { places } = await Place.searchByText({
+    fields: PLACE_FIELDS,
+    textQuery: query.trim(),
+    maxResultCount: capped,
+    language: "ja",
+    region: "jp",
+  });
+
+  const filtered = await summariesFromPlaces(places);
+  return rankPlacesByTextQuery(filtered, query, origin ?? null, capped);
+}
+
+/** 投稿・チェックイン: Google テキスト検索（サーバー API 優先） */
+export async function searchPlacesByTextForPostPage(
+  query: string,
+  options?: {
+    apiKey?: string | null;
+    limit?: number;
+    origin?: { latitude: number; longitude: number };
+  },
+): Promise<PlaceSummary[]> {
+  const limit = options?.limit ?? POST_PAGE_SEARCH_LIMIT;
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+
+  const fromServer = await searchPlacesByTextServer(trimmed, limit, options?.origin);
+  if (fromServer && fromServer.length > 0) {
+    return fromServer;
+  }
+
+  const apiKey = options?.apiKey?.trim();
+  if (!apiKey) {
+    if (fromServer) return fromServer;
+    throw new Error(
+      "お店が見つかりませんでした。Google Maps API キーを確認するか、別のキーワードで試してください。",
+    );
+  }
+
+  try {
+    return await searchPlacesByTextClientLibrary(
+      apiKey,
+      trimmed,
+      limit,
+      options?.origin,
+    );
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`お店の検索に失敗しました。(${detail})`);
+  }
+}
+
+/** @deprecated searchPlacesByTextForPostPage を使用 */
 export async function searchPlacesByTextClient(
   apiKey: string,
   query: string,
   limit = POST_PAGE_SEARCH_LIMIT,
   origin?: { latitude: number; longitude: number },
 ): Promise<PlaceSummary[]> {
-  const capped = Math.min(Math.max(limit, 5), 10);
-  const nightlifeQuery = query.includes("飲食")
-    ? query
-    : `${query} 居酒屋 バー`;
-
-  try {
-    const { Place } = (await getPlacesLibrary(apiKey)) as google.maps.PlacesLibrary;
-    const { places } = await Place.searchByText({
-      fields: PLACE_FIELDS,
-      textQuery: nightlifeQuery,
-      maxResultCount: capped,
-      language: "ja",
-      region: "jp",
-    });
-
-    const googleTypesByPlaceId = new Map<string, string[]>();
-    for (const place of places) {
-      const id = placeIdKey(place);
-      if (id) mergeGoogleTypes(googleTypesByPlaceId, id, rawGoogleTypes(place));
-    }
-
-    const filtered = await summariesFromPlaces(places);
-
-    return rankPlacesByNightlifeThenDistance(
-      filtered,
-      origin ?? null,
-      googleTypesByPlaceId,
-      capped,
-    );
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      `お店の検索に失敗しました。(${detail})`,
-    );
-  }
+  return searchPlacesByTextForPostPage(query, { apiKey, limit, origin });
 }
 
 const cachePlacesInflight = new Map<string, Promise<PlaceSummary[]>>();

@@ -101,6 +101,29 @@ export async function hasActiveCheckin(
   return (data?.length ?? 0) > 0;
 }
 
+/** 有効チェックインを店舗 ID ごとに集計 */
+export async function fetchActiveCheckinCountsByShop(): Promise<
+  Map<string, number>
+> {
+  const { data, error } = await supabase
+    .from("checkins")
+    .select("shop_id")
+    .gt("expires_at", nowIso());
+
+  const counts = new Map<string, number>();
+  if (error) {
+    if (isMissingTableError(error.message, "checkins")) return counts;
+    return counts;
+  }
+
+  for (const row of data ?? []) {
+    const shopId = String(row.shop_id);
+    counts.set(shopId, (counts.get(shopId) ?? 0) + 1);
+  }
+
+  return counts;
+}
+
 export async function countActiveCheckins(shopId: string): Promise<number> {
   const { count, error } = await supabase
     .from("checkins")

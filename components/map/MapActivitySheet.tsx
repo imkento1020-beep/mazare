@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import type { MapShopActivity } from "@/lib/feed/recentFeed";
+import type { MapActivityMetricId } from "@/lib/map/mapActivityMetric";
 
 type MapActivitySheetProps = {
   activity: MapShopActivity | null;
   windowLabel: string;
+  metric?: MapActivityMetricId;
   locationLabel?: string | null;
   open: boolean;
   interestLoading?: boolean;
@@ -17,6 +19,7 @@ type MapActivitySheetProps = {
 export default function MapActivitySheet({
   activity,
   windowLabel,
+  metric = "posts",
   locationLabel,
   open,
   interestLoading,
@@ -39,8 +42,14 @@ export default function MapActivitySheet({
                   <span className="text-[#5a5668]"> · </span>
                 </>
               ) : null}
-              {windowLabel} · 投稿 {activity.postCount}件 · ユニーク{" "}
-              {activity.uniquePosterCount}人
+              {metric === "checkins" ? (
+                <>チェックイン中 {activity.postCount}人</>
+              ) : (
+                <>
+                  {windowLabel} · 投稿 {activity.postCount}件 · ユニーク{" "}
+                  {activity.uniquePosterCount}人
+                </>
+              )}
             </p>
           </div>
           <button
@@ -68,7 +77,7 @@ export default function MapActivitySheet({
         <div className="mt-5 flex gap-3">
           <button
             type="button"
-            disabled={interestLoading}
+            disabled={interestLoading || !activity.latestPostId}
             onClick={onInterest}
             className="flex-1 rounded-[12px] bg-[#ff3d00] py-3 text-sm font-bold text-white disabled:opacity-60"
           >

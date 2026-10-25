@@ -13,7 +13,7 @@ import { getDisplayName, syncGuestDisplayName } from "@/lib/mypage/api";
 import type { PlaceSummary } from "@/lib/places/types";
 import {
   cachePlacesForPost,
-  searchPlacesByTextClient,
+  searchPlacesByTextForPostPage,
 } from "@/lib/places/clientPlaces";
 import { loadNearbyFromUserGesture } from "@/lib/places/loadNearbyFromUserGesture";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
@@ -62,17 +62,19 @@ export default function CheckinPageClient() {
   async function handleSearch(event: React.FormEvent) {
     event.preventDefault();
     const query = searchQuery.trim();
-    if (query.length < 2 || !mapsApiKey) return;
+    if (query.length < 2) return;
     setLoadingPlaces(true);
     setError(null);
     try {
-      const found = await searchPlacesByTextClient(
-        mapsApiKey,
-        query,
-        undefined,
-        userCoords ?? undefined,
-      );
-      setPlaces(await cachePlacesForPost(found));
+      const found = await searchPlacesByTextForPostPage(query, {
+        apiKey: mapsApiKey,
+        origin: userCoords ?? undefined,
+      });
+      const cached = await cachePlacesForPost(found);
+      setPlaces(cached);
+      if (cached.length === 0) {
+        setError("該当するお店が見つかりませんでした。");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "検索に失敗しました");
     } finally {

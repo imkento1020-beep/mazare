@@ -7,13 +7,21 @@ import BottomNav from "@/components/BottomNav";
 import MapActivityGoogleMapView from "@/components/map/MapActivityGoogleMapView";
 import MapActivitySheet from "@/components/map/MapActivitySheet";
 import MapActivityWindowFilter from "@/components/map/MapActivityWindowFilter";
+import MapActivityMetricFilter from "@/components/map/MapActivityMetricFilter";
 import GoogleAttribution from "@/components/places/GoogleAttribution";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 import {
   buildMapShopActivity,
+  buildMapShopActivityFromCheckins,
   fetchRecentVibePosts,
 } from "@/lib/feed/recentFeed";
-import type { VibePost } from "@/lib/home/types";
+import { fetchShopsFromDb } from "@/lib/home/shops";
+import type { Shop, VibePost } from "@/lib/home/types";
+import { fetchActiveCheckinCountsByShop } from "@/lib/checkins/api";
+import {
+  type MapActivityMetricId,
+  mapActivityMetricLabel,
+} from "@/lib/map/mapActivityMetric";
 import {
   DEFAULT_MAP_ACTIVITY_WINDOW_ID,
   mapActivityWindowLabel,
@@ -39,6 +47,12 @@ type MapPageClientProps = {
 export default function MapPageClient({ setupHint }: MapPageClientProps) {
   const { openAuthPrompt } = useAuthPrompt();
   const [posts, setPosts] = useState<VibePost[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [checkinCounts, setCheckinCounts] = useState<Map<string, number>>(
+    new Map(),
+  );
+  const [activityMetric, setActivityMetric] =
+    useState<MapActivityMetricId>("posts");
   const [activityWindowId, setActivityWindowId] =
     useState<MapActivityWindowId>(DEFAULT_MAP_ACTIVITY_WINDOW_ID);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -58,15 +72,24 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
   const windowMs = mapActivityWindowMs(activityWindowId);
   const windowLabel = mapActivityWindowLabel(activityWindowId);
 
-  const activities = useMemo(
-    () => buildMapShopActivity(posts, windowMs),
-    [posts, windowMs],
-  );
+  const activities = useMemo(() => {
+    if (activityMetric === "checkins") {
+      return buildMapShopActivityFromCheckins(shops, checkinCounts);
+    }
+    return buildMapShopActivity(posts, windowMs);
+  }, [activityMetric, shops, checkinCounts, posts, windowMs]);
 
   const reload = useCallback(async () => {
-    const { data, error } = await fetchRecentVibePosts();
-    if (error) setLoadError(error);
-    setPosts(data);
+    const [postsResult, shopsResult, checkinMap] = await Promise.all([
+      fetchRecentVibePosts(),
+      fetchShopsFromDb(),
+      fetchActiveCheckinCountsByShop(),
+    ]);
+    if (postsResult.error) setLoadError(postsResult.error);
+    if (shopsResult.error) setLoadError(shopsResult.error);
+    setPosts(postsResult.data);
+    setShops(shopsResult.data ?? []);
+    setCheckinCounts(checkinMap);
     setLoading(false);
   }, []);
 
@@ -153,7 +176,7 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
   }, [selectedActivity, stationMap, userLocation]);
 
   async function handleInterest() {
-    if (!selectedActivity) return;
+    if (!selectedActivity?.latestPostId) return;
     if (!isRegisteredUser(user)) {
       openAuthPrompt({
         title: "ログインして「今夜行くかも」",
@@ -216,18 +239,25 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
           shops={mapShops}
           selectedId={selectedId}
           focusLocation={userLocation}
+          metricLabel={mapActivityMetricLabel(activityMetric)}
           onSelectShop={(shopId) => {
             setSelectedId(shopId);
             setSheetOpen(true);
           }}
         />
 
-        <div className="absolute inset-x-4 top-4 z-10 flex items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <MapActivityWindowFilter
-              value={activityWindowId}
-              onChange={setActivityWindowId}
+        <div className="absolute inset-x-4 top-4 z-10 flex flex-col gap-2 sm:flex-row sm:items-start">
+          <div className="min-w-0 flex-1 space-y-2">
+            <MapActivityMetricFilter
+              value={activityMetric}
+              onChange={setActivityMetric}
             />
+            {activityMetric === "posts" ? (
+              <MapActivityWindowFilter
+                value={activityWindowId}
+                onChange={setActivityWindowId}
+              />
+            ) : null}
           </div>
           <button
             type="button"
@@ -264,6 +294,7 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
         <MapActivitySheet
           activity={selectedActivity}
           windowLabel={windowLabel}
+          metric={activityMetric}
           locationLabel={selectedLocationLabel}
           open={sheetOpen}
           interested={

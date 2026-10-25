@@ -36,6 +36,8 @@ type GuestPostFeedCardProps = {
   showActions?: boolean;
   shopHref?: string;
   className?: string;
+  /** 投稿作成プレビューなどでは contain で全体表示 */
+  mediaFit?: "cover" | "contain";
 };
 
 function authorInitial(name: string | null | undefined) {
@@ -46,9 +48,11 @@ function authorInitial(name: string | null | undefined) {
 function FeedPreviewVideo({
   src,
   className = "",
+  objectFit = "cover",
 }: {
   src: string;
   className?: string;
+  objectFit?: "cover" | "contain";
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -78,7 +82,11 @@ function FeedPreviewVideo({
       <video
         ref={videoRef}
         src={src}
-        className="pointer-events-none h-full w-full object-cover"
+        className={
+          objectFit === "contain"
+            ? "pointer-events-none h-full w-full bg-black object-contain"
+            : "pointer-events-none h-full w-full object-cover"
+        }
         muted
         playsInline
         loop
@@ -89,7 +97,17 @@ function FeedPreviewVideo({
   );
 }
 
-function MediaLayer({ post }: { post: VibePost }) {
+function MediaLayer({
+  post,
+  mediaFit = "cover",
+}: {
+  post: VibePost;
+  mediaFit?: "cover" | "contain";
+}) {
+  const mediaClass =
+    mediaFit === "contain"
+      ? "pointer-events-none h-full w-full object-contain bg-[#080810]"
+      : "pointer-events-none h-full w-full object-cover";
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const { mode, videoUrl, images } = resolvePostMedia(post);
@@ -117,7 +135,7 @@ function MediaLayer({ post }: { post: VibePost }) {
           className="flex h-full snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           <div className="relative h-full w-full shrink-0 snap-center">
-            <FeedPreviewVideo src={videoUrl} />
+            <FeedPreviewVideo src={videoUrl} objectFit={mediaFit} />
           </div>
           {images.map((src, index) => (
             <div
@@ -130,7 +148,7 @@ function MediaLayer({ post }: { post: VibePost }) {
                 alt=""
                 loading="lazy"
                 decoding="async"
-                className="pointer-events-none h-full w-full object-cover"
+                className={mediaClass}
               />
             </div>
           ))}
@@ -159,7 +177,7 @@ function MediaLayer({ post }: { post: VibePost }) {
   if (mode === "video" && videoUrl) {
     return (
       <div className="absolute inset-0">
-        <FeedPreviewVideo src={videoUrl} />
+        <FeedPreviewVideo src={videoUrl} objectFit={mediaFit} />
       </div>
     );
   }
@@ -183,7 +201,7 @@ function MediaLayer({ post }: { post: VibePost }) {
                 alt=""
                 loading={index === 0 ? "lazy" : "lazy"}
                 decoding="async"
-                className="pointer-events-none h-full w-full object-cover"
+                className={mediaClass}
               />
             </div>
           ))}
@@ -210,7 +228,7 @@ function MediaLayer({ post }: { post: VibePost }) {
         alt=""
         loading="lazy"
         decoding="async"
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+        className={`pointer-events-none absolute inset-0 h-full w-full ${mediaFit === "contain" ? "object-contain bg-[#080810]" : "object-cover"}`}
       />
     );
   }
@@ -301,6 +319,7 @@ export default function GuestPostFeedCard({
   showActions = true,
   shopHref,
   className = "",
+  mediaFit = "cover",
 }: GuestPostFeedCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -375,7 +394,7 @@ export default function GuestPostFeedCard({
       className={`overflow-hidden rounded-[12px] bg-[#080810] ${className}`}
     >
       <div className="relative aspect-[4/5] w-full overflow-hidden">
-        <MediaLayer post={post} />
+        <MediaLayer post={post} mediaFit={mediaFit} />
 
         {hasMedia && (
           <button

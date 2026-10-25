@@ -87,3 +87,41 @@ export function rankPlacesByNightlifeThenDistance(
 
   return ranked.slice(0, limit).map((row) => row.place);
 }
+
+/** テキスト検索: 店名一致を優先し、距離は tie-break */
+export function rankPlacesByTextQuery(
+  places: PlaceSummary[],
+  query: string,
+  origin: GeoPoint | null,
+  limit: number,
+): PlaceSummary[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return places.slice(0, limit);
+
+  const ranked = places
+    .map((place) => {
+      const name = place.name.toLowerCase();
+      const address = place.address.toLowerCase();
+      let score = 10;
+      if (name === q) score = 100;
+      else if (name.startsWith(q)) score = 90;
+      else if (name.includes(q)) score = 75;
+      else if (address.includes(q)) score = 45;
+
+      const distanceKm = origin
+        ? haversineDistanceKm(origin, {
+            latitude: place.latitude,
+            longitude: place.longitude,
+          })
+        : 0;
+
+      return { place, score, distanceKm };
+    })
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (origin) return a.distanceKm - b.distanceKm;
+      return a.place.name.localeCompare(b.place.name, "ja");
+    });
+
+  return ranked.slice(0, limit).map((row) => row.place);
+}

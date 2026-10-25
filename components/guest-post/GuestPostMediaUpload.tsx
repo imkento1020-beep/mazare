@@ -3,10 +3,13 @@
 import { useEffect, useMemo, useRef } from "react";
 import { UploadIcon } from "@/components/icons/MazareIcons";
 import {
+  ALLOWED_IMAGE_MIMES,
   isAllowedImageMime,
   isAllowedVideoMime,
   MEDIA_ACCEPT,
 } from "@/lib/upload/mediaValidation";
+
+const CAMERA_IMAGE_ACCEPT = ALLOWED_IMAGE_MIMES.join(",");
 
 type GuestPostMediaUploadProps = {
   imageFiles: File[];
@@ -121,7 +124,7 @@ export default function GuestPostMediaUpload({
       <input
         ref={cameraRef}
         type="file"
-        accept={MEDIA_ACCEPT}
+        accept={CAMERA_IMAGE_ACCEPT}
         capture="environment"
         className="sr-only"
         onChange={handlePick}
@@ -157,10 +160,10 @@ export default function GuestPostMediaUpload({
           <p className="text-xs font-bold text-[#9994a8]">選択中のメディア</p>
           <div className="flex flex-wrap gap-2">
             {videoPreviewUrl && (
-              <div className="relative h-24 w-[4.5rem] overflow-hidden rounded-xl border border-[#ff3d00]/40 bg-black">
+              <div className="relative flex h-28 min-w-[5.5rem] max-w-[9rem] items-center justify-center overflow-hidden rounded-xl border border-[#ff3d00]/40 bg-black">
                 <video
                   src={videoPreviewUrl}
-                  className="h-full w-full object-cover"
+                  className="max-h-28 max-w-full object-contain"
                   muted
                   playsInline
                   preload="metadata"
@@ -181,13 +184,13 @@ export default function GuestPostMediaUpload({
             {imagePreviewUrls.map((url, index) => (
               <div
                 key={url}
-                className="relative h-24 w-[4.5rem] overflow-hidden rounded-xl border border-white/15 bg-[#080810]"
+                className="relative flex h-28 min-w-[5.5rem] max-w-[9rem] items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-[#080810]"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={url}
                   alt=""
-                  className="h-full w-full object-cover"
+                  className="max-h-28 max-w-full object-contain"
                 />
                 <span className="absolute left-1 top-1 rounded bg-[#ffaa00] px-1 py-0.5 text-[8px] font-bold text-[#080810]">
                   写真{index + 1}

@@ -25,6 +25,7 @@ type MapActivityGoogleMapViewProps = {
   shops: ActivityMapShop[];
   selectedId?: string | null;
   focusLocation?: { lat: number; lng: number } | null;
+  metricLabel?: string;
   onSelectShop?: (shopId: string) => void;
 };
 
@@ -74,6 +75,7 @@ export default function MapActivityGoogleMapView({
   shops,
   selectedId = null,
   focusLocation = null,
+  metricLabel = "投稿数",
   onSelectShop,
 }: MapActivityGoogleMapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -148,7 +150,7 @@ export default function MapActivityGoogleMapView({
 
     for (const shop of visible) {
       const tier = mapPinTier(shop.postCount) as 1 | 2 | 3;
-      const countLabel =
+      const countText =
         shop.postCount > 99 ? "99+" : String(shop.postCount);
       const position = {
         lat: Number(shop.latitude),
@@ -173,10 +175,10 @@ export default function MapActivityGoogleMapView({
         marker = new google.maps.Marker({
           map,
           position,
-          title: `${shop.name}（投稿 ${shop.postCount}件）`,
+          title: `${shop.name}（${metricLabel} ${shop.postCount}）`,
           icon: createIcon(style),
           label: {
-            text: countLabel,
+            text: countText,
             color: "#ffffff",
             fontSize: tier === 1 ? "10px" : "12px",
             fontWeight: "700",
@@ -191,12 +193,12 @@ export default function MapActivityGoogleMapView({
         marker.setPosition(position);
         marker.setIcon(createIcon(style));
         marker.setLabel({
-          text: countLabel,
+          text: countText,
           color: "#ffffff",
           fontSize: tier === 1 ? "10px" : "12px",
           fontWeight: "700",
         });
-        marker.setTitle(`${shop.name}（投稿 ${shop.postCount}件）`);
+        marker.setTitle(`${shop.name}（${metricLabel} ${shop.postCount}）`);
         marker.setZIndex(style.z);
         marker.setMap(map);
       }
@@ -231,7 +233,7 @@ export default function MapActivityGoogleMapView({
     if (!bounds.isEmpty()) {
       map.fitBounds(bounds, 64);
     }
-  }, [mapReady, shops, selectedId]);
+  }, [mapReady, shops, selectedId, metricLabel]);
 
   useEffect(() => {
     const map = mapRef.current;

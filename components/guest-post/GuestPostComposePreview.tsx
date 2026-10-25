@@ -116,7 +116,11 @@ export default function GuestPostComposePreview({
           </p>
         </div>
       ) : (
-        <GuestPostFeedCard post={draftPost} showActions={false} />
+        <GuestPostFeedCard
+          post={draftPost}
+          showActions={false}
+          mediaFit="contain"
+        />
       )}
     </div>
   );
