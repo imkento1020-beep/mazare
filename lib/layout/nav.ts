@@ -68,6 +68,14 @@ export const OWNER_BOTTOM_NAV: BottomNavItem[] = [
   { label: "設定", href: "/owner/profile", icon: "user" },
 ];
 
+/** Matches mobile BottomNav: h-16 row + safe-area padding on the nav element. */
+export const MOBILE_TAB_BAR_INSET =
+  "calc(4rem + env(safe-area-inset-bottom, 0px))";
+
+/** Fixed compose footer (次へ) + tab bar — scroll padding for step 1–2. */
+export const MOBILE_COMPOSE_FOOTER_SCROLL_PADDING =
+  "calc(7.5rem + env(safe-area-inset-bottom, 0px))";
+
 export function isActivePath(pathname: string, href: string) {
   if (href === "/home") return pathname === "/home";
   if (href === "/mypage") return pathname.startsWith("/mypage");

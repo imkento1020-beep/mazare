@@ -53,7 +53,7 @@ export default function PostFinishToolRail({
   showShopTool,
 }: PostFinishToolRailProps) {
   return (
-    <div className="absolute right-3 top-[42%] z-20 flex -translate-y-1/2 flex-col items-center gap-3">
+    <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-3 pb-[env(safe-area-inset-bottom,0px)]">
       <RailButton
         label="コメントとタグ"
         active={activeSheet === "comment" || hasComment}

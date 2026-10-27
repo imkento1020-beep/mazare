@@ -40,7 +40,6 @@ import {
   postComposeStepOrder,
   type SelectedPostShop,
 } from "@/lib/guest-post/postComposeSteps";
-
 export default function PostPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -361,7 +360,13 @@ export default function PostPageClient() {
   const isFinish = step === "finish";
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#080810] text-[#eeeaf4]">
+    <div
+      className={`flex flex-col bg-[#080810] text-[#eeeaf4] ${
+        isFinish
+          ? "h-dvh max-h-dvh overflow-hidden"
+          : "min-h-dvh max-h-dvh overflow-hidden"
+      }`}
+    >
       <Header />
 
       <div className="sticky top-16 z-20 border-b border-white/[0.06] bg-[#080810]/95 backdrop-blur-md">
@@ -397,10 +402,10 @@ export default function PostPageClient() {
       </div>
 
       <main
-        className={`mx-auto flex w-full max-w-lg flex-1 flex-col ${
+        className={`mx-auto flex w-full max-w-lg min-h-0 flex-1 flex-col overflow-y-auto ${
           step === "finish"
-            ? "min-h-0 overflow-hidden px-0 py-0"
-            : "px-4 py-4 pb-28"
+            ? "overflow-hidden px-0 py-0 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0"
+            : "px-4 py-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] md:pb-28"
         }`}
       >
         {!mapsKeyLoading && !mapsApiKey && step === "shop" ? (
@@ -489,7 +494,7 @@ export default function PostPageClient() {
       </main>
 
       {step !== "finish" ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06] bg-[#080810]/98 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md">
+        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-[110] border-t border-white/[0.06] bg-[#080810]/98 px-4 py-3 backdrop-blur-md md:bottom-0">
           <div className="mx-auto flex max-w-lg">
             <button
               type="button"
@@ -513,6 +518,7 @@ export default function PostPageClient() {
         />
       ) : null}
 
+      <BottomNav />
     </div>
   );
 }
