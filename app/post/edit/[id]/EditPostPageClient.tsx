@@ -87,11 +87,6 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
 
   async function handleSave() {
     if (!post) return;
-    if (nightOut.stopNumber == null) {
-      setError("今夜何軒目かを選んでください");
-      return;
-    }
-
     setSubmitting(true);
     setError(null);
 

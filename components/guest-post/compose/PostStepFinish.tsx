@@ -1,16 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import GuestPostComposePreview from "@/components/guest-post/GuestPostComposePreview";
 import GuestPostBodyHashtagSuggestions from "@/components/guest-post/GuestPostBodyHashtagSuggestions";
 import { GUEST_POST_BODY_MAX_LENGTH } from "@/lib/guest-post/composeBody";
 import type { NightOutInput } from "@/lib/guest-post/nightOut";
 import type { Shop } from "@/lib/home/types";
+import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
 import PostComposeSheet from "@/components/guest-post/compose/PostComposeSheet";
 import PostFinishToolRail, {
   type ToolId,
 } from "@/components/guest-post/compose/PostFinishToolRail";
 import GuestPostFinishMeta from "@/components/guest-post/compose/GuestPostFinishMeta";
+import TonightSocialMoodPicker from "@/components/profile/TonightSocialMoodPicker";
 
 type PostStepFinishProps = {
   shop: Shop;
@@ -18,11 +20,12 @@ type PostStepFinishProps = {
   videoFile: File | null;
   nightOut: NightOutInput;
   onNightOutChange: React.Dispatch<React.SetStateAction<NightOutInput>>;
+  socialMood: TonightSocialMoodId | null;
+  onSocialMoodChange: (value: TonightSocialMoodId | null) => void;
   bodyText: string;
   onBodyTextChange: (value: string) => void;
   comment: string;
   hashtags: string[];
-  userId: string | null;
   onChangeShop?: () => void;
   shopLocked: boolean;
 };
@@ -33,25 +36,16 @@ export default function PostStepFinish({
   videoFile,
   nightOut,
   onNightOutChange,
+  socialMood,
+  onSocialMoodChange,
   bodyText,
   onBodyTextChange,
   comment,
   hashtags,
-  userId,
   onChangeShop,
   shopLocked,
 }: PostStepFinishProps) {
   const [sheet, setSheet] = useState<ToolId | null>(null);
-
-  const hasDetails = useMemo(
-    () =>
-      Boolean(
-        nightOut.drinkName?.trim() ||
-          nightOut.tonightTotalCups != null ||
-          nightOut.partySize != null,
-      ),
-    [nightOut],
-  );
 
   function openSheet(id: ToolId) {
     if (id === "shop") {
@@ -71,6 +65,7 @@ export default function PostStepFinish({
           comment={comment}
           hashtags={hashtags}
           shop={shop}
+          authorTonightSocialMood={socialMood}
           fillHeight
           hideChrome
           immersive
@@ -92,9 +87,9 @@ export default function PostStepFinish({
       <PostFinishToolRail
         activeSheet={sheet}
         onOpen={openSheet}
-        stopNumber={nightOut.stopNumber}
+        socialMood={socialMood}
+        partySize={nightOut.partySize}
         hasComment={bodyText.trim().length > 0}
-        hasDetails={hasDetails}
         showShopTool={!shopLocked && Boolean(onChangeShop)}
       />
 
@@ -122,28 +117,25 @@ export default function PostStepFinish({
       </PostComposeSheet>
 
       <PostComposeSheet
-        open={sheet === "stop"}
-        title="今夜何軒目？"
+        open={sheet === "mood"}
+        title="今夜の気分"
         onClose={() => setSheet(null)}
       >
-        <GuestPostFinishMeta
-          userId={userId}
-          value={nightOut}
-          onChange={onNightOutChange}
-          mode="stopOnly"
+        <TonightSocialMoodPicker
+          value={socialMood}
+          onChange={onSocialMoodChange}
         />
       </PostComposeSheet>
 
       <PostComposeSheet
-        open={sheet === "details"}
-        title="今夜の詳細（任意）"
+        open={sheet === "party"}
+        title="誰と？（任意）"
         onClose={() => setSheet(null)}
       >
         <GuestPostFinishMeta
-          userId={userId}
           value={nightOut}
           onChange={onNightOutChange}
-          mode="detailsOnly"
+          mode="partyOnly"
         />
       </PostComposeSheet>
     </div>

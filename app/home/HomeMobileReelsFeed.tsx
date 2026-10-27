@@ -26,6 +26,7 @@ import {
   useEnrichShopNearestStations,
 } from "@/hooks/useEnrichShopNearestStations";
 import type { Shop } from "@/lib/home/types";
+import { attachAuthorTonightMoods } from "@/lib/search/postSearch";
 
 export default function HomeMobileReelsFeed() {
   const searchParams = useSearchParams();
@@ -74,7 +75,8 @@ export default function HomeMobileReelsFeed() {
     async (activeUser: User | null) => {
       const { data, error: feedError } = await fetchHomeReelsFeed();
       if (feedError) setError(feedError);
-      setPosts(data);
+      const withMoods = await attachAuthorTonightMoods(data);
+      setPosts(withMoods);
 
       const priorityIds = data.slice(0, 5).map((p) => p.id);
       void loadCounts(priorityIds);

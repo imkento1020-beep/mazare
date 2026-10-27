@@ -41,6 +41,7 @@ export type VibePost = {
   drink_count?: number | null;
   party_size?: number | null;
   author_display_name?: string | null;
+  author_tonight_social_mood?: string | null;
   shops: Shop | null;
 };
 

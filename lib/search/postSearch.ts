@@ -31,12 +31,21 @@ export async function attachAuthorTonightMoods(
     }
   }
 
-  return posts.map((post) => ({
-    ...post,
-    author_tonight_social_mood: post.author_id
+  return posts.map((post) => {
+    const fromProfile = post.author_id
       ? (moodByUser.get(post.author_id) ?? null)
-      : null,
-  }));
+      : null;
+    const snapshot = post.author_tonight_social_mood;
+    const fromSnapshot =
+      typeof snapshot === "string" && isTonightSocialMoodId(snapshot)
+        ? snapshot
+        : null;
+
+    return {
+      ...post,
+      author_tonight_social_mood: fromSnapshot ?? fromProfile,
+    };
+  });
 }
 
 export type PartySizeFilter = "any" | "solo" | "small" | "large";

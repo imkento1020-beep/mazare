@@ -1,5 +1,9 @@
 import { supabase } from "@/lib/supabase";
 import { normalizeNightOutInput, type NightOutInput } from "@/lib/guest-post/nightOut";
+import {
+  isTonightSocialMoodId,
+  type TonightSocialMoodId,
+} from "@/lib/profile/tonightSocialMood";
 import { uploadGuestPostImages, uploadGuestPostVideo } from "@/lib/guest-post/uploadMedia";
 
 export const DEFAULT_HASHTAG_SUGGESTIONS = [
@@ -60,6 +64,7 @@ export async function createGuestVibePost(input: {
   shopId: string;
   hashtags: string[];
   nightOut: NightOutInput;
+  tonightSocialMood?: TonightSocialMoodId | null;
   comment?: string;
   imageFiles?: File[];
   videoFile?: File | null;
@@ -100,31 +105,58 @@ export async function createGuestVibePost(input: {
     mediaType = hasImages ? "mixed" : "video";
   }
 
-  const { data, error } = await supabase
-    .from("vibe_posts")
-    .insert({
-      shop_id: input.shopId,
-      author_id: input.userId,
-      is_guest_post: true,
-      comment,
-      moods: [],
-      hashtags,
-      media_type: mediaType,
-      images,
-      video_url: videoUrl,
-      posted_at: new Date().toISOString(),
-      stop_number: nightOut.stop_number,
-      visit_order: nightOut.visit_order,
-      drink_name: nightOut.drink_name,
-      drink_cups: nightOut.drink_cups,
-      drink_count: nightOut.drink_count,
-      party_size: nightOut.party_size,
-    })
-    .select("id")
-    .single();
+  const moodSnapshot =
+    input.tonightSocialMood && isTonightSocialMoodId(input.tonightSocialMood)
+      ? input.tonightSocialMood
+      : null;
 
-  if (error) {
-    return { postId: null, error: error.message };
+  const baseRow = {
+    shop_id: input.shopId,
+    author_id: input.userId,
+    is_guest_post: true,
+    comment,
+    moods: [],
+    hashtags,
+    media_type: mediaType,
+    images,
+    video_url: videoUrl,
+    posted_at: new Date().toISOString(),
+    stop_number: nightOut.stop_number,
+    visit_order: nightOut.visit_order,
+    drink_name: nightOut.drink_name,
+    drink_cups: nightOut.drink_cups,
+    drink_count: nightOut.drink_count,
+    party_size: nightOut.party_size,
+  };
+
+  let data: { id: string } | null = null;
+  let error: { message: string } | null = null;
+
+  if (moodSnapshot) {
+    const attempt = await supabase
+      .from("vibe_posts")
+      .insert({ ...baseRow, author_tonight_social_mood: moodSnapshot })
+      .select("id")
+      .single();
+    data = attempt.data;
+    error = attempt.error;
+    if (error?.message.includes("author_tonight_social_mood")) {
+      const fallback = await supabase
+        .from("vibe_posts")
+        .insert(baseRow)
+        .select("id")
+        .single();
+      data = fallback.data;
+      error = fallback.error;
+    }
+  } else {
+    const attempt = await supabase.from("vibe_posts").insert(baseRow).select("id").single();
+    data = attempt.data;
+    error = attempt.error;
+  }
+
+  if (error || !data) {
+    return { postId: null, error: error?.message ?? "投稿の保存に失敗しました" };
   }
 
   return { postId: data.id, error: null };

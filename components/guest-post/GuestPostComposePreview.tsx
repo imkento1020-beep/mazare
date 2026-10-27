@@ -5,6 +5,7 @@ import GuestPostFeedCard from "@/components/posts/GuestPostFeedCard";
 import type { NightOutInput } from "@/lib/guest-post/nightOut";
 import { normalizeNightOutInput } from "@/lib/guest-post/nightOut";
 import type { Shop, VibePost } from "@/lib/home/types";
+import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
 
 type GuestPostComposePreviewProps = {
   imageFiles: File[];
@@ -18,6 +19,7 @@ type GuestPostComposePreviewProps = {
   hideChrome?: boolean;
   /** 仕上げ画面: カードを画面いっぱいに */
   immersive?: boolean;
+  authorTonightSocialMood?: TonightSocialMoodId | null;
 };
 
 function useObjectUrls(files: File[]) {
@@ -46,6 +48,7 @@ export default function GuestPostComposePreview({
   fillHeight = false,
   hideChrome = false,
   immersive = false,
+  authorTonightSocialMood = null,
 }: GuestPostComposePreviewProps) {
   const imageUrls = useObjectUrls(imageFiles);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
@@ -109,6 +112,7 @@ export default function GuestPostComposePreview({
   const card = (
     <GuestPostFeedCard
       post={draftPost}
+      authorTonightSocialMood={authorTonightSocialMood}
       showActions={false}
       mediaFit={immersive ? "cover" : "contain"}
       fillViewport={immersive}

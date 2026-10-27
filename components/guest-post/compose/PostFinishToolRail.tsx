@@ -2,18 +2,21 @@
 
 import {
   FeedCommentIcon,
-  FeedGlassIcon,
+  FeedPeopleIcon,
   FeedPinIcon,
+  FeedWaveIcon,
 } from "@/components/icons/FeedActionIcons";
+import { labelForTonightSocialMood } from "@/lib/profile/tonightSocialMood";
+import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
 
-type ToolId = "comment" | "stop" | "details" | "shop";
+type ToolId = "comment" | "mood" | "party" | "shop";
 
 type PostFinishToolRailProps = {
   activeSheet: ToolId | null;
   onOpen: (id: ToolId) => void;
-  stopNumber: number | null;
+  socialMood: TonightSocialMoodId | null;
+  partySize: number | null;
   hasComment: boolean;
-  hasDetails: boolean;
   showShopTool: boolean;
 };
 
@@ -47,11 +50,13 @@ function RailButton({
 export default function PostFinishToolRail({
   activeSheet,
   onOpen,
-  stopNumber,
+  socialMood,
+  partySize,
   hasComment,
-  hasDetails,
   showShopTool,
 }: PostFinishToolRailProps) {
+  const moodShort = labelForTonightSocialMood(socialMood);
+
   return (
     <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-3 pb-[env(safe-area-inset-bottom,0px)]">
       <RailButton
@@ -63,21 +68,31 @@ export default function PostFinishToolRail({
       </RailButton>
 
       <RailButton
-        label="今夜何軒目"
-        active={activeSheet === "stop" || stopNumber != null}
-        onClick={() => onOpen("stop")}
+        label="今夜の気分"
+        active={activeSheet === "mood" || socialMood != null}
+        onClick={() => onOpen("mood")}
       >
-        <span className="text-sm font-black tabular-nums text-white">
-          {stopNumber ?? "?"}
-        </span>
+        {moodShort ? (
+          <span className="max-w-[2.25rem] truncate text-[9px] font-black leading-tight text-white">
+            {moodShort.replace("歓迎", "").trim() || moodShort.slice(0, 2)}
+          </span>
+        ) : (
+          <FeedWaveIcon size={20} color="#ffffff" />
+        )}
       </RailButton>
 
       <RailButton
-        label="今夜の詳細"
-        active={activeSheet === "details" || hasDetails}
-        onClick={() => onOpen("details")}
+        label="誰といる？"
+        active={activeSheet === "party" || partySize != null}
+        onClick={() => onOpen("party")}
       >
-        <FeedGlassIcon size={22} color="#ffcc66" />
+        {partySize != null && partySize >= 1 ? (
+          <span className="text-sm font-black tabular-nums text-white">
+            {partySize}
+          </span>
+        ) : (
+          <FeedPeopleIcon size={20} color="#00e87a" />
+        )}
       </RailButton>
 
       {showShopTool ? (
