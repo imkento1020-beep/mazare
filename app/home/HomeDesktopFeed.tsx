@@ -265,7 +265,14 @@ export default function HomeDesktopFeed() {
     setTonightInterests((prev) => prev.filter((item) => item.id !== interestId));
   }
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return (
+      <LoadingScreen
+        message="フィードを読み込んでいます"
+        submessage="今夜の投稿を集めています"
+      />
+    );
+  }
 
   return (
     <GuestLayout

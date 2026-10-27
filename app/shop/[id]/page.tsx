@@ -348,7 +348,14 @@ export default function ShopDetailPage() {
     setFavorited(!favorited);
   }
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return (
+      <LoadingScreen
+        message="お店の情報を読み込んでいます"
+        submessage="今夜の発信や基本情報を取得しています"
+      />
+    );
+  }
 
   if (!shop) {
     return (

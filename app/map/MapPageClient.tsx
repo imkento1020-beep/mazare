@@ -39,6 +39,7 @@ import {
 } from "@/hooks/useEnrichShopNearestStations";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { isRegisteredUser } from "@/lib/auth/anonymous";
+import LoadingScreen from "@/components/layout/LoadingScreen";
 
 type MapPageClientProps = {
   setupHint: string;
@@ -223,9 +224,10 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[#080810]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#ff3d00] border-t-transparent" />
-      </div>
+      <LoadingScreen
+        message="地図を読み込んでいます"
+        submessage="今夜の投稿とお店の位置情報を取得しています"
+      />
     );
   }
 

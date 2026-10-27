@@ -38,6 +38,8 @@ type GuestPostFeedCardProps = {
   className?: string;
   /** 投稿作成プレビューなどでは contain で全体表示 */
   mediaFit?: "cover" | "contain";
+  /** 仕上げ画面など、4:5 ではなく親の高さいっぱい */
+  fillViewport?: boolean;
 };
 
 function authorInitial(name: string | null | undefined) {
@@ -320,6 +322,7 @@ export default function GuestPostFeedCard({
   shopHref,
   className = "",
   mediaFit = "cover",
+  fillViewport = false,
 }: GuestPostFeedCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -393,7 +396,11 @@ export default function GuestPostFeedCard({
     <article
       className={`overflow-hidden rounded-[12px] bg-[#080810] ${className}`}
     >
-      <div className="relative aspect-[4/5] w-full overflow-hidden">
+      <div
+        className={`relative w-full overflow-hidden ${
+          fillViewport ? "h-full min-h-[100%] aspect-auto" : "aspect-[4/5]"
+        }`}
+      >
         <MediaLayer post={post} mediaFit={mediaFit} />
 
         {hasMedia && (

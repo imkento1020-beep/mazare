@@ -76,6 +76,10 @@ export async function createGuestVibePost(input: {
   const hasImages = imageFiles.length > 0;
   const hasVideo = Boolean(input.videoFile);
 
+  if (!hasImages && !hasVideo) {
+    return { postId: null, error: "写真または動画を追加してください" };
+  }
+
   if (hasImages) {
     const uploaded = await uploadGuestPostImages({
       userId: input.userId,

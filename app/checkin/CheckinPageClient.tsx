@@ -19,6 +19,7 @@ import { loadNearbyFromUserGesture } from "@/lib/places/loadNearbyFromUserGestur
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 import { ensureAnonymousSession } from "@/lib/auth/anonymous";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
+import { LoadingBlock, LoadingOverlay } from "@/components/layout/LoadingScreen";
 
 export default function CheckinPageClient() {
   const { apiKey: mapsApiKey, loading: mapsKeyLoading } = useGoogleMapsApiKey();
@@ -211,10 +212,15 @@ export default function CheckinPageClient() {
         {locationDenied && <GeolocationPermissionHelp className="mt-3" />}
 
         <div className="mt-4 space-y-2">
-          {loadingPlaces && (
-            <p className="text-xs text-[#9994a8]">お店を読み込み中…</p>
-          )}
-          {places.map((place) => {
+          {loadingPlaces ? (
+            <LoadingBlock
+              message="お店を検索しています"
+              submessage="近くの店舗候補を取得しています"
+              className="py-8"
+            />
+          ) : null}
+          {!loadingPlaces &&
+            places.map((place) => {
             const active = place.shopId === selectedShopId;
             return (
               <button
@@ -232,7 +238,7 @@ export default function CheckinPageClient() {
                 <p className="mt-1 text-xs text-[#9994a8]">{place.address}</p>
               </button>
             );
-          })}
+            })}
         </div>
 
         <button
@@ -256,6 +262,13 @@ export default function CheckinPageClient() {
 
         <GoogleAttribution className="mt-8" />
       </main>
+
+      {submitting ? (
+        <LoadingOverlay
+          message="チェックインしています"
+          submessage="お店への到着を記録しています"
+        />
+      ) : null}
 
       <BottomNav />
     </div>

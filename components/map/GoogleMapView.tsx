@@ -336,11 +336,17 @@ export default function GoogleMapView({
       className={`relative h-full w-full ${preview ? "min-h-0" : "min-h-[50dvh]"} ${className}`}
     >
       <div ref={containerRef} className="absolute inset-0" />
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#080810]/80">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#ff3d00] border-t-transparent" />
+      {loading ? (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#080810]/85 backdrop-blur-[2px]"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#ff3d00] border-t-transparent" />
+          <p className="text-sm font-bold text-[#eeeaf4]">地図を表示しています</p>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

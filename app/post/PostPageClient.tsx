@@ -32,6 +32,10 @@ import PostStepShop from "@/components/guest-post/compose/PostStepShop";
 import PostStepMedia from "@/components/guest-post/compose/PostStepMedia";
 import PostStepFinish from "@/components/guest-post/compose/PostStepFinish";
 import {
+  LoadingBlock,
+  LoadingOverlay,
+} from "@/components/layout/LoadingScreen";
+import {
   type PostComposeStep,
   postComposeStepOrder,
   type SelectedPostShop,
@@ -208,19 +212,24 @@ export default function PostPageClient() {
         apiKey: mapsApiKey,
         origin: userCoords ?? undefined,
       });
-      const cached = await cachePlacesForPost(found);
-      setPlaces(cached);
-      if (cached.length === 0) {
+      setPlaces(found);
+      if (found.length === 0) {
         setError(
           "該当するお店が見つかりませんでした。店名や住所でもう一度試してください。",
         );
+        return;
       }
+      setLoadingPlaces(false);
+      const cached = await cachePlacesForPost(found);
+      setPlaces(cached);
     } catch (err) {
       setError(err instanceof Error ? err.message : "検索に失敗しました");
     } finally {
       setLoadingPlaces(false);
     }
   }
+
+  const hasMedia = imageFiles.length > 0 || Boolean(videoFile);
 
   function handleUseCheckinShop() {
     if (!checkinShop) return;
@@ -249,8 +258,14 @@ export default function PostPageClient() {
       setError("お店を選んでください");
       return;
     }
+    if (!hasMedia) {
+      setError("写真または動画を追加してください");
+      setStep("media");
+      return;
+    }
     if (nightOut.stopNumber == null || nightOut.stopNumber < 1) {
       setError("今夜何軒目かを選んでください");
+      setStep("finish");
       return;
     }
     if (!authReady) {
@@ -346,7 +361,7 @@ export default function PostPageClient() {
   const isFinish = step === "finish";
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#080810] pb-28 text-[#eeeaf4] md:pb-8">
+    <div className="flex min-h-dvh flex-col bg-[#080810] text-[#eeeaf4]">
       <Header />
 
       <div className="sticky top-16 z-20 border-b border-white/[0.06] bg-[#080810]/95 backdrop-blur-md">
@@ -381,7 +396,13 @@ export default function PostPageClient() {
         </div>
       </div>
 
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 py-4">
+      <main
+        className={`mx-auto flex w-full max-w-lg flex-1 flex-col ${
+          step === "finish"
+            ? "min-h-0 overflow-hidden px-0 py-0"
+            : "px-4 py-4 pb-28"
+        }`}
+      >
         {!mapsKeyLoading && !mapsApiKey && step === "shop" ? (
           <p className="mb-3 rounded-lg border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
             近くのお店の表示には Google Maps API キーが必要です。検索はサーバー経由で利用できます。
@@ -411,7 +432,10 @@ export default function PostPageClient() {
         ) : null}
 
         {step === "media" && !selectedShop && loadingPresetShop ? (
-          <p className="py-12 text-center text-sm text-[#9994a8]">お店を読み込み中…</p>
+          <LoadingBlock
+            message="お店を読み込んでいます"
+            submessage="投稿先の店舗情報を確認しています"
+          />
         ) : null}
 
         {step === "media" && selectedShop ? (
@@ -450,7 +474,11 @@ export default function PostPageClient() {
         ) : null}
 
         {error ? (
-          <p className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <p
+            className={`mt-4 rounded-lg border border-red-500/30 bg-red-500/10 py-3 text-sm text-red-400 ${
+              step === "finish" ? "mx-4 px-4" : "px-4"
+            }`}
+          >
             {error}
           </p>
         ) : null}
@@ -461,25 +489,16 @@ export default function PostPageClient() {
       </main>
 
       {step !== "finish" ? (
-        <div className="fixed inset-x-0 bottom-16 z-30 border-t border-white/[0.06] bg-[#080810]/95 px-4 py-3 backdrop-blur-md md:bottom-0">
-          <div className="mx-auto flex max-w-lg gap-2">
-            {step === "media" ? (
-              <button
-                type="button"
-                onClick={goNext}
-                className="flex-1 rounded-[14px] border border-white/15 py-3.5 text-sm font-bold text-[#9994a8]"
-              >
-                写真なしで続ける
-              </button>
-            ) : null}
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06] bg-[#080810]/98 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md">
+          <div className="mx-auto flex max-w-lg">
             <button
               type="button"
               disabled={
                 (step === "shop" && !selectedShopId) ||
-                (step === "media" && !selectedShop)
+                (step === "media" && (!selectedShop || !hasMedia))
               }
               onClick={goNext}
-              className="flex-[2] rounded-[14px] bg-[#ff3d00] py-3.5 text-sm font-black text-white disabled:opacity-50"
+              className="w-full rounded-[14px] bg-[#ff3d00] py-3.5 text-sm font-black text-white disabled:opacity-50"
             >
               次へ
             </button>
@@ -487,7 +506,13 @@ export default function PostPageClient() {
         </div>
       ) : null}
 
-      <BottomNav />
+      {submitting ? (
+        <LoadingOverlay
+          message="投稿しています"
+          submessage="写真や動画がある場合は少し時間がかかります"
+        />
+      ) : null}
+
     </div>
   );
 }

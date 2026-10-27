@@ -9,15 +9,17 @@ type GuestPostFinishMetaProps = {
   userId: string | null;
   value: NightOutInput;
   onChange: Dispatch<SetStateAction<NightOutInput>>;
+  mode?: "full" | "stopOnly" | "detailsOnly";
 };
 
 export default function GuestPostFinishMeta({
   userId,
   value,
   onChange,
+  mode = "full",
 }: GuestPostFinishMetaProps) {
   const suggestedStopRef = useRef(false);
-  const [optionalOpen, setOptionalOpen] = useState(false);
+  const [optionalOpen, setOptionalOpen] = useState(mode === "detailsOnly");
 
   useEffect(() => {
     if (!userId || suggestedStopRef.current) return;
@@ -50,47 +52,38 @@ export default function GuestPostFinishMeta({
 
   const stop = value.stopNumber ?? 1;
 
-  return (
-    <div className="space-y-3">
-      <div>
-        <p className="text-xs font-bold text-[#9994a8]">
-          今夜何軒目？ <span className="text-[#ff3d00]">*</span>
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
-            const active = value.stopNumber === n;
-            return (
-              <button
-                key={n}
-                type="button"
-                onClick={() => onChange({ ...value, stopNumber: n })}
-                className={`min-w-[2.5rem] rounded-full px-3 py-1.5 text-sm font-bold transition ${
-                  active
-                    ? "bg-[#ff3d00] text-white"
-                    : "border border-white/15 bg-black/40 text-[#eeeaf4]"
-                }`}
-              >
-                {n}
-              </button>
-            );
-          })}
-        </div>
-        <p className="mt-1 text-[10px] text-[#5a5668]">
-          提案: {stop}軒目（タップで変更）
-        </p>
+  const stopSection = (
+    <div>
+      <p className="text-xs font-bold text-[#9994a8]">
+        今夜何軒目？ <span className="text-[#ff3d00]">*</span>
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
+          const active = value.stopNumber === n;
+          return (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange({ ...value, stopNumber: n })}
+              className={`min-w-[2.5rem] rounded-full px-3 py-1.5 text-sm font-bold transition ${
+                active
+                  ? "bg-[#ff3d00] text-white"
+                  : "border border-white/15 bg-[#111118] text-[#eeeaf4]"
+              }`}
+            >
+              {n}
+            </button>
+          );
+        })}
       </div>
+      <p className="mt-2 text-[11px] text-[#5a5668]">
+        提案: {stop}軒目（タップで変更）
+      </p>
+    </div>
+  );
 
-      <button
-        type="button"
-        onClick={() => setOptionalOpen((open) => !open)}
-        className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/35 px-3 py-2.5 text-left text-xs font-bold text-[#9994a8]"
-      >
-        今夜の詳細を追加（任意）
-        <span className="text-[#ff3d00]">{optionalOpen ? "−" : "+"}</span>
-      </button>
-
-      {optionalOpen ? (
-        <div className="space-y-3 rounded-xl border border-white/10 bg-black/40 p-3">
+  const detailsSection = (
+    <div className="space-y-3">
           <div>
             <label
               htmlFor="finish-drink-name"
@@ -187,8 +180,29 @@ export default function GuestPostFinishMeta({
               </button>
             </div>
           </div>
-        </div>
-      ) : null}
+    </div>
+  );
+
+  if (mode === "stopOnly") {
+    return <div className="space-y-1">{stopSection}</div>;
+  }
+
+  if (mode === "detailsOnly") {
+    return detailsSection;
+  }
+
+  return (
+    <div className="space-y-3">
+      {stopSection}
+      <button
+        type="button"
+        onClick={() => setOptionalOpen((open) => !open)}
+        className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/35 px-3 py-2.5 text-left text-xs font-bold text-[#9994a8]"
+      >
+        今夜の詳細を追加（任意）
+        <span className="text-[#ff3d00]">{optionalOpen ? "−" : "+"}</span>
+      </button>
+      {optionalOpen ? detailsSection : null}
     </div>
   );
 }

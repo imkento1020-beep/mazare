@@ -3,6 +3,7 @@
 import type { PlaceSummary } from "@/lib/places/types";
 import GeolocationPermissionHelp from "@/components/geo/GeolocationPermissionHelp";
 import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
+import { LoadingBlock } from "@/components/layout/LoadingScreen";
 
 type PostStepShopProps = {
   searchQuery: string;
@@ -64,9 +65,10 @@ export default function PostStepShop({
         />
         <button
           type="submit"
-          className="rounded-[12px] bg-[#111118] px-4 text-sm font-bold text-[#ff3d00]"
+          disabled={loadingPlaces}
+          className="rounded-[12px] bg-[#111118] px-4 text-sm font-bold text-[#ff3d00] disabled:opacity-50"
         >
-          検索
+          {loadingPlaces ? "…" : "検索"}
         </button>
       </form>
 
@@ -82,29 +84,42 @@ export default function PostStepShop({
 
       {locationDenied ? <GeolocationPermissionHelp className="mt-1" /> : null}
 
-      <div className="space-y-2">
+      <div className="relative space-y-2">
         {loadingPlaces ? (
-          <p className="text-xs text-[#9994a8]">お店を読み込み中…</p>
+          <LoadingBlock
+            message="お店を検索しています"
+            submessage="候補が見つかり次第、すぐ下に表示します"
+            className="py-6"
+          />
         ) : null}
-        {places.map((place) => {
-          const active = place.shopId === selectedShopId;
-          return (
-            <button
-              key={place.googlePlaceId}
-              type="button"
-              disabled={!place.shopId}
-              onClick={() => place.shopId && onSelectShop(place.shopId)}
-              className={`w-full rounded-[12px] border p-4 text-left transition ${
-                active
-                  ? "border-[#ff3d00]/50 bg-[#ff3d00]/10"
-                  : "border-white/10 bg-[#111118]"
-              }`}
-            >
-              <p className="font-bold">{place.name}</p>
-              <p className="mt-1 text-xs text-[#9994a8]">{place.address}</p>
-            </button>
-          );
-        })}
+        {places.length > 0 ? (
+          <ul
+            className={`space-y-2 ${loadingPlaces ? "pointer-events-none opacity-50" : ""}`}
+          >
+            {places.map((place) => {
+              const active = place.shopId === selectedShopId;
+              return (
+                <li key={place.googlePlaceId}>
+                  <button
+                    type="button"
+                    disabled={!place.shopId}
+                    onClick={() => place.shopId && onSelectShop(place.shopId)}
+                    className={`w-full rounded-[12px] border p-4 text-left transition ${
+                      active
+                        ? "border-[#ff3d00]/50 bg-[#ff3d00]/10"
+                        : "border-white/10 bg-[#111118]"
+                    } ${!place.shopId ? "opacity-70" : ""}`}
+                  >
+                    <p className="font-bold">{place.name}</p>
+                    <p className="mt-1 text-xs text-[#9994a8]">
+                      {place.address || "店舗情報を準備中…"}
+                    </p>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
       </div>
     </div>
   );

@@ -16,6 +16,8 @@ type GuestPostComposePreviewProps = {
   existingPost?: VibePost | null;
   fillHeight?: boolean;
   hideChrome?: boolean;
+  /** 仕上げ画面: カードを画面いっぱいに */
+  immersive?: boolean;
 };
 
 function useObjectUrls(files: File[]) {
@@ -43,6 +45,7 @@ export default function GuestPostComposePreview({
   existingPost = null,
   fillHeight = false,
   hideChrome = false,
+  immersive = false,
 }: GuestPostComposePreviewProps) {
   const imageUrls = useObjectUrls(imageFiles);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
@@ -107,13 +110,28 @@ export default function GuestPostComposePreview({
     <GuestPostFeedCard
       post={draftPost}
       showActions={false}
-      mediaFit="contain"
-      className={fillHeight ? "min-h-[70dvh]" : undefined}
+      mediaFit={immersive ? "cover" : "contain"}
+      fillViewport={immersive}
+      className={
+        fillHeight
+          ? immersive
+            ? "flex h-full min-h-full flex-col rounded-none"
+            : "min-h-[70dvh]"
+          : undefined
+      }
     />
   );
 
   return (
-    <div className={fillHeight ? "h-full min-h-[70dvh]" : undefined}>
+    <div
+      className={
+        fillHeight
+          ? immersive
+            ? "h-full min-h-full"
+            : "h-full min-h-[70dvh]"
+          : undefined
+      }
+    >
       {!hideChrome ? (
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#5a5668]">
@@ -126,8 +144,12 @@ export default function GuestPostComposePreview({
       ) : null}
       {!hasDraftMedia && !useExisting ? (
         <div
-          className={`flex items-center justify-center rounded-2xl border border-dashed border-white/10 bg-[#111118] px-6 py-10 text-center ${
-            fillHeight ? "min-h-[70dvh]" : ""
+          className={`flex items-center justify-center border border-dashed border-white/10 bg-[#111118] px-6 py-10 text-center ${
+            fillHeight
+              ? immersive
+                ? "h-full min-h-full rounded-none"
+                : "min-h-[70dvh] rounded-2xl"
+              : "rounded-2xl"
           }`}
         >
           <p className="text-sm text-[#5a5668]">

@@ -178,7 +178,14 @@ export default function SearchPageClient() {
     });
   }
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return (
+      <LoadingScreen
+        message="探す画面を準備しています"
+        submessage="お店と投稿の一覧を読み込んでいます"
+      />
+    );
+  }
 
   const resultCount =
     mode === "shops" ? displayedShops.length : filteredPosts.length;

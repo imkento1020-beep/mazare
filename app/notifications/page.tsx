@@ -122,7 +122,14 @@ export default function NotificationsPage() {
     dispatchNotificationsRead();
   }
 
-  if (loading || !modeReady) return <LoadingScreen />;
+  if (loading || !modeReady) {
+    return (
+      <LoadingScreen
+        message="通知を読み込んでいます"
+        submessage="最新のお知らせを取得しています"
+      />
+    );
+  }
 
   const content = (
     <div className="md:max-w-2xl">
@@ -234,7 +241,9 @@ function OwnerNotificationsShell({ children }: { children: React.ReactNode }) {
     load();
   }, []);
 
-  if (!ready) return <LoadingScreen />;
+  if (!ready) {
+    return <LoadingScreen message="通知を読み込んでいます" />;
+  }
 
   return (
     <OwnerLayout shop={shop}>

@@ -266,5 +266,20 @@ export default function MapActivityGoogleMapView({
     map.setZoom(Math.max(map.getZoom() ?? DEFAULT_MAP_ZOOM, 15));
   }, [focusLocation, mapReady]);
 
-  return <div ref={containerRef} className="absolute inset-0" />;
+  return (
+    <div className="absolute inset-0">
+      <div ref={containerRef} className="absolute inset-0" />
+      {!mapReady ? (
+        <div
+          className="absolute inset-0 z-[5] flex flex-col items-center justify-center gap-3 bg-[#080810]/90"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#ff3d00] border-t-transparent" />
+          <p className="text-sm font-bold text-[#eeeaf4]">Google 地図を準備しています</p>
+        </div>
+      ) : null}
+    </div>
+  );
 }

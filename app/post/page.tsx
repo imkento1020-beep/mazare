@@ -9,7 +9,14 @@ export const metadata = {
 
 export default function PostPage() {
   return (
-    <Suspense fallback={<LoadingScreen />}>
+    <Suspense
+      fallback={
+        <LoadingScreen
+          message="投稿画面を開いています"
+          submessage="少々お待ちください"
+        />
+      }
+    >
       <PostPageClient />
     </Suspense>
   );

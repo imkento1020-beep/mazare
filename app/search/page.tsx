@@ -4,7 +4,14 @@ import SearchPageClient from "./SearchPageClient";
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<LoadingScreen />}>
+    <Suspense
+      fallback={
+        <LoadingScreen
+          message="探す画面を開いています"
+          submessage="少々お待ちください"
+        />
+      }
+    >
       <SearchPageClient />
     </Suspense>
   );

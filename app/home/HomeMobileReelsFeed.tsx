@@ -294,7 +294,14 @@ export default function HomeMobileReelsFeed() {
     [posts, stationMap],
   );
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return (
+      <LoadingScreen
+        message="フィードを読み込んでいます"
+        submessage="今夜の投稿を集めています"
+      />
+    );
+  }
 
   return (
     <div className="min-h-dvh bg-[#080810] text-[#eeeaf4]">
