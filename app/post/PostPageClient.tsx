@@ -1,24 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { invalidateCachedPrefix } from "@/lib/cache/clientCache";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import GoogleAttribution from "@/components/places/GoogleAttribution";
-import {
-  GUEST_POST_BODY_MAX_LENGTH,
-  parseGuestPostBody,
-} from "@/lib/guest-post/composeBody";
-import GuestPostMetaFields from "@/components/guest-post/GuestPostMetaFields";
-import GuestPostBodyHashtagSuggestions from "@/components/guest-post/GuestPostBodyHashtagSuggestions";
-import GuestPostComposePreview from "@/components/guest-post/GuestPostComposePreview";
-import GuestPostMediaUpload from "@/components/guest-post/GuestPostMediaUpload";
+import { parseGuestPostBody } from "@/lib/guest-post/composeBody";
 import { createGuestVibePost } from "@/lib/guest-post/createPost";
 import type { NightOutInput } from "@/lib/guest-post/nightOut";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
-import { FeedGlassIcon, FeedPinIcon } from "@/components/icons/FeedActionIcons";
+import { FeedGlassIcon } from "@/components/icons/FeedActionIcons";
 import { FireIcon } from "@/components/icons/MazareIcons";
 import {
   countGuestPostsByUser,
@@ -30,21 +22,42 @@ import {
   cachePlacesForPost,
   searchPlacesByTextForPostPage,
 } from "@/lib/places/clientPlaces";
-import GeolocationPermissionHelp from "@/components/geo/GeolocationPermissionHelp";
 import { loadNearbyFromUserGesture } from "@/lib/places/loadNearbyFromUserGesture";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
+import { fetchShopById } from "@/lib/shop/api";
+import { supabase } from "@/lib/supabase";
+import type { Shop } from "@/lib/home/types";
+import PostComposeProgress from "@/components/guest-post/compose/PostComposeProgress";
+import PostStepShop from "@/components/guest-post/compose/PostStepShop";
+import PostStepMedia from "@/components/guest-post/compose/PostStepMedia";
+import PostStepFinish from "@/components/guest-post/compose/PostStepFinish";
+import {
+  type PostComposeStep,
+  postComposeStepOrder,
+  type SelectedPostShop,
+} from "@/lib/guest-post/postComposeSteps";
 
 export default function PostPageClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { openFormalRegistrationPrompt } = useAuthPrompt();
   const { user, ready: authReady, authError } = useAnonymousAuth();
   const { apiKey: mapsApiKey, loading: mapsKeyLoading } = useGoogleMapsApiKey();
+
+  const urlShopId = searchParams.get("shopId")?.trim() || null;
+
+  const [step, setStep] = useState<PostComposeStep>(
+    urlShopId ? "media" : "shop",
+  );
+  const [lockedShop, setLockedShop] = useState<SelectedPostShop | null>(null);
   const [places, setPlaces] = useState<PlaceSummary[]>([]);
   const [userCoords, setUserCoords] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
-  const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
+  const [selectedShopId, setSelectedShopId] = useState<string | null>(
+    urlShopId,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [bodyText, setBodyText] = useState("");
   const [nightOut, setNightOut] = useState<NightOutInput>({
@@ -60,24 +73,108 @@ export default function PostPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [locationDenied, setLocationDenied] = useState(false);
   const [successShopName, setSuccessShopName] = useState<string | null>(null);
+  const [checkinShop, setCheckinShop] = useState<{
+    shopId: string;
+    name: string;
+  } | null>(null);
+  const [loadingPresetShop, setLoadingPresetShop] = useState(Boolean(urlShopId));
 
-  const selectedPlace = useMemo(
-    () => places.find((place) => place.shopId === selectedShopId) ?? null,
-    [places, selectedShopId],
-  );
-
+  const shopPreselected = Boolean(lockedShop);
   const parsedBody = useMemo(() => parseGuestPostBody(bodyText), [bodyText]);
 
-  const previewShop = useMemo(() => {
-    if (!selectedPlace?.shopId) return null;
+  const selectedShop = useMemo((): SelectedPostShop | null => {
+    if (lockedShop) return lockedShop;
+    const place = places.find((p) => p.shopId === selectedShopId);
+    if (!place?.shopId) return null;
     return {
-      id: selectedPlace.shopId,
-      name: selectedPlace.name,
-      address: selectedPlace.address,
+      id: place.shopId,
+      name: place.name,
+      address: place.address,
+    };
+  }, [lockedShop, places, selectedShopId]);
+
+  const previewShop = useMemo((): Shop | null => {
+    if (!selectedShop) return null;
+    return {
+      id: selectedShop.id,
+      name: selectedShop.name,
+      address: selectedShop.address,
       genre: null,
       open_hours: null,
     };
-  }, [selectedPlace]);
+  }, [selectedShop]);
+
+  const goBack = useCallback(() => {
+    const order = postComposeStepOrder(shopPreselected);
+    const index = order.indexOf(step);
+    if (index > 0) setStep(order[index - 1]!);
+  }, [shopPreselected, step]);
+
+  const goNext = useCallback(() => {
+    const order = postComposeStepOrder(shopPreselected);
+    const index = order.indexOf(step);
+    if (index >= 0 && index < order.length - 1) {
+      setStep(order[index + 1]!);
+    }
+  }, [shopPreselected, step]);
+
+  useEffect(() => {
+    if (!urlShopId) return;
+
+    let cancelled = false;
+    void fetchShopById(urlShopId).then((result) => {
+      if (cancelled) return;
+      setLoadingPresetShop(false);
+      if (!result.data) {
+        setError(result.error ?? "店舗が見つかりません");
+        setStep("shop");
+        return;
+      }
+      setLockedShop({
+        id: result.data.id,
+        name: result.data.name,
+        address: result.data.address,
+      });
+      setSelectedShopId(result.data.id);
+      setStep("media");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [urlShopId]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setCheckinShop(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      const { data, error: checkinError } = await supabase
+        .from("checkins")
+        .select("shop_id, shops(name)")
+        .eq("user_id", user.id)
+        .gt("expires_at", new Date().toISOString())
+        .order("checked_in_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cancelled || checkinError || !data?.shop_id) return;
+
+      const shopRow = data.shops as { name?: string } | null;
+      setCheckinShop({
+        shopId: String(data.shop_id),
+        name: shopRow?.name?.trim() || "チェックイン中のお店",
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   function handleLoadNearbyClick() {
     if (!mapsApiKey) return;
@@ -114,7 +211,9 @@ export default function PostPageClient() {
       const cached = await cachePlacesForPost(found);
       setPlaces(cached);
       if (cached.length === 0) {
-        setError("該当するお店が見つかりませんでした。店名や住所でもう一度試してください。");
+        setError(
+          "該当するお店が見つかりませんでした。店名や住所でもう一度試してください。",
+        );
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "検索に失敗しました");
@@ -123,8 +222,30 @@ export default function PostPageClient() {
     }
   }
 
+  function handleUseCheckinShop() {
+    if (!checkinShop) return;
+    setSelectedShopId(checkinShop.shopId);
+    setPlaces((prev) => {
+      if (prev.some((p) => p.shopId === checkinShop.shopId)) return prev;
+      return [
+        {
+          googlePlaceId: `checkin-${checkinShop.shopId}`,
+          name: checkinShop.name,
+          address: "",
+          latitude: 0,
+          longitude: 0,
+          types: [],
+          openHoursText: null,
+          photoUrl: null,
+          shopId: checkinShop.shopId,
+        },
+        ...prev,
+      ];
+    });
+  }
+
   async function handleSubmit() {
-    if (!selectedShopId || !selectedPlace) {
+    if (!selectedShop) {
       setError("お店を選んでください");
       return;
     }
@@ -158,12 +279,11 @@ export default function PostPageClient() {
     }
 
     const priorCount = await countGuestPostsByUser(activeUser.id);
-
     const { comment, hashtags } = parseGuestPostBody(bodyText);
 
     const result = await createGuestVibePost({
       userId: activeUser.id,
-      shopId: selectedShopId,
+      shopId: selectedShop.id,
       hashtags,
       nightOut,
       comment,
@@ -182,16 +302,7 @@ export default function PostPageClient() {
     if (typeof window !== "undefined") {
       sessionStorage.setItem("mazare_feed_refresh", "1");
     }
-    setSuccessShopName(selectedPlace.name);
-    setBodyText("");
-    setNightOut({
-      stopNumber: null,
-      drinkName: "",
-      tonightTotalCups: null,
-      partySize: null,
-    });
-    setImageFiles([]);
-    setVideoFile(null);
+    setSuccessShopName(selectedShop.name);
 
     const totalPosts = priorCount + 1;
     if (activeUser.is_anonymous && totalPosts >= 5) {
@@ -217,9 +328,7 @@ export default function PostPageClient() {
             <FeedGlassIcon size={20} color="#ffcc66" />
             引き続き、最高の夜を。乾杯！
           </p>
-          {successShopName && (
-            <p className="mt-2 text-xs text-[#9994a8]">{successShopName}</p>
-          )}
+          <p className="mt-2 text-xs text-[#9994a8]">{successShopName}</p>
           <button
             type="button"
             onClick={() => router.push("/home?posted=1")}
@@ -233,142 +342,150 @@ export default function PostPageClient() {
     );
   }
 
+  const showBack = postComposeStepOrder(shopPreselected).indexOf(step) > 0;
+  const isFinish = step === "finish";
+
   return (
     <div className="flex min-h-dvh flex-col bg-[#080810] pb-28 text-[#eeeaf4] md:pb-8">
       <Header />
 
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 py-6">
-        <h1 className="text-2xl font-black">今夜のお店をシェア</h1>
-        {!mapsKeyLoading && !mapsApiKey && (
-          <p className="mt-3 rounded-lg border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
-            Google Maps API キーが未設定です。Vercel の環境変数を確認してください。
-          </p>
-        )}
-        {authReady && !user && authError && (
-          <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-400">
-            {authError}
-          </p>
-        )}
-        <form onSubmit={handleSearch} className="mt-6 flex gap-2">
-          <input
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="お店名・エリアで検索"
-            className="flex-1 rounded-[12px] border border-white/10 bg-[#111118] px-4 py-3 text-sm outline-none focus:border-[#ff3d00]/40"
-          />
-          <button
-            type="submit"
-            className="rounded-[12px] bg-[#111118] px-4 text-sm font-bold text-[#ff3d00]"
-          >
-            検索
-          </button>
-        </form>
-
-        <button
-          type="button"
-          disabled={loadingPlaces || !mapsApiKey || mapsKeyLoading}
-          onClick={handleLoadNearbyClick}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] border border-[#ff3d00]/35 bg-[#ff3d00]/10 py-3.5 text-sm font-bold text-[#eeeaf4] transition hover:bg-[#ff3d00]/15 disabled:opacity-50"
-        >
-          <FeedPinIcon size={16} color="currentColor" />
-          現在地から近くのお店を表示
-        </button>
-
-        {locationDenied && <GeolocationPermissionHelp className="mt-3" />}
-
-        <div className="mt-4 space-y-2">
-          {loadingPlaces && (
-            <p className="text-xs text-[#9994a8]">お店を読み込み中…</p>
+      <div className="sticky top-16 z-20 border-b border-white/[0.06] bg-[#080810]/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-4 py-2">
+          {showBack ? (
+            <button
+              type="button"
+              onClick={goBack}
+              className="text-sm font-bold text-[#9994a8] hover:text-[#eeeaf4]"
+            >
+              戻る
+            </button>
+          ) : (
+            <span className="w-10" />
           )}
-          {places.map((place) => {
-            const active = place.shopId === selectedShopId;
-            return (
-              <button
-                key={place.googlePlaceId}
-                type="button"
-                disabled={!place.shopId}
-                onClick={() => place.shopId && setSelectedShopId(place.shopId)}
-                className={`w-full rounded-[12px] border p-4 text-left transition ${
-                  active
-                    ? "border-[#ff3d00]/50 bg-[#ff3d00]/10"
-                    : "border-white/10 bg-[#111118]"
-                }`}
-              >
-                <p className="font-bold">{place.name}</p>
-                <p className="mt-1 text-xs text-[#9994a8]">{place.address}</p>
-              </button>
-            );
-          })}
-        </div>
-
-        {selectedShopId && (
-          <section className="mt-8 space-y-6">
-            <GuestPostMediaUpload
-              imageFiles={imageFiles}
-              videoFile={videoFile}
-              onChange={(images, video) => {
-                setImageFiles(images);
-                setVideoFile(video);
-              }}
-            />
-
-            <GuestPostMetaFields
-              userId={user?.id ?? null}
-              value={nightOut}
-              onChange={setNightOut}
-            />
-
-            <div className="space-y-3 rounded-[16px] border border-white/10 bg-[#111118] p-5">
-              <label htmlFor="guest-post-comment" className="text-sm font-black">
-                コメント（任意・140文字）
-              </label>
-              <textarea
-                id="guest-post-comment"
-                value={bodyText}
-                onChange={(event) => setBodyText(event.target.value)}
-                maxLength={GUEST_POST_BODY_MAX_LENGTH}
-                rows={4}
-                placeholder="今夜のひとこと… #タグもこの欄に"
-                className="w-full resize-none rounded-[12px] border border-white/10 bg-[#080810] px-4 py-3 text-sm leading-relaxed outline-none focus:border-[#ff3d00]/40"
-              />
-              <GuestPostBodyHashtagSuggestions
-                bodyText={bodyText}
-                onBodyTextChange={setBodyText}
-              />
-            </div>
-
-            <GuestPostComposePreview
-              imageFiles={imageFiles}
-              videoFile={videoFile}
-              nightOut={nightOut}
-              comment={parsedBody.comment}
-              hashtags={parsedBody.hashtags}
-              shop={previewShop}
-            />
-
+          <p className="text-sm font-black">今夜のお店をシェア</p>
+          {isFinish ? (
             <button
               type="button"
               disabled={submitting || !authReady}
               onClick={() => void handleSubmit()}
-              className="w-full rounded-[14px] bg-[#ff3d00] py-4 text-base font-black text-white disabled:opacity-60"
+              className="text-sm font-black text-[#ff3d00] disabled:opacity-50"
             >
-              {!authReady
-                ? "接続を準備中…"
-                : submitting
-                  ? "投稿中…"
-                  : "投稿する"}
+              {submitting ? "…" : "投稿"}
             </button>
-          </section>
-        )}
+          ) : (
+            <span className="w-10" />
+          )}
+        </div>
+        <div className="mx-auto max-w-lg px-4 pb-2">
+          <PostComposeProgress current={step} shopPreselected={shopPreselected} />
+        </div>
+      </div>
 
-        {error && (
+      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 py-4">
+        {!mapsKeyLoading && !mapsApiKey && step === "shop" ? (
+          <p className="mb-3 rounded-lg border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
+            近くのお店の表示には Google Maps API キーが必要です。検索はサーバー経由で利用できます。
+          </p>
+        ) : null}
+        {authReady && !user && authError ? (
+          <p className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-400">
+            {authError}
+          </p>
+        ) : null}
+
+        {step === "shop" ? (
+          <PostStepShop
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            onSearchSubmit={handleSearch}
+            onLoadNearby={handleLoadNearbyClick}
+            loadingPlaces={loadingPlaces}
+            mapsKeyReady={Boolean(mapsApiKey) && !mapsKeyLoading}
+            locationDenied={locationDenied}
+            places={places}
+            selectedShopId={selectedShopId}
+            onSelectShop={setSelectedShopId}
+            checkinShop={checkinShop}
+            onUseCheckinShop={handleUseCheckinShop}
+          />
+        ) : null}
+
+        {step === "media" && !selectedShop && loadingPresetShop ? (
+          <p className="py-12 text-center text-sm text-[#9994a8]">お店を読み込み中…</p>
+        ) : null}
+
+        {step === "media" && selectedShop ? (
+          <PostStepMedia
+            shopName={selectedShop.name}
+            imageFiles={imageFiles}
+            videoFile={videoFile}
+            onChange={(images, video) => {
+              setImageFiles(images);
+              setVideoFile(video);
+            }}
+          />
+        ) : null}
+
+        {step === "finish" && previewShop ? (
+          <PostStepFinish
+            shop={previewShop}
+            imageFiles={imageFiles}
+            videoFile={videoFile}
+            nightOut={nightOut}
+            onNightOutChange={setNightOut}
+            bodyText={bodyText}
+            onBodyTextChange={setBodyText}
+            comment={parsedBody.comment}
+            hashtags={parsedBody.hashtags}
+            userId={user?.id ?? null}
+            shopLocked={shopPreselected}
+            onChangeShop={
+              shopPreselected
+                ? undefined
+                : () => {
+                    setStep("shop");
+                  }
+            }
+          />
+        ) : null}
+
+        {error ? (
           <p className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {error}
           </p>
-        )}
+        ) : null}
 
-        <GoogleAttribution className="mt-8" />
+        {step !== "finish" ? (
+          <GoogleAttribution className="mt-8" />
+        ) : null}
       </main>
+
+      {step !== "finish" ? (
+        <div className="fixed inset-x-0 bottom-16 z-30 border-t border-white/[0.06] bg-[#080810]/95 px-4 py-3 backdrop-blur-md md:bottom-0">
+          <div className="mx-auto flex max-w-lg gap-2">
+            {step === "media" ? (
+              <button
+                type="button"
+                onClick={goNext}
+                className="flex-1 rounded-[14px] border border-white/15 py-3.5 text-sm font-bold text-[#9994a8]"
+              >
+                写真なしで続ける
+              </button>
+            ) : null}
+            <button
+              type="button"
+              disabled={
+                (step === "shop" && !selectedShopId) ||
+                (step === "media" && !selectedShop)
+              }
+              onClick={goNext}
+              className="flex-[2] rounded-[14px] bg-[#ff3d00] py-3.5 text-sm font-black text-white disabled:opacity-50"
+            >
+              次へ
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <BottomNav />
     </div>

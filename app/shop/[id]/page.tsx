@@ -431,6 +431,13 @@ export default function ShopDetailPage() {
           )}
         </div>
 
+        <Link
+          href={`/post?shopId=${shopId}`}
+          className="mt-3 flex w-full items-center justify-center rounded-lg border border-[#ff3d00]/35 bg-[#ff3d00]/10 py-3 text-sm font-bold text-[#ff3d00] transition hover:bg-[#ff3d00]/15"
+        >
+          このお店で投稿する
+        </Link>
+
         <div className="mt-3">
           <button
             type="button"

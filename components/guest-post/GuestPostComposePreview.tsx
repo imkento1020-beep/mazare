@@ -14,6 +14,8 @@ type GuestPostComposePreviewProps = {
   hashtags?: string[];
   shop?: Shop | null;
   existingPost?: VibePost | null;
+  fillHeight?: boolean;
+  hideChrome?: boolean;
 };
 
 function useObjectUrls(files: File[]) {
@@ -39,6 +41,8 @@ export default function GuestPostComposePreview({
   hashtags = [],
   shop = null,
   existingPost = null,
+  fillHeight = false,
+  hideChrome = false,
 }: GuestPostComposePreviewProps) {
   const imageUrls = useObjectUrls(imageFiles);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
@@ -99,28 +103,41 @@ export default function GuestPostComposePreview({
             ? "既存のメディア"
             : null;
 
+  const card = (
+    <GuestPostFeedCard
+      post={draftPost}
+      showActions={false}
+      mediaFit="contain"
+      className={fillHeight ? "min-h-[70dvh]" : undefined}
+    />
+  );
+
   return (
-    <div>
-      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#5a5668]">
-          プレビュー
-        </p>
-        {mediaSummary && (
-          <p className="text-[11px] font-bold text-[#9994a8]">{mediaSummary}</p>
-        )}
-      </div>
+    <div className={fillHeight ? "h-full min-h-[70dvh]" : undefined}>
+      {!hideChrome ? (
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#5a5668]">
+            プレビュー
+          </p>
+          {mediaSummary ? (
+            <p className="text-[11px] font-bold text-[#9994a8]">{mediaSummary}</p>
+          ) : null}
+        </div>
+      ) : null}
       {!hasDraftMedia && !useExisting ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-[#111118] px-6 py-10 text-center">
+        <div
+          className={`flex items-center justify-center rounded-2xl border border-dashed border-white/10 bg-[#111118] px-6 py-10 text-center ${
+            fillHeight ? "min-h-[70dvh]" : ""
+          }`}
+        >
           <p className="text-sm text-[#5a5668]">
-            写真または動画を選ぶと、ここに投稿カードのプレビューが表示されます
+            {hideChrome
+              ? "写真なしの投稿プレビュー"
+              : "写真または動画を選ぶと、ここに投稿カードのプレビューが表示されます"}
           </p>
         </div>
       ) : (
-        <GuestPostFeedCard
-          post={draftPost}
-          showActions={false}
-          mediaFit="contain"
-        />
+        card
       )}
     </div>
   );

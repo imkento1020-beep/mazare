@@ -15,6 +15,8 @@ type GuestPostMediaUploadProps = {
   imageFiles: File[];
   videoFile: File | null;
   onChange: (images: File[], video: File | null) => void;
+  /** 投稿ウィザード Step2 用の大きめレイアウト */
+  layout?: "default" | "compose";
 };
 
 function useFileObjectUrls(files: File[]) {
@@ -36,7 +38,9 @@ export default function GuestPostMediaUpload({
   imageFiles,
   videoFile,
   onChange,
+  layout = "default",
 }: GuestPostMediaUploadProps) {
+  const isCompose = layout === "compose";
   const galleryRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const imagePreviewUrls = useFileObjectUrls(imageFiles);
@@ -88,7 +92,14 @@ export default function GuestPostMediaUpload({
   const hasMedia = Boolean(videoFile) || imageFiles.length > 0;
 
   return (
-    <div className="space-y-3 rounded-[16px] border border-[#ff3d00]/25 bg-[#111118] p-5">
+    <div
+      className={
+        isCompose
+          ? "space-y-4"
+          : "space-y-3 rounded-[16px] border border-[#ff3d00]/25 bg-[#111118] p-5"
+      }
+    >
+      {!isCompose ? (
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-black">写真・動画</h2>
         <div className="flex flex-wrap gap-2">
@@ -112,6 +123,28 @@ export default function GuestPostMediaUpload({
           </span>
         </div>
       </div>
+      ) : (
+        <div className="flex flex-wrap justify-end gap-2">
+          <span
+            className={`rounded-full px-2.5 py-1 text-[11px] font-bold tabular-nums ${
+              videoFile
+                ? "bg-[#ff3d00]/15 text-[#ff3d00]"
+                : "bg-[#18181f] text-[#5a5668]"
+            }`}
+          >
+            動画 {videoFile ? 1 : 0}/1
+          </span>
+          <span
+            className={`rounded-full px-2.5 py-1 text-[11px] font-bold tabular-nums ${
+              imageFiles.length > 0
+                ? "bg-[#ffaa00]/15 text-[#ffaa00]"
+                : "bg-[#18181f] text-[#5a5668]"
+            }`}
+          >
+            写真 {imageFiles.length}/3
+          </span>
+        </div>
+      )}
 
       <input
         ref={galleryRef}
@@ -134,15 +167,19 @@ export default function GuestPostMediaUpload({
         <button
           type="button"
           onClick={() => galleryRef.current?.click()}
-          className="flex flex-col items-center justify-center gap-2 rounded-[12px] border border-white/15 bg-[#080810] px-3 py-6 transition hover:border-[#ff3d00]/40"
+          className={`flex flex-col items-center justify-center gap-2 rounded-[12px] border border-white/15 bg-[#080810] px-3 transition hover:border-[#ff3d00]/40 ${
+            isCompose ? "min-h-[140px] py-8" : "py-6"
+          }`}
         >
-          <UploadIcon size={28} color="#9994a8" />
+          <UploadIcon size={isCompose ? 36 : 28} color="#9994a8" />
           <span className="text-xs font-bold text-[#eeeaf4]">ライブラリ</span>
         </button>
         <button
           type="button"
           onClick={() => cameraRef.current?.click()}
-          className="flex flex-col items-center justify-center gap-2 rounded-[12px] border border-[#ff3d00]/35 bg-[#ff3d00]/10 px-3 py-6 transition hover:border-[#ff3d00]/55"
+          className={`flex flex-col items-center justify-center gap-2 rounded-[12px] border border-[#ff3d00]/35 bg-[#ff3d00]/10 px-3 transition hover:border-[#ff3d00]/55 ${
+            isCompose ? "min-h-[140px] py-8" : "py-6"
+          }`}
         >
           <span className="text-xs font-bold uppercase tracking-wider text-[#ff3d00]">
             CAM
