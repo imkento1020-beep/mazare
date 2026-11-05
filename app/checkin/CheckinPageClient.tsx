@@ -71,10 +71,17 @@ export default function CheckinPageClient() {
         apiKey: mapsApiKey,
         origin: userCoords ?? undefined,
       });
-      const cached = await cachePlacesForPost(found);
-      setPlaces(cached);
-      if (cached.length === 0) {
+      if (found.length === 0) {
+        setPlaces([]);
         setError("該当するお店が見つかりませんでした。");
+        return;
+      }
+      setPlaces(found);
+      setLoadingPlaces(false);
+
+      if (found.some((place) => !place.shopId)) {
+        const cached = await cachePlacesForPost(found);
+        setPlaces(cached);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "検索に失敗しました");

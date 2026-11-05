@@ -319,10 +319,26 @@ export async function searchPlacesByTextClient(
 
 const cachePlacesInflight = new Map<string, Promise<PlaceSummary[]>>();
 
+function mergeCachedShopIds(
+  places: PlaceSummary[],
+  cached: PlaceSummary[],
+): PlaceSummary[] {
+  const shopIdByGooglePlaceId = new Map(
+    cached.map((place) => [place.googlePlaceId, place.shopId] as const),
+  );
+  return places.map((place) => {
+    const shopId = place.shopId ?? shopIdByGooglePlaceId.get(place.googlePlaceId);
+    return shopId ? { ...place, shopId } : place;
+  });
+}
+
 export async function cachePlacesForPost(places: PlaceSummary[]) {
   if (places.length === 0) return [];
 
-  const dedupeKey = places
+  const needsCache = places.filter((place) => !place.shopId);
+  if (needsCache.length === 0) return places;
+
+  const dedupeKey = needsCache
     .map((place) => place.googlePlaceId)
     .sort()
     .join("|");
@@ -334,7 +350,7 @@ export async function cachePlacesForPost(places: PlaceSummary[]) {
       const response = await fetch("/api/places/cache", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ places }),
+        body: JSON.stringify({ places: needsCache }),
       });
 
       const json = (await response.json()) as {
@@ -343,13 +359,16 @@ export async function cachePlacesForPost(places: PlaceSummary[]) {
       };
 
       if (response.ok && (json.places?.length ?? 0) > 0) {
-        return json.places ?? [];
+        return mergeCachedShopIds(places, json.places ?? []);
       }
     } catch {
       // fall through to client cache
     }
 
-    return ensureShopsFromPlacesClient(places);
+    return mergeCachedShopIds(
+      places,
+      await ensureShopsFromPlacesClient(needsCache),
+    );
   })();
 
   cachePlacesInflight.set(dedupeKey, promise);

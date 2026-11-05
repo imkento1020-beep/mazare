@@ -238,16 +238,20 @@ export default function PostPageClient() {
         apiKey: mapsApiKey,
         origin: userCoords ?? undefined,
       });
-      setPlaces(found);
       if (found.length === 0) {
+        setPlaces([]);
         setError(
           "該当するお店が見つかりませんでした。店名や住所でもう一度試してください。",
         );
         return;
       }
+      setPlaces(found);
       setLoadingPlaces(false);
-      const cached = await cachePlacesForPost(found);
-      setPlaces(cached);
+
+      if (found.some((place) => !place.shopId)) {
+        const cached = await cachePlacesForPost(found);
+        setPlaces(cached);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "検索に失敗しました");
     } finally {
