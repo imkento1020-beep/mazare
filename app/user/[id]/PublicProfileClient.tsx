@@ -15,8 +15,12 @@ import {
 import { computeGuestPostInsights } from "@/lib/profile/postInsights";
 import GuestPostInsightsPanel from "@/components/profile/GuestPostInsightsPanel";
 import ProfileHero from "@/components/profile/ProfileHero";
-import TonightSocialMoodBadge from "@/components/profile/TonightSocialMoodBadge";
-import { findTonightSocialMood } from "@/lib/profile/tonightSocialMood";
+import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
+import {
+  MERGE_ATTITUDES,
+  VIBE_SCALES,
+  hasAnySocialContext,
+} from "@/lib/profile/tonightSocialContext";
 import PublicProfileTabBar, {
   type PublicProfileTab,
 } from "@/components/profile/PublicProfileTabBar";
@@ -81,7 +85,8 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
   }
 
   const isSelf = viewerId === profile.id;
-  const moodMeta = findTonightSocialMood(profile.tonight_social_mood);
+  const mergeMeta = MERGE_ATTITUDES.find((m) => m.id === profile.mergeAttitude);
+  const vibeMeta = VIBE_SCALES.find((v) => v.id === profile.vibeScale);
   const joinLine = profile.created_at
     ? `${new Date(profile.created_at).toLocaleDateString("ja-JP")} から mazare`
     : null;
@@ -99,7 +104,10 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
           displayName={profile.display_name}
           avatarUrl={profile.profile_image}
           metaLine={joinLine}
-          mood={profile.tonight_social_mood}
+          socialContext={{
+            mergeAttitude: profile.mergeAttitude,
+            vibeScale: profile.vibeScale,
+          }}
           stats={[
             { value: posts.length, label: "投稿" },
             { value: insights.tonightPostCount, label: "今夜" },
@@ -137,21 +145,31 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
         {tab === "profile" && (
           <section className="mt-4 space-y-4 rounded-2xl border border-white/[0.07] bg-[#111118] p-5">
             <div>
-              <p className="text-base font-black text-[#eeeaf4]">今夜の気分</p>
+              <p className="text-base font-black text-[#eeeaf4]">合流・席の人数感</p>
               <p className="mt-1 text-xs text-[#9994a8]">
-                このユーザーが今夜どんな飲み方を希望しているか
+                合流の意思と、今夜の席の雰囲気
               </p>
             </div>
-            {profile.tonight_social_mood ? (
+            {hasAnySocialContext({
+              mergeAttitude: profile.mergeAttitude,
+              vibeScale: profile.vibeScale,
+            }) ? (
               <div className="rounded-2xl border border-white/[0.08] bg-[#0d0d12] p-4">
-                <TonightSocialMoodBadge
-                  mood={profile.tonight_social_mood}
+                <TonightSocialContextBadges
+                  context={{
+                    mergeAttitude: profile.mergeAttitude,
+                    vibeScale: profile.vibeScale,
+                  }}
                   size="md"
-                  prefix={false}
                 />
-                {moodMeta?.description && (
+                {mergeMeta?.description && (
                   <p className="mt-3 text-sm leading-relaxed text-[#9994a8]">
-                    {moodMeta.description}
+                    {mergeMeta.description}
+                  </p>
+                )}
+                {vibeMeta?.description && (
+                  <p className="mt-2 text-sm leading-relaxed text-[#9994a8]">
+                    {vibeMeta.description}
                   </p>
                 )}
               </div>

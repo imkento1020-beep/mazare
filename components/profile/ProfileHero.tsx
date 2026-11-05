@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 import UserIcon from "@/components/icons/UserIcon";
-import TonightSocialMoodBadge from "@/components/profile/TonightSocialMoodBadge";
-import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
+import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
+import {
+  hasAnySocialContext,
+  type TonightSocialContext,
+} from "@/lib/profile/tonightSocialContext";
 
 export type ProfileStat = {
   value: number | string;
@@ -12,7 +15,7 @@ type ProfileHeroProps = {
   displayName: string;
   avatarUrl?: string | null;
   metaLine?: string | null;
-  mood?: TonightSocialMoodId | null;
+  socialContext?: TonightSocialContext | null;
   stats?: ProfileStat[];
   actions?: ReactNode;
 };
@@ -21,7 +24,7 @@ export default function ProfileHero({
   displayName,
   avatarUrl,
   metaLine,
-  mood = null,
+  socialContext = null,
   stats = [],
   actions,
 }: ProfileHeroProps) {
@@ -75,10 +78,11 @@ export default function ProfileHero({
             <p className="mt-0.5 truncate text-xs text-[#9994a8]">{metaLine}</p>
           )}
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <TonightSocialMoodBadge mood={mood} size="md" />
-            {!mood && (
+            {socialContext && hasAnySocialContext(socialContext) ? (
+              <TonightSocialContextBadges context={socialContext} size="md" />
+            ) : (
               <span className="text-[11px] text-[#5a5668]">
-                今夜の気分は未設定
+                合流・席の人数感は未設定
               </span>
             )}
           </div>

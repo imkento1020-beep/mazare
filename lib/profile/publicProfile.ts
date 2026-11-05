@@ -2,7 +2,11 @@ import { supabase } from "@/lib/supabase";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
 import type { Shop, VibePost } from "@/lib/home/types";
 
-import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
+import {
+  parseTonightSocialContextFromProfile,
+  type MergeAttitude,
+  type VibeScale,
+} from "@/lib/profile/tonightSocialContext";
 
 export type PublicGuestProfile = {
   id: string;
@@ -10,7 +14,8 @@ export type PublicGuestProfile = {
   profile_image: string | null;
   user_type: string;
   created_at: string | null;
-  tonight_social_mood: TonightSocialMoodId | null;
+  mergeAttitude: MergeAttitude | null;
+  vibeScale: VibeScale | null;
 };
 
 const GUEST_POST_SELECT = `
@@ -38,13 +43,25 @@ export async function fetchPublicGuestProfile(userId: string): Promise<{
   data: PublicGuestProfile | null;
   error: string | null;
 }> {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, display_name, profile_image, user_type, created_at, tonight_social_mood",
+      "id, display_name, profile_image, user_type, created_at, merge_attitude, vibe_scale, tonight_social_mood",
     )
     .eq("id", userId)
     .maybeSingle();
+
+  if (error?.message.includes("merge_attitude")) {
+    const legacy = await supabase
+      .from("profiles")
+      .select(
+        "id, display_name, profile_image, user_type, created_at, tonight_social_mood",
+      )
+      .eq("id", userId)
+      .maybeSingle();
+    data = legacy.data as typeof data;
+    error = legacy.error;
+  }
 
   if (error) return { data: null, error: error.message };
   if (!data) return { data: null, error: null };
@@ -54,12 +71,7 @@ export async function fetchPublicGuestProfile(userId: string): Promise<{
       ? data.display_name.trim()
       : "ゲスト";
 
-  const moodRaw = data.tonight_social_mood;
-  const tonight_social_mood =
-    typeof moodRaw === "string" &&
-    ["merge_welcome", "solo", "pair_ok", "large_ok"].includes(moodRaw)
-      ? (moodRaw as TonightSocialMoodId)
-      : null;
+  const social = parseTonightSocialContextFromProfile(data);
 
   return {
     data: {
@@ -68,7 +80,8 @@ export async function fetchPublicGuestProfile(userId: string): Promise<{
       profile_image: data.profile_image ?? null,
       user_type: data.user_type ?? "guest",
       created_at: data.created_at ?? null,
-      tonight_social_mood,
+      mergeAttitude: social.mergeAttitude,
+      vibeScale: social.vibeScale,
     },
     error: null,
   };

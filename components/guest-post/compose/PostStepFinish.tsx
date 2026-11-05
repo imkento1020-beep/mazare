@@ -6,13 +6,13 @@ import GuestPostBodyHashtagSuggestions from "@/components/guest-post/GuestPostBo
 import { GUEST_POST_BODY_MAX_LENGTH } from "@/lib/guest-post/composeBody";
 import type { NightOutInput } from "@/lib/guest-post/nightOut";
 import type { Shop } from "@/lib/home/types";
-import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
+import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
 import PostComposeSheet from "@/components/guest-post/compose/PostComposeSheet";
 import PostFinishToolRail, {
   type ToolId,
 } from "@/components/guest-post/compose/PostFinishToolRail";
 import GuestPostFinishMeta from "@/components/guest-post/compose/GuestPostFinishMeta";
-import TonightSocialMoodPicker from "@/components/profile/TonightSocialMoodPicker";
+import TonightSocialContextPicker from "@/components/profile/TonightSocialContextPicker";
 
 type PostStepFinishProps = {
   shop: Shop;
@@ -20,14 +20,12 @@ type PostStepFinishProps = {
   videoFile: File | null;
   nightOut: NightOutInput;
   onNightOutChange: React.Dispatch<React.SetStateAction<NightOutInput>>;
-  socialMood: TonightSocialMoodId | null;
-  onSocialMoodChange: (value: TonightSocialMoodId | null) => void;
+  socialContext: TonightSocialContext;
+  onSocialContextChange: (value: TonightSocialContext) => void;
   bodyText: string;
   onBodyTextChange: (value: string) => void;
   comment: string;
   hashtags: string[];
-  onChangeShop?: () => void;
-  shopLocked: boolean;
 };
 
 export default function PostStepFinish({
@@ -36,24 +34,14 @@ export default function PostStepFinish({
   videoFile,
   nightOut,
   onNightOutChange,
-  socialMood,
-  onSocialMoodChange,
+  socialContext,
+  onSocialContextChange,
   bodyText,
   onBodyTextChange,
   comment,
   hashtags,
-  onChangeShop,
-  shopLocked,
 }: PostStepFinishProps) {
   const [sheet, setSheet] = useState<ToolId | null>(null);
-
-  function openSheet(id: ToolId) {
-    if (id === "shop") {
-      onChangeShop?.();
-      return;
-    }
-    setSheet(id);
-  }
 
   return (
     <div className="relative h-full min-h-0 flex-1 overflow-hidden">
@@ -65,7 +53,7 @@ export default function PostStepFinish({
           comment={comment}
           hashtags={hashtags}
           shop={shop}
-          authorTonightSocialMood={socialMood}
+          authorSocialContext={socialContext}
           fillHeight
           hideChrome
           immersive
@@ -86,11 +74,10 @@ export default function PostStepFinish({
 
       <PostFinishToolRail
         activeSheet={sheet}
-        onOpen={openSheet}
-        socialMood={socialMood}
+        onOpen={setSheet}
+        socialContext={socialContext}
         partySize={nightOut.partySize}
         hasComment={bodyText.trim().length > 0}
-        showShopTool={!shopLocked && Boolean(onChangeShop)}
       />
 
       <PostComposeSheet
@@ -118,12 +105,12 @@ export default function PostStepFinish({
 
       <PostComposeSheet
         open={sheet === "mood"}
-        title="今夜の気分"
+        title="合流・席の人数感"
         onClose={() => setSheet(null)}
       >
-        <TonightSocialMoodPicker
-          value={socialMood}
-          onChange={onSocialMoodChange}
+        <TonightSocialContextPicker
+          value={socialContext}
+          onChange={onSocialContextChange}
         />
       </PostComposeSheet>
 

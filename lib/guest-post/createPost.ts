@@ -1,9 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { normalizeNightOutInput, type NightOutInput } from "@/lib/guest-post/nightOut";
-import {
-  isTonightSocialMoodId,
-  type TonightSocialMoodId,
-} from "@/lib/profile/tonightSocialMood";
+import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
 import { uploadGuestPostImages, uploadGuestPostVideo } from "@/lib/guest-post/uploadMedia";
 
 export const DEFAULT_HASHTAG_SUGGESTIONS = [
@@ -64,7 +61,7 @@ export async function createGuestVibePost(input: {
   shopId: string;
   hashtags: string[];
   nightOut: NightOutInput;
-  tonightSocialMood?: TonightSocialMoodId | null;
+  socialContext?: TonightSocialContext | null;
   comment?: string;
   imageFiles?: File[];
   videoFile?: File | null;
@@ -105,10 +102,10 @@ export async function createGuestVibePost(input: {
     mediaType = hasImages ? "mixed" : "video";
   }
 
-  const moodSnapshot =
-    input.tonightSocialMood && isTonightSocialMoodId(input.tonightSocialMood)
-      ? input.tonightSocialMood
-      : null;
+  const ctx = input.socialContext ?? {
+    mergeAttitude: null,
+    vibeScale: null,
+  };
 
   const baseRow = {
     shop_id: input.shopId,
@@ -132,27 +129,31 @@ export async function createGuestVibePost(input: {
   let data: { id: string } | null = null;
   let error: { message: string } | null = null;
 
-  if (moodSnapshot) {
-    const attempt = await supabase
+  const withSnapshot = {
+    ...baseRow,
+    author_merge_attitude: ctx.mergeAttitude,
+    author_vibe_scale: ctx.vibeScale,
+  };
+
+  const attempt = await supabase
+    .from("vibe_posts")
+    .insert(withSnapshot)
+    .select("id")
+    .single();
+  data = attempt.data;
+  error = attempt.error;
+
+  if (
+    error?.message.includes("author_merge_attitude") ||
+    error?.message.includes("author_vibe_scale")
+  ) {
+    const fallback = await supabase
       .from("vibe_posts")
-      .insert({ ...baseRow, author_tonight_social_mood: moodSnapshot })
+      .insert(baseRow)
       .select("id")
       .single();
-    data = attempt.data;
-    error = attempt.error;
-    if (error?.message.includes("author_tonight_social_mood")) {
-      const fallback = await supabase
-        .from("vibe_posts")
-        .insert(baseRow)
-        .select("id")
-        .single();
-      data = fallback.data;
-      error = fallback.error;
-    }
-  } else {
-    const attempt = await supabase.from("vibe_posts").insert(baseRow).select("id").single();
-    data = attempt.data;
-    error = attempt.error;
+    data = fallback.data;
+    error = fallback.error;
   }
 
   if (error || !data) {

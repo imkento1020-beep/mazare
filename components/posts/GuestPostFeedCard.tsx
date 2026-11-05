@@ -11,8 +11,8 @@ import {
   getTonightCupDisplay,
   getVisitOrder,
 } from "@/lib/guest-post/nightOut";
-import TonightSocialMoodBadge from "@/components/profile/TonightSocialMoodBadge";
-import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
+import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
+import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
 import VibePostCommentSheet from "@/components/comments/VibePostCommentSheet";
 import {
   FeedCommentIcon,
@@ -42,7 +42,7 @@ type GuestPostFeedCardProps = {
   mediaFit?: "cover" | "contain";
   /** 仕上げ画面など、4:5 ではなく親の高さいっぱい */
   fillViewport?: boolean;
-  authorTonightSocialMood?: TonightSocialMoodId | null;
+  authorSocialContext?: TonightSocialContext | null;
 };
 
 function authorInitial(name: string | null | undefined) {
@@ -326,7 +326,7 @@ export default function GuestPostFeedCard({
   className = "",
   mediaFit = "cover",
   fillViewport = false,
-  authorTonightSocialMood = null,
+  authorSocialContext = null,
 }: GuestPostFeedCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -491,11 +491,10 @@ export default function GuestPostFeedCard({
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] space-y-2 p-3 pr-14">
           <div className="flex flex-wrap items-center gap-1.5">
-            {authorTonightSocialMood ? (
-              <TonightSocialMoodBadge
-                mood={authorTonightSocialMood}
+            {authorSocialContext ? (
+              <TonightSocialContextBadges
+                context={authorSocialContext}
                 size="sm"
-                prefix={false}
               />
             ) : null}
             {amberPill && (

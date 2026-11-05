@@ -24,8 +24,11 @@ import {
   FeedShareIcon,
   PostLikeIcon,
 } from "@/components/icons/FeedActionIcons";
-import TonightSocialMoodBadge from "@/components/profile/TonightSocialMoodBadge";
-import { isTonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
+import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
+import {
+  hasAnySocialContext,
+  resolvePostAuthorSocialContext,
+} from "@/lib/profile/tonightSocialContext";
 
 type HomeReelSlideProps = {
   post: HomeReelsPost;
@@ -121,6 +124,12 @@ export default function HomeReelSlide({
   }, [commentCount]);
 
   const { isVideo, videoUrl, images } = mediaOf(post);
+  const authorSocial = resolvePostAuthorSocialContext({
+    author_merge_attitude: post.author_merge_attitude,
+    author_vibe_scale: post.author_vibe_scale,
+    author_tonight_social_mood: post.author_tonight_social_mood,
+  });
+
   const shop = post.shops;
   const visitOrder = getVisitOrder(post);
   const cups = getTonightCupDisplay(post, tonightTotalCups);
@@ -294,12 +303,8 @@ export default function HomeReelSlide({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#080810]/95 via-[#080810]/55 to-transparent px-4 pb-5 pt-24">
         <div className="pointer-events-auto space-y-2.5 pr-14">
           <div className="flex flex-wrap items-center gap-1.5">
-            {isTonightSocialMoodId(post.author_tonight_social_mood) ? (
-              <TonightSocialMoodBadge
-                mood={post.author_tonight_social_mood}
-                size="sm"
-                prefix={false}
-              />
+            {hasAnySocialContext(authorSocial) ? (
+              <TonightSocialContextBadges context={authorSocial} size="sm" />
             ) : null}
             {(cups != null || post.drink_name) && (
               <span className="inline-flex items-center rounded-full border border-[#ffaa00]/35 bg-[#ffaa00]/12 px-2.5 py-1 text-[10px] font-bold text-[#ffaa00]">

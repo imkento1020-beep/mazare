@@ -17,11 +17,13 @@ import SearchModeToggle, {
 import SearchShopCard from "@/components/search/SearchShopCard";
 import GuestPostFeedCard from "@/components/posts/GuestPostFeedCard";
 import MotionPanel from "@/components/ui/MotionPanel";
-import TonightSocialMoodBadge from "@/components/profile/TonightSocialMoodBadge";
+import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
 import {
-  TONIGHT_SOCIAL_MOODS,
-  type TonightSocialMoodId,
-} from "@/lib/profile/tonightSocialMood";
+  MERGE_ATTITUDES,
+  VIBE_SCALES,
+  type MergeAttitude,
+  type VibeScale,
+} from "@/lib/profile/tonightSocialContext";
 import {
   buildShopSearchIndexFromShops,
   filterShopSearchItems,
@@ -33,7 +35,7 @@ import {
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { getDistanceLabel } from "@/lib/geo/haversine";
 import {
-  attachAuthorTonightMoods,
+  attachAuthorSocialContext,
   filterPostSearchRows,
   type PartySizeFilter,
   type PostSearchRow,
@@ -59,9 +61,10 @@ export default function SearchPageClient() {
   const [genres, setGenres] = useState<Set<string>>(new Set(["すべて"]));
   const [areas, setAreas] = useState<Set<string>>(new Set(["すべて"]));
   const [minTonightPosts, setMinTonightPosts] = useState(0);
-  const [authorMoods, setAuthorMoods] = useState<Set<TonightSocialMoodId>>(
+  const [mergeFilters, setMergeFilters] = useState<Set<MergeAttitude>>(
     new Set(),
   );
+  const [vibeFilters, setVibeFilters] = useState<Set<VibeScale>>(new Set());
   const [partySize, setPartySize] = useState<PartySizeFilter>("any");
   const [interestCounts, setInterestCounts] = useState<Map<string, number>>(
     new Map(),
@@ -92,7 +95,7 @@ export default function SearchPageClient() {
 
       const [shopItemsNext, withMoods] = await Promise.all([
         Promise.resolve(buildShopSearchIndexFromShops(list, shops)),
-        attachAuthorTonightMoods(list),
+        attachAuthorSocialContext(list),
       ]);
       setShopItems(shopItemsNext);
       setPostRows(withMoods);
@@ -124,10 +127,11 @@ export default function SearchPageClient() {
       filterPostSearchRows(postRows, {
         search,
         areas,
-        moods: authorMoods,
+        mergeAttitudes: mergeFilters,
+        vibeScales: vibeFilters,
         partySize,
       }),
-    [postRows, search, areas, authorMoods, partySize],
+    [postRows, search, areas, mergeFilters, vibeFilters, partySize],
   );
 
   const tonightCupTotals = useMemo(
@@ -169,8 +173,17 @@ export default function SearchPageClient() {
     });
   }
 
-  function toggleAuthorMood(id: TonightSocialMoodId) {
-    setAuthorMoods((prev) => {
+  function toggleMergeFilter(id: MergeAttitude) {
+    setMergeFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleVibeFilter(id: VibeScale) {
+    setVibeFilters((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -260,12 +273,24 @@ export default function SearchPageClient() {
                 </SearchFilterChip>
               ))}
             </SearchFilterGroup>
-            <SearchFilterGroup label="投稿者の今夜の気分">
-              {TONIGHT_SOCIAL_MOODS.map((m) => (
+            <SearchFilterGroup label="合流・声かけ">
+              {MERGE_ATTITUDES.map((m) => (
                 <SearchFilterChip
                   key={m.id}
-                  active={authorMoods.has(m.id)}
-                  onClick={() => toggleAuthorMood(m.id)}
+                  active={mergeFilters.has(m.id)}
+                  accent="green"
+                  onClick={() => toggleMergeFilter(m.id)}
+                >
+                  {m.label}
+                </SearchFilterChip>
+              ))}
+            </SearchFilterGroup>
+            <SearchFilterGroup label="席の人数感">
+              {VIBE_SCALES.map((m) => (
+                <SearchFilterChip
+                  key={m.id}
+                  active={vibeFilters.has(m.id)}
+                  onClick={() => toggleVibeFilter(m.id)}
                 >
                   {m.label}
                 </SearchFilterChip>
@@ -333,16 +358,23 @@ export default function SearchPageClient() {
                     key={post.id}
                     className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111118]"
                   >
-                    {post.author_tonight_social_mood && (
+                    {(post.author_merge_attitude || post.author_vibe_scale) && (
                       <div className="border-b border-white/[0.06] px-3 py-2">
-                        <TonightSocialMoodBadge
-                          mood={post.author_tonight_social_mood}
+                        <TonightSocialContextBadges
+                          context={{
+                            mergeAttitude: post.author_merge_attitude,
+                            vibeScale: post.author_vibe_scale,
+                          }}
                           size="md"
                         />
                       </div>
                     )}
                     <GuestPostFeedCard
                       post={post}
+                      authorSocialContext={{
+                        mergeAttitude: post.author_merge_attitude,
+                        vibeScale: post.author_vibe_scale,
+                      }}
                       tonightTotalCups={tonightCupTotals.get(post.id) ?? null}
                       interestCount={interestCounts.get(post.id) ?? 0}
                       commentCount={commentCounts.get(post.id) ?? 0}

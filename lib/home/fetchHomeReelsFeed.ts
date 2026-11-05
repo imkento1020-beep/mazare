@@ -5,11 +5,15 @@ import {
   POST_CARD_SHOP_RELATION_LEGACY,
 } from "@/lib/home/postCardShopFields";
 import type { Shop, VibePost } from "@/lib/home/types";
-import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
+import type {
+  MergeAttitude,
+  VibeScale,
+} from "@/lib/profile/tonightSocialContext";
 
 export type HomeReelsPost = VibePost & {
   author_profile_image?: string | null;
-  author_tonight_social_mood?: TonightSocialMoodId | null;
+  author_merge_attitude?: MergeAttitude | null;
+  author_vibe_scale?: VibeScale | null;
 };
 
 const SELECT = `

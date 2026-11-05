@@ -28,12 +28,9 @@ import { fetchShopById } from "@/lib/shop/api";
 import { supabase } from "@/lib/supabase";
 import {
   fetchGuestProfile,
-  updateTonightSocialMood,
+  updateTonightSocialContext,
 } from "@/lib/mypage/api";
-import {
-  isTonightSocialMoodId,
-  type TonightSocialMoodId,
-} from "@/lib/profile/tonightSocialMood";
+import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
 import type { Shop } from "@/lib/home/types";
 import PostComposeProgress from "@/components/guest-post/compose/PostComposeProgress";
 import PostStepShop from "@/components/guest-post/compose/PostStepShop";
@@ -89,9 +86,10 @@ export default function PostPageClient() {
     name: string;
   } | null>(null);
   const [loadingPresetShop, setLoadingPresetShop] = useState(Boolean(urlShopId));
-  const [socialMood, setSocialMood] = useState<TonightSocialMoodId | null>(
-    null,
-  );
+  const [socialContext, setSocialContext] = useState<TonightSocialContext>({
+    mergeAttitude: null,
+    vibeScale: null,
+  });
 
   const shopPreselected = Boolean(lockedShop);
   const parsedBody = useMemo(() => parseGuestPostBody(bodyText), [bodyText]);
@@ -197,10 +195,10 @@ export default function PostPageClient() {
     void (async () => {
       const { data } = await fetchGuestProfile(user);
       if (cancelled) return;
-      const mood = data.tonight_social_mood;
-      if (isTonightSocialMoodId(mood)) {
-        setSocialMood(mood);
-      }
+      setSocialContext({
+        mergeAttitude: data.mergeAttitude,
+        vibeScale: data.vibeScale,
+      });
     })();
 
     return () => {
@@ -316,9 +314,7 @@ export default function PostPageClient() {
       return;
     }
 
-    if (socialMood != null) {
-      await updateTonightSocialMood(activeUser.id, socialMood);
-    }
+    await updateTonightSocialContext(activeUser.id, socialContext);
 
     const priorCount = await countGuestPostsByUser(activeUser.id);
     const { comment, hashtags } = parseGuestPostBody(bodyText);
@@ -328,7 +324,7 @@ export default function PostPageClient() {
       shopId: selectedShop.id,
       hashtags,
       nightOut,
-      tonightSocialMood: socialMood,
+      socialContext,
       comment,
       imageFiles: videoFile ? undefined : imageFiles,
       videoFile,
@@ -491,20 +487,12 @@ export default function PostPageClient() {
             videoFile={videoFile}
             nightOut={nightOut}
             onNightOutChange={setNightOut}
-            socialMood={socialMood}
-            onSocialMoodChange={setSocialMood}
+            socialContext={socialContext}
+            onSocialContextChange={setSocialContext}
             bodyText={bodyText}
             onBodyTextChange={setBodyText}
             comment={parsedBody.comment}
             hashtags={parsedBody.hashtags}
-            shopLocked={shopPreselected}
-            onChangeShop={
-              shopPreselected
-                ? undefined
-                : () => {
-                    setStep("shop");
-                  }
-            }
           />
         ) : null}
 

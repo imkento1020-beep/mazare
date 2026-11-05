@@ -3,21 +3,21 @@
 import {
   FeedCommentIcon,
   FeedPeopleIcon,
-  FeedPinIcon,
   FeedWaveIcon,
 } from "@/components/icons/FeedActionIcons";
-import { labelForTonightSocialMood } from "@/lib/profile/tonightSocialMood";
-import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
+import {
+  hasAnySocialContext,
+  type TonightSocialContext,
+} from "@/lib/profile/tonightSocialContext";
 
-type ToolId = "comment" | "mood" | "party" | "shop";
+type ToolId = "comment" | "mood" | "party";
 
 type PostFinishToolRailProps = {
   activeSheet: ToolId | null;
   onOpen: (id: ToolId) => void;
-  socialMood: TonightSocialMoodId | null;
+  socialContext: TonightSocialContext;
   partySize: number | null;
   hasComment: boolean;
-  showShopTool: boolean;
 };
 
 function RailButton({
@@ -50,12 +50,16 @@ function RailButton({
 export default function PostFinishToolRail({
   activeSheet,
   onOpen,
-  socialMood,
+  socialContext,
   partySize,
   hasComment,
-  showShopTool,
 }: PostFinishToolRailProps) {
-  const moodShort = labelForTonightSocialMood(socialMood);
+  const mergeShort =
+    socialContext.mergeAttitude === "open"
+      ? "OK"
+      : socialContext.mergeAttitude === "closed"
+        ? "—"
+        : null;
 
   return (
     <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-3 pb-[env(safe-area-inset-bottom,0px)]">
@@ -68,14 +72,18 @@ export default function PostFinishToolRail({
       </RailButton>
 
       <RailButton
-        label="今夜の気分"
-        active={activeSheet === "mood" || socialMood != null}
+        label="合流・席の人数感"
+        active={activeSheet === "mood" || hasAnySocialContext(socialContext)}
         onClick={() => onOpen("mood")}
       >
-        {moodShort ? (
-          <span className="max-w-[2.25rem] truncate text-[9px] font-black leading-tight text-white">
-            {moodShort.replace("歓迎", "").trim() || moodShort.slice(0, 2)}
-          </span>
+        {mergeShort ? (
+          <span className="text-[10px] font-black text-white">{mergeShort}</span>
+        ) : socialContext.vibeScale === "solo" ? (
+          <span className="text-[10px] font-black text-white">1</span>
+        ) : socialContext.vibeScale === "small" ? (
+          <span className="text-[10px] font-black text-white">2</span>
+        ) : socialContext.vibeScale === "lively" ? (
+          <span className="text-[10px] font-black text-white">+</span>
         ) : (
           <FeedWaveIcon size={20} color="#ffffff" />
         )}
@@ -94,16 +102,6 @@ export default function PostFinishToolRail({
           <FeedPeopleIcon size={20} color="#00e87a" />
         )}
       </RailButton>
-
-      {showShopTool ? (
-        <RailButton
-          label="お店を変更"
-          active={activeSheet === "shop"}
-          onClick={() => onOpen("shop")}
-        >
-          <FeedPinIcon size={20} color="#ff3d00" />
-        </RailButton>
-      ) : null}
     </div>
   );
 }

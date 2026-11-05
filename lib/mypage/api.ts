@@ -2,7 +2,10 @@ import { supabase } from "@/lib/supabase";
 import { getTonightInterestWindowJST } from "@/lib/home/dates";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
 import type { InterestRow, Shop, TodayInterestRow, VibePost } from "@/lib/home/types";
-import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
+import {
+  parseTonightSocialContextFromProfile,
+  type TonightSocialContext,
+} from "@/lib/profile/tonightSocialContext";
 import type { GuestProfile } from "./types";
 import type { User } from "@supabase/supabase-js";
 import { countUserVisitedShops } from "@/lib/checkins/api";
@@ -34,13 +37,25 @@ export async function fetchGuestProfile(user: User): Promise<{
 }> {
   await ensureGuestProfile(user.id);
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, user_type, profile_image, created_at, display_name, tonight_social_mood, bio",
+      "id, user_type, profile_image, created_at, display_name, merge_attitude, vibe_scale, tonight_social_mood, bio",
     )
     .eq("id", user.id)
     .maybeSingle();
+
+  if (error?.message.includes("merge_attitude")) {
+    const legacy = await supabase
+      .from("profiles")
+      .select(
+        "id, user_type, profile_image, created_at, display_name, tonight_social_mood, bio",
+      )
+      .eq("id", user.id)
+      .maybeSingle();
+    data = legacy.data as typeof data;
+    error = legacy.error;
+  }
 
   const fallbackProfile: GuestProfile = {
     id: user.id,
@@ -49,7 +64,8 @@ export async function fetchGuestProfile(user: User): Promise<{
     created_at: null,
     display_name: getDisplayName(user),
     email: user.email ?? "",
-    tonight_social_mood: null,
+    mergeAttitude: null,
+    vibeScale: null,
     bio: null,
   };
 
@@ -60,12 +76,7 @@ export async function fetchGuestProfile(user: User): Promise<{
     };
   }
 
-  const moodRaw = data?.tonight_social_mood;
-  const tonight_social_mood =
-    typeof moodRaw === "string" &&
-    ["merge_welcome", "solo", "pair_ok", "large_ok"].includes(moodRaw)
-      ? (moodRaw as TonightSocialMoodId)
-      : null;
+  const social = parseTonightSocialContextFromProfile(data ?? {});
 
   return {
     data: {
@@ -77,7 +88,8 @@ export async function fetchGuestProfile(user: User): Promise<{
         (typeof data?.display_name === "string" && data.display_name.trim()) ||
         getDisplayName(user),
       email: user.email ?? "",
-      tonight_social_mood,
+      mergeAttitude: social.mergeAttitude,
+      vibeScale: social.vibeScale,
       bio:
         typeof data?.bio === "string" && data.bio.trim()
           ? data.bio.trim().slice(0, 100)
@@ -87,14 +99,25 @@ export async function fetchGuestProfile(user: User): Promise<{
   };
 }
 
-export async function updateTonightSocialMood(
+export async function updateTonightSocialContext(
   userId: string,
-  mood: TonightSocialMoodId | null,
+  context: TonightSocialContext,
 ) {
   const { error } = await supabase
     .from("profiles")
-    .update({ tonight_social_mood: mood })
+    .update({
+      merge_attitude: context.mergeAttitude,
+      vibe_scale: context.vibeScale,
+      tonight_social_mood: null,
+    })
     .eq("id", userId);
+
+  if (error?.message.includes("merge_attitude")) {
+    return {
+      error:
+        "プロフィールの更新に新しい列が必要です。Supabase で profile-social-context.sql を実行してください。",
+    };
+  }
 
   if (error) return { error: error.message };
   return { error: null };

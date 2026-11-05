@@ -1,4 +1,7 @@
-import type { TonightSocialMoodId } from "@/lib/profile/tonightSocialMood";
+import type {
+  MergeAttitude,
+  VibeScale,
+} from "@/lib/profile/tonightSocialContext";
 
 export type GuestProfile = {
   id: string;
@@ -7,6 +10,7 @@ export type GuestProfile = {
   created_at: string | null;
   display_name: string;
   email: string;
-  tonight_social_mood: TonightSocialMoodId | null;
+  mergeAttitude: MergeAttitude | null;
+  vibeScale: VibeScale | null;
   bio: string | null;
 };

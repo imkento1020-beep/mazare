@@ -2,50 +2,63 @@ import { extractAreaFromAddress } from "@/lib/geo/area";
 import type { VibePost } from "@/lib/home/types";
 import { isWithinRecentPostsWindow } from "@/lib/home/recentWindow";
 import {
-  isTonightSocialMoodId,
-  type TonightSocialMoodId,
-} from "@/lib/profile/tonightSocialMood";
+  type MergeAttitude,
+  type VibeScale,
+  parseTonightSocialContextFromProfile,
+  resolvePostAuthorSocialContext,
+} from "@/lib/profile/tonightSocialContext";
 import { supabase } from "@/lib/supabase";
 
 export type PostSearchRow = VibePost & {
-  author_tonight_social_mood: TonightSocialMoodId | null;
+  author_merge_attitude: MergeAttitude | null;
+  author_vibe_scale: VibeScale | null;
 };
 
-export async function attachAuthorTonightMoods(
+export async function attachAuthorSocialContext(
   posts: VibePost[],
 ): Promise<PostSearchRow[]> {
   const authorIds = [...new Set(posts.map((p) => p.author_id).filter(Boolean))] as string[];
-  const moodByUser = new Map<string, TonightSocialMoodId>();
+  const profileByUser = new Map<
+    string,
+    { mergeAttitude: MergeAttitude | null; vibeScale: VibeScale | null }
+  >();
 
   if (authorIds.length > 0) {
     const { data } = await supabase
       .from("profiles")
-      .select("id, tonight_social_mood")
+      .select("id, merge_attitude, vibe_scale, tonight_social_mood")
       .in("id", authorIds);
 
     for (const row of data ?? []) {
-      const mood = row.tonight_social_mood;
-      if (typeof mood === "string" && isTonightSocialMoodId(mood)) {
-        moodByUser.set(String(row.id), mood);
-      }
+      const ctx = parseTonightSocialContextFromProfile(row);
+      profileByUser.set(String(row.id), ctx);
     }
   }
 
   return posts.map((post) => {
-    const fromProfile = post.author_id
-      ? (moodByUser.get(post.author_id) ?? null)
+    const profile = post.author_id
+      ? (profileByUser.get(post.author_id) ?? null)
       : null;
-    const snapshot = post.author_tonight_social_mood;
-    const fromSnapshot =
-      typeof snapshot === "string" && isTonightSocialMoodId(snapshot)
-        ? snapshot
-        : null;
+    const resolved = resolvePostAuthorSocialContext({
+      author_merge_attitude: post.author_merge_attitude,
+      author_vibe_scale: post.author_vibe_scale,
+      author_tonight_social_mood: post.author_tonight_social_mood,
+      profile,
+    });
 
     return {
       ...post,
-      author_tonight_social_mood: fromSnapshot ?? fromProfile,
+      author_merge_attitude: resolved.mergeAttitude,
+      author_vibe_scale: resolved.vibeScale,
     };
   });
+}
+
+/** @deprecated use attachAuthorSocialContext */
+export async function attachAuthorTonightMoods(
+  posts: VibePost[],
+): Promise<PostSearchRow[]> {
+  return attachAuthorSocialContext(posts);
 }
 
 export type PartySizeFilter = "any" | "solo" | "small" | "large";
@@ -55,7 +68,8 @@ export function filterPostSearchRows(
   filters: {
     search: string;
     areas: Set<string>;
-    moods: Set<TonightSocialMoodId>;
+    mergeAttitudes: Set<MergeAttitude>;
+    vibeScales: Set<VibeScale>;
     partySize: PartySizeFilter;
   },
 ): PostSearchRow[] {
@@ -80,9 +94,14 @@ export function filterPostSearchRows(
       if (!inArea) return false;
     }
 
-    if (filters.moods.size > 0) {
-      const authorMood = post.author_tonight_social_mood;
-      if (!authorMood || !filters.moods.has(authorMood)) return false;
+    if (filters.mergeAttitudes.size > 0) {
+      const merge = post.author_merge_attitude;
+      if (!merge || !filters.mergeAttitudes.has(merge)) return false;
+    }
+
+    if (filters.vibeScales.size > 0) {
+      const vibe = post.author_vibe_scale;
+      if (!vibe || !filters.vibeScales.has(vibe)) return false;
     }
 
     const party = post.party_size ?? 1;
