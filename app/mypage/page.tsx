@@ -12,10 +12,7 @@ import {
   fetchUserGuestPosts,
   fetchUserInterestStats,
   fetchUserInterests,
-  updateTonightSocialContext,
 } from "@/lib/mypage/api";
-import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
-import TonightSocialContextPicker from "@/components/profile/TonightSocialContextPicker";
 import ProfileHero from "@/components/profile/ProfileHero";
 import ProfileSection from "@/components/profile/ProfileSection";
 import MyPageTabBar, { type MyPageTab } from "@/components/mypage/MyPageTabBar";
@@ -76,12 +73,6 @@ export default function MyPage() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [tab, setTab] = useState<MyPageTab>("drink_log");
   const [drinkLogView, setDrinkLogView] = useState<DrinkLogView>("grid");
-  const [socialContext, setSocialContext] = useState<TonightSocialContext>({
-    mergeAttitude: null,
-    vibeScale: null,
-  });
-  const [moodSaving, setMoodSaving] = useState(false);
-  const [moodError, setMoodError] = useState<string | null>(null);
   const drinkLogStats = useMemo(
     () => computeDrinkLogMonthStats(myPosts),
     [myPosts],
@@ -126,10 +117,6 @@ export default function MyPage() {
         ]);
 
       setProfile(profileResult.data);
-      setSocialContext({
-        mergeAttitude: profileResult.data.mergeAttitude,
-        vibeScale: profileResult.data.vibeScale,
-      });
       setInterests(interestsResult.data);
       setTodayInterests(todayInterestsResult.data);
       setStats(interestStats);
@@ -218,32 +205,6 @@ export default function MyPage() {
     setFavorites((prev) => prev.filter((item) => item.shop_id !== shopId));
   }
 
-  async function handleSocialContextChange(next: TonightSocialContext) {
-    if (!user) return;
-    setSocialContext(next);
-    setMoodSaving(true);
-    setMoodError(null);
-    const { error } = await updateTonightSocialContext(user.id, next);
-    setMoodSaving(false);
-    if (error) {
-      setMoodError(error);
-      setSocialContext({
-        mergeAttitude: profile?.mergeAttitude ?? null,
-        vibeScale: profile?.vibeScale ?? null,
-      });
-    } else {
-      setProfile((prev) =>
-        prev
-          ? {
-              ...prev,
-              mergeAttitude: next.mergeAttitude,
-              vibeScale: next.vibeScale,
-            }
-          : prev,
-      );
-    }
-  }
-
   async function handleLogout() {
     setLoggingOut(true);
     clearStoredAppMode();
@@ -307,7 +268,6 @@ export default function MyPage() {
       <ProfileHero
         displayName={displayName}
         avatarUrl={profile?.profile_image}
-        socialContext={socialContext}
         stats={[
           { value: myPosts.length, label: "投稿" },
           { value: stats.totalInterests, label: "行くかも" },
@@ -386,20 +346,6 @@ export default function MyPage() {
 
       {tab === "account" && (
         <div className="mt-4 space-y-8 pb-4">
-      <section className="rounded-2xl border border-white/[0.07] bg-[#111118] p-5">
-        <TonightSocialContextPicker
-          value={socialContext}
-          onChange={(ctx) => void handleSocialContextChange(ctx)}
-          disabled={moodSaving}
-        />
-        {moodSaving && (
-          <p className="mt-3 text-xs text-[#9994a8]">保存中...</p>
-        )}
-        {moodError && (
-          <p className="mt-3 text-xs text-red-400">{moodError}</p>
-        )}
-      </section>
-
       {staffInvites.length > 0 && (
         <ProfileSection
           title="スタッフ招待"

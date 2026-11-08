@@ -319,6 +319,11 @@ export default function SearchPageClient() {
               <p className="mt-0.5 text-xs text-[#9994a8]">
                 「{search.trim()}」で検索中
               </p>
+            ) : !areas.has("すべて") && areas.size > 0 ? (
+              <p className="mt-0.5 text-xs text-[#9994a8]">
+                mazare に登録されたお店をエリアで絞り込み中（Google
+                検索は投稿時のお店追加で利用）
+              </p>
             ) : mode === "shops" && isDefaultShopBrowseFilters(shopFilters) ? (
               <p className="mt-0.5 text-xs text-[#9994a8]">
                 近くの居酒屋・バーなど {displayedShops.length} 件

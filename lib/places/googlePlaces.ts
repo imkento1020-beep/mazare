@@ -28,6 +28,8 @@ type GooglePlace = {
   types?: string[];
   regularOpeningHours?: { weekdayDescriptions?: string[] };
   photos?: Array<{ name?: string }>;
+  editorialSummary?: { text?: string; languageCode?: string };
+  generativeSummary?: { overview?: { text?: string } };
 };
 
 function photoUrlFromReference(apiKey: string, photoName: string | undefined) {
@@ -199,16 +201,40 @@ export async function searchNearbyPlaces(input: {
   );
 }
 
-async function searchPlacesByTextNew(query: string): Promise<PlaceSummary[]> {
+async function searchPlacesByTextNew(
+  query: string,
+  options?: {
+    locationBias?: {
+      latitude: number;
+      longitude: number;
+      radiusMeters: number;
+    };
+  },
+): Promise<PlaceSummary[]> {
   const apiKey = getGooglePlacesApiKey();
+  const body: Record<string, unknown> = {
+    textQuery: query,
+    languageCode: "ja",
+    regionCode: "JP",
+    maxResultCount: 20,
+  };
+
+  const bias = options?.locationBias;
+  if (bias) {
+    body.locationBias = {
+      circle: {
+        center: {
+          latitude: bias.latitude,
+          longitude: bias.longitude,
+        },
+        radius: bias.radiusMeters,
+      },
+    };
+  }
+
   const data = await placesRequest<{ places?: GooglePlace[] }>(
     "places:searchText",
-    {
-      textQuery: query,
-      languageCode: "ja",
-      regionCode: "JP",
-      maxResultCount: 20,
-    },
+    body,
   );
 
   return (data.places ?? [])
@@ -216,10 +242,56 @@ async function searchPlacesByTextNew(query: string): Promise<PlaceSummary[]> {
     .filter((place): place is PlaceSummary => place !== null);
 }
 
-export async function searchPlacesByText(query: string): Promise<PlaceSummary[]> {
+export async function searchPlacesByText(
+  query: string,
+  options?: {
+    locationBias?: {
+      latitude: number;
+      longitude: number;
+      radiusMeters: number;
+    };
+  },
+): Promise<PlaceSummary[]> {
   return withLegacyFallback(
-    () => searchPlacesByTextNew(query),
+    () => searchPlacesByTextNew(query, options),
     () => searchPlacesByTextLegacy(query),
+  );
+}
+
+export function editorialTextFromGooglePlace(place: GooglePlace): string | null {
+  const editorial = place.editorialSummary?.text?.trim();
+  if (editorial) return editorial;
+  const generated = place.generativeSummary?.overview?.text?.trim();
+  return generated || null;
+}
+
+export async function fetchPlaceEditorialById(
+  placeId: string,
+): Promise<string | null> {
+  const normalized = placeId.replace(/^places\//, "");
+  return withLegacyFallback(
+    async () => {
+      const apiKey = getGooglePlacesApiKey();
+      if (!apiKey) return null;
+
+      return withPlacesApiRateLimit(async () => {
+        const response = await fetch(
+          `https://places.googleapis.com/v1/places/${encodeURIComponent(normalized)}`,
+          {
+            headers: {
+              "X-Goog-Api-Key": apiKey,
+              "X-Goog-FieldMask": "editorialSummary,generativeSummary",
+            },
+          },
+        );
+
+        if (!response.ok) return null;
+
+        const place = (await response.json()) as GooglePlace;
+        return editorialTextFromGooglePlace(place);
+      });
+    },
+    async () => null,
   );
 }
 

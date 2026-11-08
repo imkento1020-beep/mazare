@@ -1,4 +1,5 @@
 import { extractAreaFromAddress } from "@/lib/geo/area";
+import { addressMatchesAreaFilters } from "@/lib/geo/tokyoDrinkingAreas";
 import type { VibePost } from "@/lib/home/types";
 import { isWithinRecentPostsWindow } from "@/lib/home/recentWindow";
 import {
@@ -24,12 +25,26 @@ export async function attachAuthorSocialContext(
   >();
 
   if (authorIds.length > 0) {
-    const { data } = await supabase
+    let profileRows: Record<string, unknown>[] | null = null;
+
+    const primary = await supabase
       .from("profiles")
       .select("id, merge_attitude, vibe_scale, tonight_social_mood")
       .in("id", authorIds);
 
-    for (const row of data ?? []) {
+    if (!primary.error) {
+      profileRows = (primary.data as Record<string, unknown>[] | null) ?? null;
+    } else if (primary.error.message.includes("merge_attitude")) {
+      const legacy = await supabase
+        .from("profiles")
+        .select("id, tonight_social_mood")
+        .in("id", authorIds);
+      if (!legacy.error) {
+        profileRows = (legacy.data as Record<string, unknown>[] | null) ?? null;
+      }
+    }
+
+    for (const row of profileRows ?? []) {
       const ctx = parseTonightSocialContextFromProfile(row);
       profileByUser.set(String(row.id), ctx);
     }
@@ -83,15 +98,16 @@ export function filterPostSearchRows(
     const shop = post.shops;
     if (!shop) return false;
 
-    if (!filters.areas.has("すべて")) {
-      const address = shop.address ?? "";
-      const inArea =
-        filters.areas.has("その他")
-          ? !["渋谷", "恵比寿", "新宿", "銀座", "六本木", "中目黒"].some((a) =>
-              address.includes(a),
-            ) || [...filters.areas].some((a) => a !== "その他" && address.includes(a))
-          : [...filters.areas].some((a) => address.includes(a));
-      if (!inArea) return false;
+    const derived = extractAreaFromAddress(shop.address);
+    if (
+      !addressMatchesAreaFilters(
+        shop.address ?? "",
+        derived,
+        filters.areas,
+        shop.nearest_station,
+      )
+    ) {
+      return false;
     }
 
     if (filters.mergeAttitudes.size > 0) {

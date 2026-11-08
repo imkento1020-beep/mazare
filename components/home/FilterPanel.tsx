@@ -7,8 +7,6 @@ import NavMenuIcon from "@/components/icons/NavMenuIcon";
 import {
   AREA_FILTERS,
   GENRE_FILTERS,
-  MOOD_FILTERS,
-  toggleMood,
   toggleSetValue,
 } from "@/lib/home/filters";
 
@@ -149,19 +147,6 @@ export default function FilterPanel({
             onClick={() =>
               onGenresChange(toggleSetValue(genres, item.id, "すべて"))
             }
-          />
-        ))}
-      </FilterGroup>
-
-      <div className="mb-7 h-px bg-white/7" />
-
-      <FilterGroup title="今夜の雰囲気">
-        {MOOD_FILTERS.map((item) => (
-          <FilterChip
-            key={item.id}
-            label={item.label}
-            active={moods.has(item.id)}
-            onClick={() => onMoodsChange(toggleMood(moods, item.id))}
           />
         ))}
       </FilterGroup>

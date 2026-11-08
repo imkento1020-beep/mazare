@@ -5,6 +5,7 @@ import { configureGoogleMapsLoader } from "@/lib/map/google";
 import { ensureShopsFromPlacesClient } from "@/lib/places/cacheShopClient";
 import type { PlaceSummary } from "@/lib/places/types";
 import { labelsFromGooglePlaceTypes } from "@/lib/home/genreDisplay";
+import { placesSearchFromAreaFilters } from "@/lib/geo/tokyoDrinkingAreas";
 import {
   NEARBY_ALL_PRIMARY_TYPES,
   rankPlacesByNightlifeThenDistance,
@@ -226,12 +227,16 @@ async function searchPlacesByTextServer(
   query: string,
   limit: number,
   origin?: { latitude: number; longitude: number },
+  areaIds?: string[],
 ): Promise<PlaceSummary[] | null> {
   try {
     const response = await fetch("/api/places/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({
+        query,
+        areaIds: areaIds ?? [],
+      }),
     });
     const json = (await response.json()) as {
       places?: PlaceSummary[];
@@ -275,13 +280,23 @@ export async function searchPlacesByTextForPostPage(
     apiKey?: string | null;
     limit?: number;
     origin?: { latitude: number; longitude: number };
+    areas?: Set<string>;
   },
 ): Promise<PlaceSummary[]> {
   const limit = options?.limit ?? POST_PAGE_SEARCH_LIMIT;
-  const trimmed = query.trim();
+  const areaIds = options?.areas
+    ? [...options.areas].filter((id) => id !== "すべて" && id !== "その他")
+    : [];
+  const { textQuery } = placesSearchFromAreaFilters(query, options?.areas ?? new Set());
+  const trimmed = textQuery.trim();
   if (trimmed.length < 2) return [];
 
-  const fromServer = await searchPlacesByTextServer(trimmed, limit, options?.origin);
+  const fromServer = await searchPlacesByTextServer(
+    trimmed,
+    limit,
+    options?.origin,
+    areaIds,
+  );
   if (fromServer && fromServer.length > 0) {
     return fromServer;
   }

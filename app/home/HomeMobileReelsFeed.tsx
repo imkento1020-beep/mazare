@@ -74,7 +74,12 @@ export default function HomeMobileReelsFeed() {
   const reloadFeed = useCallback(
     async (activeUser: User | null) => {
       const { data, error: feedError } = await fetchHomeReelsFeed();
-      if (feedError) setError(feedError);
+      if (feedError) {
+        setError(feedError);
+        setPosts([]);
+        return;
+      }
+      setError(null);
       const withMoods = await attachAuthorTonightMoods(data);
       setPosts(withMoods);
 

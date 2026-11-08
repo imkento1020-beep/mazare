@@ -23,6 +23,7 @@ export const PLACES_DETAIL_BASE_FIELD_MASK = [
   "location",
   "regularOpeningHours",
   "types",
+  "editorialSummary",
 ].join(",");
 
 export const PLACES_DETAIL_FIELD_MASK = `${PLACES_DETAIL_BASE_FIELD_MASK},photos`;

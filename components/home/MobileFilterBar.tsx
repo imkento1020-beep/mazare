@@ -4,14 +4,12 @@ import { useState } from "react";
 import {
   AREA_FILTERS,
   GENRE_FILTERS,
-  MOOD_FILTERS,
   isFilterActive,
-  toggleMood,
   toggleSetValue,
 } from "@/lib/home/filters";
 import { CheckIcon, SparkleIcon } from "@/components/icons/MazareIcons";
 
-type FilterSheet = "genres" | "areas" | "moods" | null;
+type FilterSheet = "genres" | "areas" | null;
 
 type MobileFilterBarProps = {
   genres: Set<string>;
@@ -27,50 +25,38 @@ type MobileFilterBarProps = {
 const FILTER_BUTTONS = [
   { key: "genres" as const, label: "ジャンル" },
   { key: "areas" as const, label: "エリア" },
-  { key: "moods" as const, label: "ムード" },
 ];
 
 function getSheetOptions(sheet: Exclude<FilterSheet, null>) {
   if (sheet === "genres") {
     return GENRE_FILTERS.filter((item) => item.id !== "すべて");
   }
-  if (sheet === "areas") {
-    return AREA_FILTERS.filter((item) => item.id !== "すべて");
-  }
-  return MOOD_FILTERS;
+  return AREA_FILTERS.filter((item) => item.id !== "すべて");
 }
 
 function isOptionActive(
   sheet: Exclude<FilterSheet, null>,
   optionId: string,
   genres: Set<string>,
-  moods: Set<string>,
   areas: Set<string>,
 ) {
   if (sheet === "genres") return genres.has(optionId);
-  if (sheet === "areas") return areas.has(optionId);
-  return moods.has(optionId);
+  return areas.has(optionId);
 }
 
 function toggleOption(
   sheet: Exclude<FilterSheet, null>,
   optionId: string,
   genres: Set<string>,
-  moods: Set<string>,
   areas: Set<string>,
   onGenresChange: (value: Set<string>) => void,
-  onMoodsChange: (value: Set<string>) => void,
   onAreasChange: (value: Set<string>) => void,
 ) {
   if (sheet === "genres") {
     onGenresChange(toggleSetValue(genres, optionId, "すべて"));
     return;
   }
-  if (sheet === "areas") {
-    onAreasChange(toggleSetValue(areas, optionId, "すべて"));
-    return;
-  }
-  onMoodsChange(toggleMood(moods, optionId));
+  onAreasChange(toggleSetValue(areas, optionId, "すべて"));
 }
 
 export default function MobileFilterBar({
@@ -78,9 +64,9 @@ export default function MobileFilterBar({
   moods,
   areas,
   onGenresChange,
-  onMoodsChange,
+  onMoodsChange: _onMoodsChange,
   onAreasChange,
-  newShopsOnly = false,
+  newShopsOnly,
   onNewShopsOnlyChange,
 }: MobileFilterBarProps) {
   const [openSheet, setOpenSheet] = useState<FilterSheet>(null);
@@ -91,7 +77,7 @@ export default function MobileFilterBar({
         <button
           type="button"
           onClick={() => onNewShopsOnlyChange(!newShopsOnly)}
-          className={`mb-2 w-full rounded-[10px] border px-3 py-2.5 text-xs font-bold transition md:hidden ${
+          className={`mb-4 w-full rounded-[12px] border px-3 py-2.5 text-xs font-bold transition md:hidden ${
             newShopsOnly
               ? "border-[#00e87a] bg-[#00e87a]/10 text-[#00e87a]"
               : "border-white/[0.12] bg-[#111118] text-[#9994a8]"
@@ -104,7 +90,7 @@ export default function MobileFilterBar({
         </button>
       )}
 
-      <div className="mb-4 grid grid-cols-3 gap-2 md:hidden">
+      <div className="mb-4 grid grid-cols-2 gap-2 md:hidden">
         {FILTER_BUTTONS.map((button) => {
           const active = isFilterActive(genres, moods, areas, button.key);
           return (
@@ -152,7 +138,6 @@ export default function MobileFilterBar({
                   openSheet,
                   option.id,
                   genres,
-                  moods,
                   areas,
                 );
                 return (
@@ -164,10 +149,8 @@ export default function MobileFilterBar({
                         openSheet,
                         option.id,
                         genres,
-                        moods,
                         areas,
                         onGenresChange,
-                        onMoodsChange,
                         onAreasChange,
                       )
                     }
@@ -185,14 +168,6 @@ export default function MobileFilterBar({
                 );
               })}
             </div>
-
-            <button
-              type="button"
-              onClick={() => setOpenSheet(null)}
-              className="mt-4 w-full rounded-xl bg-[#ff3d00] py-3 text-sm font-bold text-white"
-            >
-              適用する
-            </button>
           </div>
         </div>
       )}

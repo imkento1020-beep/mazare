@@ -26,18 +26,13 @@ import { loadNearbyFromUserGesture } from "@/lib/places/loadNearbyFromUserGestur
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 import { fetchShopById } from "@/lib/shop/api";
 import { supabase } from "@/lib/supabase";
-import {
-  fetchGuestProfile,
-  updateTonightSocialContext,
-} from "@/lib/mypage/api";
+import { updateTonightSocialContext } from "@/lib/mypage/api";
 import {
   defaultMazaruSettings,
   mazaruToSocialContext,
-  socialContextToMazaruMode,
   type PostMazaruSettings,
 } from "@/lib/guest-post/mazaruSettings";
 import type { Shop } from "@/lib/home/types";
-import PostComposeProgress from "@/components/guest-post/compose/PostComposeProgress";
 import PostStepShop from "@/components/guest-post/compose/PostStepShop";
 import PostStepMedia from "@/components/guest-post/compose/PostStepMedia";
 import PostStepFinish from "@/components/guest-post/compose/PostStepFinish";
@@ -190,29 +185,6 @@ export default function PostPageClient() {
       cancelled = true;
     };
   }, [user?.id]);
-
-  useEffect(() => {
-    if (!user?.id) return;
-
-    let cancelled = false;
-    void (async () => {
-      const { data } = await fetchGuestProfile(user);
-      if (cancelled) return;
-      const mode = socialContextToMazaruMode({
-        mergeAttitude: data.mergeAttitude,
-        vibeScale: data.vibeScale,
-      });
-      if (mode) {
-        setMazaruSettings((prev) =>
-          prev.mode === null ? { ...prev, mode } : prev,
-        );
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
 
   function handleLoadNearbyClick() {
     if (!mapsApiKey) return;
@@ -408,43 +380,13 @@ export default function PostPageClient() {
     >
       <Header />
 
-      <div className="sticky top-16 z-20 border-b border-white/[0.06] bg-[#080810]/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-4 py-2">
-          {showBack ? (
-            <button
-              type="button"
-              onClick={goBack}
-              className="text-sm font-bold text-[#9994a8] hover:text-[#eeeaf4]"
-            >
-              戻る
-            </button>
-          ) : (
-            <span className="w-10" />
-          )}
-          <p className="text-sm font-black">今夜のお店をシェア</p>
-          {isFinish ? (
-            <button
-              type="button"
-              disabled={submitting || !authReady}
-              onClick={() => void handleSubmit()}
-              className="text-sm font-black text-[#ff3d00] disabled:opacity-50"
-            >
-              {submitting ? "…" : "投稿"}
-            </button>
-          ) : (
-            <span className="w-10" />
-          )}
-        </div>
-        <div className="mx-auto max-w-lg px-4 pb-2">
-          <PostComposeProgress current={step} shopPreselected={shopPreselected} />
-        </div>
-      </div>
-
       <main
         className={`mx-auto flex w-full max-w-lg min-h-0 flex-1 flex-col overflow-y-auto ${
           step === "finish"
-            ? "overflow-hidden px-0 py-0 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0"
-            : "px-4 py-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] md:pb-28"
+            ? "overflow-hidden px-0 py-0 pb-[calc(8.25rem+env(safe-area-inset-bottom,0px))] md:pb-[5.5rem]"
+            : showBack
+              ? "px-4 py-4 pb-[calc(8.25rem+env(safe-area-inset-bottom,0px))] md:pb-[5.5rem]"
+              : "px-4 py-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] md:pb-28"
         }`}
       >
         {!mapsKeyLoading && !mapsApiKey && step === "shop" ? (
@@ -525,9 +467,41 @@ export default function PostPageClient() {
         ) : null}
       </main>
 
-      {step !== "finish" ? (
-        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-[110] border-t border-white/[0.06] bg-[#080810]/98 px-4 py-3 backdrop-blur-md md:bottom-0">
-          <div className="mx-auto flex max-w-lg">
+      {isFinish ? (
+        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-[110] border-t border-white/[0.08] bg-[#080810]/98 px-4 py-3 backdrop-blur-md md:bottom-0">
+          <div className="mx-auto flex max-w-lg gap-3">
+            <button
+              type="button"
+              onClick={goBack}
+              disabled={submitting}
+              className="min-h-[52px] flex-1 rounded-[14px] border border-white/[0.18] bg-[#18181f] py-3.5 text-base font-bold text-[#eeeaf4] transition hover:border-white/25 hover:bg-[#1f1f28] disabled:opacity-50"
+            >
+              戻る
+            </button>
+            <button
+              type="button"
+              disabled={submitting || !authReady}
+              onClick={() => void handleSubmit()}
+              className="min-h-[52px] flex-[1.15] rounded-[14px] bg-[#ff3d00] py-3.5 text-base font-black text-white shadow-[0_4px_20px_rgba(255,61,0,0.35)] transition hover:bg-[#e63600] disabled:opacity-50"
+            >
+              {submitting ? "投稿中…" : "投稿する"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-[110] border-t border-white/[0.08] bg-[#080810]/98 px-4 py-3 backdrop-blur-md md:bottom-0">
+          <div
+            className={`mx-auto flex max-w-lg ${showBack ? "gap-3" : ""}`.trim()}
+          >
+            {showBack ? (
+              <button
+                type="button"
+                onClick={goBack}
+                className="min-h-[52px] flex-1 rounded-[14px] border border-white/[0.18] bg-[#18181f] py-3.5 text-base font-bold text-[#eeeaf4] transition hover:border-white/25 hover:bg-[#1f1f28]"
+              >
+                戻る
+              </button>
+            ) : null}
             <button
               type="button"
               disabled={
@@ -535,13 +509,15 @@ export default function PostPageClient() {
                 (step === "media" && (!selectedShop || !hasMedia))
               }
               onClick={goNext}
-              className="w-full rounded-[14px] bg-[#ff3d00] py-3.5 text-sm font-black text-white disabled:opacity-50"
+              className={`min-h-[52px] rounded-[14px] bg-[#ff3d00] py-3.5 text-base font-black text-white shadow-[0_4px_20px_rgba(255,61,0,0.35)] transition hover:bg-[#e63600] disabled:opacity-50 ${
+                showBack ? "flex-[1.15]" : "w-full"
+              }`}
             >
               次へ
             </button>
           </div>
         </div>
-      ) : null}
+      )}
 
       {submitting ? (
         <LoadingOverlay

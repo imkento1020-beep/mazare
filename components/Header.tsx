@@ -221,11 +221,6 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
         </form>
 
         <div className="ml-auto flex items-center gap-1 md:gap-2">
-          <div className="md:hidden">
-            <IconButton href="/search" label="検索">
-              <SearchIcon size={20} color="currentColor" />
-            </IconButton>
-          </div>
           {isDualRole && (
             <AppModeSwitcher mode={mode} onModeChange={setMode} compact />
           )}

@@ -17,7 +17,7 @@ export type HomeReelsPost = VibePost & {
   author_vibe_scale?: VibeScale | null;
 };
 
-const SELECT = `
+const POST_CORE_FIELDS = `
   id,
   shop_id,
   comment,
@@ -34,18 +34,27 @@ const SELECT = `
   drink_name,
   drink_cups,
   drink_count,
-  party_size,
-  mazaru_mode,
-  mazaru_details,
-  author_merge_attitude,
-  author_vibe_scale,
-  ${POST_CARD_SHOP_RELATION}
+  party_size
 `;
 
-const SELECT_LEGACY = SELECT.replace(
-  POST_CARD_SHOP_RELATION,
-  POST_CARD_SHOP_RELATION_LEGACY,
-);
+function buildPostSelect(extraFields: string, shopRelation: string) {
+  const extra = extraFields.trim();
+  return `${POST_CORE_FIELDS}${extra ? `, ${extra}` : ""}, ${shopRelation}`;
+}
+
+/** 存在しないカラムを順に外してクエリが通るまで試す */
+const FEED_SELECT_VARIANTS = [
+  buildPostSelect(
+    "mazaru_mode, mazaru_details, author_merge_attitude, author_vibe_scale",
+    POST_CARD_SHOP_RELATION,
+  ),
+  buildPostSelect(
+    "author_merge_attitude, author_vibe_scale",
+    POST_CARD_SHOP_RELATION,
+  ),
+  buildPostSelect("", POST_CARD_SHOP_RELATION),
+  buildPostSelect("", POST_CARD_SHOP_RELATION_LEGACY),
+];
 
 function mapRow(row: Record<string, unknown>): HomeReelsPost {
   const shopRaw = row.shops;
@@ -63,7 +72,9 @@ function mapRow(row: Record<string, unknown>): HomeReelsPost {
     posted_at: typeof row.posted_at === "string" ? row.posted_at : null,
     hashtags: Array.isArray(row.hashtags) ? row.hashtags.map(String) : [],
     media_type:
-      row.media_type === "image" || row.media_type === "video"
+      row.media_type === "image" ||
+      row.media_type === "video" ||
+      row.media_type === "mixed"
         ? row.media_type
         : null,
     is_guest_post: Boolean(row.is_guest_post),
@@ -74,7 +85,8 @@ function mapRow(row: Record<string, unknown>): HomeReelsPost {
     ...parseNightOutFromRow(row),
     ...parseMazaruFromRow(row),
     author_merge_attitude:
-      row.author_merge_attitude === "open" || row.author_merge_attitude === "closed"
+      row.author_merge_attitude === "open" ||
+      row.author_merge_attitude === "closed"
         ? row.author_merge_attitude
         : null,
     author_vibe_scale:
@@ -122,36 +134,33 @@ async function attachAuthors(posts: HomeReelsPost[]): Promise<HomeReelsPost[]> {
   });
 }
 
+async function queryGuestPosts(select: string, nowIso: string) {
+  return supabase
+    .from("vibe_posts")
+    .select(select)
+    .eq("is_guest_post", true)
+    .lte("posted_at", nowIso)
+    .order("posted_at", { ascending: false })
+    .limit(50);
+}
+
 export async function fetchHomeReelsFeed(): Promise<{
   data: HomeReelsPost[];
   error: string | null;
 }> {
   const nowIso = new Date().toISOString();
 
-  const primary = await supabase
-    .from("vibe_posts")
-    .select(SELECT)
-    .eq("is_guest_post", true)
-    .lte("posted_at", nowIso)
-    .order("posted_at", { ascending: false })
-    .limit(50);
+  let rows: unknown[] | null = null;
+  let fetchError: { message: string } | null = null;
 
-  let rows: unknown[] | null = primary.data as unknown[] | null;
-  let fetchError = primary.error;
-
-  if (
-    fetchError?.message?.includes("nearest_station") ||
-    fetchError?.message?.includes("mazaru_mode")
-  ) {
-    const retry = await supabase
-      .from("vibe_posts")
-      .select(SELECT_LEGACY)
-      .eq("is_guest_post", true)
-      .lte("posted_at", nowIso)
-      .order("posted_at", { ascending: false })
-      .limit(50);
-    rows = retry.data as unknown[] | null;
-    fetchError = retry.error;
+  for (const select of FEED_SELECT_VARIANTS) {
+    const result = await queryGuestPosts(select, nowIso);
+    if (!result.error) {
+      rows = result.data as unknown[] | null;
+      fetchError = null;
+      break;
+    }
+    fetchError = result.error;
   }
 
   if (fetchError) return { data: [], error: fetchError.message };

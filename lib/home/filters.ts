@@ -1,3 +1,5 @@
+import { addressMatchesAreaFilters } from "@/lib/geo/tokyoDrinkingAreas";
+import { extractAreaFromAddress } from "@/lib/geo/area";
 import { formatGenre, type Shop, type VibePost } from "./types";
 import { isNewShop } from "./newShops";
 import { excludeShopRegistrationPosts } from "./shopRegistration";
@@ -22,14 +24,11 @@ export const MOOD_FILTERS = [
   { id: "歌える", label: "歌える" },
 ];
 
+import { KNOWN_TOKYO_AREA_IDS } from "@/lib/geo/tokyoDrinkingAreas";
+
 export const AREA_FILTERS = [
   { id: "すべて", label: "すべて" },
-  { id: "渋谷", label: "渋谷" },
-  { id: "恵比寿", label: "恵比寿" },
-  { id: "新宿", label: "新宿" },
-  { id: "銀座", label: "銀座" },
-  { id: "六本木", label: "六本木" },
-  { id: "中目黒", label: "中目黒" },
+  ...KNOWN_TOKYO_AREA_IDS.map((id) => ({ id, label: id })),
   { id: "その他", label: "その他" },
 ];
 
@@ -37,9 +36,7 @@ const KNOWN_GENRES = GENRE_FILTERS.filter(
   (item) => item.id !== "すべて" && item.id !== "その他",
 ).map((item) => item.id);
 
-const KNOWN_AREAS = AREA_FILTERS.filter(
-  (item) => item.id !== "すべて" && item.id !== "その他",
-).map((item) => item.id);
+const KNOWN_AREAS = KNOWN_TOKYO_AREA_IDS;
 
 export function toggleSetValue(
   current: Set<string>,
@@ -83,18 +80,17 @@ function matchesGenreFilter(shop: Shop, genres: Set<string>) {
   return values.some((genre) => genres.has(genre));
 }
 
-function matchesAreaFilter(address: string, areas: Set<string>) {
-  if (areas.has("すべて")) return true;
-
-  if (areas.has("その他")) {
-    const hasKnown = KNOWN_AREAS.some((area) => address.includes(area));
-    const matchesSelected = [...areas].some(
-      (area) => area !== "その他" && address.includes(area),
-    );
-    return matchesSelected || !hasKnown;
-  }
-
-  return [...areas].some((area) => address.includes(area));
+function matchesAreaFilter(
+  address: string,
+  areas: Set<string>,
+  nearestStation?: string | null,
+) {
+  return addressMatchesAreaFilters(
+    address,
+    extractAreaFromAddress(address),
+    areas,
+    nearestStation,
+  );
 }
 
 export function filterPosts(

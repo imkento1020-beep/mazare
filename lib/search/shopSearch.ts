@@ -1,4 +1,5 @@
 import { extractAreaFromAddress } from "@/lib/geo/area";
+import { addressMatchesAreaFilters } from "@/lib/geo/tokyoDrinkingAreas";
 import { haversineDistanceKm, type GeoPoint } from "@/lib/geo/haversine";
 import { formatGenre, type Shop, type VibePost } from "@/lib/home/types";
 import { isWithinRecentPostsWindow } from "@/lib/home/recentWindow";
@@ -161,14 +162,15 @@ export function filterShopSearchItems(
       return false;
     }
 
-    if (!filters.areas.has("すべて")) {
-      const inArea =
-        filters.areas.has("その他")
-          ? !["渋谷", "恵比寿", "新宿", "銀座", "六本木", "中目黒"].some((a) =>
-              item.shop.address.includes(a),
-            ) || [...filters.areas].some((a) => a !== "その他" && item.shop.address.includes(a))
-          : [...filters.areas].some((a) => item.shop.address.includes(a));
-      if (!inArea) return false;
+    if (
+      !addressMatchesAreaFilters(
+        item.shop.address,
+        item.area,
+        filters.areas,
+        item.shop.nearest_station,
+      )
+    ) {
+      return false;
     }
 
     if (!filters.genres.has("すべて")) {

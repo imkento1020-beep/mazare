@@ -1,16 +1,15 @@
-import { AREA_FILTERS } from "@/lib/home/filters";
+import { KNOWN_TOKYO_AREA_IDS } from "@/lib/geo/tokyoDrinkingAreas";
 
 /** フィルター用の主要エリア（長い名称を先にマッチ） */
-const FILTER_AREA_NAMES = AREA_FILTERS.filter(
-  (area) => area.id !== "すべて" && area.id !== "その他",
-)
-  .map((area) => area.id)
-  .sort((a, b) => b.length - a.length);
+const FILTER_AREA_NAMES = [...KNOWN_TOKYO_AREA_IDS].sort(
+  (a, b) => b.length - a.length,
+);
 
 /**
  * 住所に含まれることが多いエリア名（フィルター外の表示用）
  * 例: 港区新橋 → 「新橋」を優先表示
  */
+
 const NEIGHBORHOOD_KEYWORDS = [
   "代官山",
   "自由が丘",
@@ -100,6 +99,10 @@ export function extractAreaFromAddress(address: string | null | undefined): stri
 
   for (const area of FILTER_AREA_NAMES) {
     if (normalized.includes(area)) return area;
+  }
+
+  for (const id of KNOWN_TOKYO_AREA_IDS) {
+    if (normalized.includes(id)) return id;
   }
 
   for (const keyword of NEIGHBORHOOD_KEYWORDS) {

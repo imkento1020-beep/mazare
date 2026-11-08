@@ -5,7 +5,7 @@ export const SHOP_SELECT_BASE =
   "id, name, address, genre, open_hours, cover_image, cover_images, owner_id, staff_ids, created_at";
 
 export const SHOP_SELECT_WITH_COORDS = `${SHOP_SELECT_BASE}, latitude, longitude`;
-export const SHOP_SELECT_WITH_COORDS_AND_STATION = `${SHOP_SELECT_WITH_COORDS}, nearest_station, cached_photo_url, google_place_id`;
+export const SHOP_SELECT_WITH_COORDS_AND_STATION = `${SHOP_SELECT_WITH_COORDS}, nearest_station, cached_photo_url, google_place_id, description`;
 
 function isMissingShopsColumnError(message: string, columns: string[]) {
   const normalized = message.toLowerCase();
@@ -24,6 +24,7 @@ function isMissingNearestStationColumnError(message: string) {
     "nearest_station",
     "cached_photo_url",
     "google_place_id",
+    "description",
   ]);
 }
 

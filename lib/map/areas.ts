@@ -1,3 +1,5 @@
+import { TOKYO_DRINKING_AREAS } from "@/lib/geo/tokyoDrinkingAreas";
+
 export type MapPin = {
   shopId: string;
   name: string;
@@ -7,17 +9,23 @@ export type MapPin = {
   live: boolean;
 };
 
-const AREA_POSITIONS: Record<string, { x: number; y: number }> = {
-  渋谷: { x: 42, y: 58 },
-  恵比寿: { x: 55, y: 52 },
-  新宿: { x: 38, y: 38 },
-  六本木: { x: 62, y: 45 },
-  池袋: { x: 48, y: 28 },
-};
+/** 簡易ピン位置（%）— 東京ナイトマップ用 */
+const AREA_POSITIONS: Record<string, { x: number; y: number }> =
+  Object.fromEntries(
+    TOKYO_DRINKING_AREAS.map((area, index) => [
+      area.id,
+      {
+        x: 18 + (index % 6) * 12,
+        y: 22 + Math.floor(index / 6) * 18,
+      },
+    ]),
+  );
 
 export function extractArea(address: string) {
-  for (const area of Object.keys(AREA_POSITIONS)) {
-    if (address.includes(area)) return area;
+  for (const area of TOKYO_DRINKING_AREAS) {
+    if (area.matchTerms.some((term) => address.includes(term))) {
+      return area.id;
+    }
   }
   return "渋谷";
 }

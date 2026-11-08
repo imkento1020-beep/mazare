@@ -13,6 +13,8 @@ type MapActivitySheetProps = {
   open: boolean;
   interestLoading?: boolean;
   interested?: boolean;
+  interestPostResolving?: boolean;
+  interestPostAvailable?: boolean;
   onClose: () => void;
   onInterest: () => void;
 };
@@ -25,9 +27,13 @@ export default function MapActivitySheet({
   open,
   interestLoading,
   interested,
+  interestPostResolving = false,
+  interestPostAvailable = true,
   onClose,
   onInterest,
 }: MapActivitySheetProps) {
+  const interestDisabled =
+    interestLoading || interestPostResolving || !interestPostAvailable;
   if (!open || !activity) return null;
 
   return (
@@ -79,11 +85,15 @@ export default function MapActivitySheet({
         <div className="mt-5 flex gap-3">
           <button
             type="button"
-            disabled={interestLoading || !activity.latestPostId}
+            disabled={interestDisabled}
             onClick={onInterest}
             className="flex-1 rounded-[12px] bg-[#ff3d00] py-3 text-sm font-bold text-white disabled:opacity-60"
           >
-            {interested ? "行くかも済み" : "今夜行くかも"}
+            {interestPostResolving
+              ? "確認中…"
+              : interested
+                ? "行くかも済み"
+                : "今夜行くかも"}
           </button>
           <Link
             href={`/shop/${activity.shopId}`}
@@ -92,6 +102,11 @@ export default function MapActivitySheet({
             詳細を見る
           </Link>
         </div>
+        {!interestPostResolving && !interestPostAvailable ? (
+          <p className="mt-2 text-center text-[11px] text-[#5a5668]">
+            このお店にはまだ投稿がないため「今夜行くかも」は使えません
+          </p>
+        ) : null}
       </div>
       <style jsx global>{`
         @keyframes slideUp {

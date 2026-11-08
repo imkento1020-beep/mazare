@@ -104,10 +104,6 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
           displayName={profile.display_name}
           avatarUrl={profile.profile_image}
           metaLine={joinLine}
-          socialContext={{
-            mergeAttitude: profile.mergeAttitude,
-            vibeScale: profile.vibeScale,
-          }}
           stats={[
             { value: posts.length, label: "投稿" },
             { value: insights.tonightPostCount, label: "今夜" },

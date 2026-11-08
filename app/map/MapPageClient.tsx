@@ -39,6 +39,7 @@ import {
 } from "@/hooks/useEnrichShopNearestStations";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { isRegisteredUser } from "@/lib/auth/anonymous";
+import { fetchLatestVibePostForInterest } from "@/lib/shop/api";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 
 type MapPageClientProps = {
@@ -60,6 +61,8 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [interestedPostIds, setInterestedPostIds] = useState<Set<string>>(new Set());
+  const [interestPostId, setInterestPostId] = useState<string | null>(null);
+  const [interestPostResolving, setInterestPostResolving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(
     null,
@@ -97,15 +100,27 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
   useEffect(() => {
     void reload();
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const activeUser = session?.user ?? null;
+    async function syncUserInterests(activeUser: User | null) {
       setUser(activeUser);
-      if (!activeUser) return;
+      if (!activeUser) {
+        setInterestedPostIds(new Set());
+        return;
+      }
       const { data } = await supabase
         .from("interests")
         .select("vibe_post_id")
         .eq("user_id", activeUser.id);
       setInterestedPostIds(new Set((data ?? []).map((row) => row.vibe_post_id)));
+    }
+
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      void syncUserInterests(session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void syncUserInterests(session?.user ?? null);
     });
 
     const channel = supabase
@@ -120,6 +135,7 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
       .subscribe();
 
     return () => {
+      subscription.unsubscribe();
       void supabase.removeChannel(channel);
     };
   }, [reload]);
@@ -156,6 +172,37 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
   const selectedActivity =
     activities.find((item) => item.shopId === selectedId) ?? null;
 
+  useEffect(() => {
+    if (!sheetOpen || !selectedActivity) {
+      setInterestPostId(null);
+      setInterestPostResolving(false);
+      return;
+    }
+
+    const fromActivity = selectedActivity.latestPostId?.trim() || null;
+    if (fromActivity) {
+      setInterestPostId(fromActivity);
+      setInterestPostResolving(false);
+      return;
+    }
+
+    let cancelled = false;
+    setInterestPostResolving(true);
+    setInterestPostId(null);
+
+    void fetchLatestVibePostForInterest(selectedActivity.shopId).then(
+      (result) => {
+        if (cancelled) return;
+        setInterestPostId(result.data?.id ?? null);
+        setInterestPostResolving(false);
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedActivity, sheetOpen]);
+
   const mapShopsForEnrichment = useMemo(
     () => activities.map((item) => item.shop),
     [activities],
@@ -177,7 +224,19 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
   }, [selectedActivity, stationMap, userLocation]);
 
   async function handleInterest() {
-    if (!selectedActivity?.latestPostId) return;
+    if (!selectedActivity) return;
+
+    let postId = interestPostId;
+    if (!postId) {
+      if (interestPostResolving) return;
+      const resolved = await fetchLatestVibePostForInterest(
+        selectedActivity.shopId,
+      );
+      postId = resolved.data?.id ?? null;
+      setInterestPostId(postId);
+      if (!postId) return;
+    }
+
     if (!isRegisteredUser(user)) {
       openAuthPrompt({
         title: "ログインして「今夜行くかも」",
@@ -187,7 +246,6 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
       return;
     }
 
-    const postId = selectedActivity.latestPostId;
     const interested = interestedPostIds.has(postId);
     setSubmitting(true);
 
@@ -300,11 +358,13 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
           locationLabel={selectedLocationLabel}
           open={sheetOpen}
           interested={
-            selectedActivity
-              ? interestedPostIds.has(selectedActivity.latestPostId)
-              : false
+            interestPostId ? interestedPostIds.has(interestPostId) : false
           }
           interestLoading={submitting}
+          interestPostResolving={interestPostResolving}
+          interestPostAvailable={Boolean(
+            interestPostId || selectedActivity?.latestPostId?.trim(),
+          )}
           onClose={() => setSheetOpen(false)}
           onInterest={() => void handleInterest()}
         />

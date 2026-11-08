@@ -133,6 +133,11 @@ export default function ShopDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shopAbout, setShopAbout] = useState<string | null>(null);
+  const [shopAboutSource, setShopAboutSource] = useState<
+    "google" | "owner" | null
+  >(null);
+  const [shopAboutLoading, setShopAboutLoading] = useState(true);
 
   const latestPost = posts[0] ?? null;
   const tonightCupTotals = useMemo(
@@ -208,6 +213,41 @@ export default function ShopDetailPage() {
     }
 
     load();
+  }, [shopId]);
+
+  useEffect(() => {
+    if (!shopId) return;
+
+    let cancelled = false;
+    setShopAboutLoading(true);
+
+    void fetch(`/api/shops/${shopId}/google-about`)
+      .then(async (response) => {
+        const json = (await response.json()) as {
+          description?: string | null;
+          source?: "google" | "owner" | null;
+        };
+        if (cancelled) return;
+        setShopAbout(
+          typeof json.description === "string" && json.description.trim()
+            ? json.description.trim()
+            : null,
+        );
+        setShopAboutSource(json.source ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setShopAbout(null);
+          setShopAboutSource(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setShopAboutLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [shopId]);
 
   useEffect(() => {
@@ -370,6 +410,8 @@ export default function ShopDetailPage() {
 
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.address)}`;
   const locationLabel = getPostCardLocationLabel(userLocation, enrichedShop);
+  const aboutFallback = `${shop.name}は${formatGenre(shop.genre)}。今夜の雰囲気はゲスト投稿からチェックできます。`;
+  const aboutText = shopAbout ?? shop.description?.trim() ?? aboutFallback;
 
   return (
     <GuestLayout
@@ -504,10 +546,18 @@ export default function ShopDetailPage() {
 
         <section className="mt-8 rounded-[14px] border border-white/7 bg-[#111118] p-4">
           <h2 className="text-sm font-bold text-[#eeeaf4]">お店の基本情報</h2>
-          <p className="mt-3 text-sm leading-relaxed text-[#9994a8]">
-            {shop.description ??
-              `${shop.name}は${formatGenre(shop.genre)}。知らない人とも自然に混ざれる、今夜行きたい場所です。`}
-          </p>
+          {shopAboutLoading ? (
+            <p className="mt-3 text-sm text-[#5a5668]">Google から情報を取得中…</p>
+          ) : (
+            <p className="mt-3 text-sm leading-relaxed text-[#9994a8]">
+              {aboutText}
+            </p>
+          )}
+          {shopAboutSource === "google" ? (
+            <p className="mt-2 text-[10px] text-[#5a5668]">
+              説明: Google マップ（要約）
+            </p>
+          ) : null}
           <a
             href={mapsUrl}
             target="_blank"
