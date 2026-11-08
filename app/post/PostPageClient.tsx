@@ -30,7 +30,12 @@ import {
   fetchGuestProfile,
   updateTonightSocialContext,
 } from "@/lib/mypage/api";
-import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
+import {
+  defaultMazaruSettings,
+  mazaruToSocialContext,
+  socialContextToMazaruMode,
+  type PostMazaruSettings,
+} from "@/lib/guest-post/mazaruSettings";
 import type { Shop } from "@/lib/home/types";
 import PostComposeProgress from "@/components/guest-post/compose/PostComposeProgress";
 import PostStepShop from "@/components/guest-post/compose/PostStepShop";
@@ -86,10 +91,8 @@ export default function PostPageClient() {
     name: string;
   } | null>(null);
   const [loadingPresetShop, setLoadingPresetShop] = useState(Boolean(urlShopId));
-  const [socialContext, setSocialContext] = useState<TonightSocialContext>({
-    mergeAttitude: null,
-    vibeScale: null,
-  });
+  const [mazaruSettings, setMazaruSettings] =
+    useState<PostMazaruSettings>(defaultMazaruSettings);
 
   const shopPreselected = Boolean(lockedShop);
   const parsedBody = useMemo(() => parseGuestPostBody(bodyText), [bodyText]);
@@ -195,10 +198,15 @@ export default function PostPageClient() {
     void (async () => {
       const { data } = await fetchGuestProfile(user);
       if (cancelled) return;
-      setSocialContext({
+      const mode = socialContextToMazaruMode({
         mergeAttitude: data.mergeAttitude,
         vibeScale: data.vibeScale,
       });
+      if (mode) {
+        setMazaruSettings((prev) =>
+          prev.mode === null ? { ...prev, mode } : prev,
+        );
+      }
     })();
 
     return () => {
@@ -318,6 +326,7 @@ export default function PostPageClient() {
       return;
     }
 
+    const socialContext = mazaruToSocialContext(mazaruSettings);
     await updateTonightSocialContext(activeUser.id, socialContext);
 
     const priorCount = await countGuestPostsByUser(activeUser.id);
@@ -329,6 +338,7 @@ export default function PostPageClient() {
       hashtags,
       nightOut,
       socialContext,
+      mazaruSettings,
       comment,
       imageFiles: videoFile ? undefined : imageFiles,
       videoFile,
@@ -491,8 +501,8 @@ export default function PostPageClient() {
             videoFile={videoFile}
             nightOut={nightOut}
             onNightOutChange={setNightOut}
-            socialContext={socialContext}
-            onSocialContextChange={setSocialContext}
+            mazaruSettings={mazaruSettings}
+            onMazaruSettingsChange={setMazaruSettings}
             bodyText={bodyText}
             onBodyTextChange={setBodyText}
             comment={parsedBody.comment}

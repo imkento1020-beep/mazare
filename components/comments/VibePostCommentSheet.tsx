@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
@@ -71,6 +72,28 @@ export default function VibePostCommentSheet({
   const [viewerName, setViewerName] = useState("ゲスト");
   const listEndRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const onCountChangeRef = useRef(onCountChange);
+  const [portalReady, setPortalReady] = useState(false);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
+
+  useEffect(() => {
+    onCountChangeRef.current = onCountChange;
+  }, [onCountChange]);
+
+  const publishCount = useCallback((count: number) => {
+    onCountChangeRef.current?.(count);
+  }, []);
+
+  const mergeComments = useCallback(
+    (next: VibePostComment[]) => {
+      setComments(next);
+      publishCount(next.length);
+    },
+    [publishCount],
+  );
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -78,16 +101,14 @@ export default function VibePostCommentSheet({
     });
   }, []);
 
-  const applyComments = useCallback(
-    (next: VibePostComment[]) => {
-      setComments(next);
-      onCountChange?.(next.length);
-    },
-    [onCountChange],
-  );
-
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setComments([]);
+      setLoading(false);
+      setError(null);
+      setDraft("");
+      return;
+    }
 
     let cancelled = false;
 
@@ -97,7 +118,7 @@ export default function VibePostCommentSheet({
       const result = await fetchCommentsForPost(vibePostId);
       if (cancelled) return;
       if (result.error) setError(result.error);
-      applyComments(result.data);
+      mergeComments(result.data);
       setLoading(false);
       scrollToBottom();
     }
@@ -105,7 +126,7 @@ export default function VibePostCommentSheet({
     void load();
 
     const channel = supabase
-      .channel(`comments-${vibePostId}`)
+      .channel(`comments-${vibePostId}-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         {
@@ -116,7 +137,8 @@ export default function VibePostCommentSheet({
         },
         () => {
           void fetchCommentsForPost(vibePostId).then((result) => {
-            if (!result.error) applyComments(result.data);
+            if (cancelled || result.error) return;
+            mergeComments(result.data);
             scrollToBottom();
           });
         },
@@ -127,7 +149,7 @@ export default function VibePostCommentSheet({
       cancelled = true;
       void supabase.removeChannel(channel);
     };
-  }, [open, vibePostId, applyComments, scrollToBottom]);
+  }, [open, vibePostId, mergeComments, scrollToBottom]);
 
   useEffect(() => {
     if (!open || !authReady) return;
@@ -153,9 +175,10 @@ export default function VibePostCommentSheet({
 
   useEffect(() => {
     if (!open) return;
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = prev;
     };
   }, [open]);
 
@@ -188,20 +211,20 @@ export default function VibePostCommentSheet({
       setComments((prev) => {
         if (prev.some((c) => c.id === result.data!.id)) return prev;
         const next = [...prev, result.data!];
-        onCountChange?.(next.length);
+        publishCount(next.length);
         return next;
       });
       scrollToBottom();
     }
   }
 
-  if (!open) return null;
+  if (!open || !portalReady) return null;
 
   const returnPath = pathname || "/home";
   const canComment = isRegisteredUser(user);
 
-  return (
-    <div className="fixed inset-0 z-[110] flex flex-col justify-end">
+  return createPortal(
+    <div className="fixed inset-0 z-[120] flex flex-col justify-end">
       <button
         type="button"
         className="absolute inset-0 bg-black/60"
@@ -278,7 +301,7 @@ export default function VibePostCommentSheet({
           <p className="shrink-0 px-4 pb-2 text-xs text-red-400">{error}</p>
         )}
 
-        <footer className="shrink-0 border-t border-white/[0.07] px-4 py-3">
+        <footer className="shrink-0 border-t border-white/[0.07] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {!canComment && authReady ? (
             <LoginRequiredPanel
               compact
@@ -325,6 +348,7 @@ export default function VibePostCommentSheet({
           )}
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

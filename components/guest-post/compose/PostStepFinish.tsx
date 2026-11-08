@@ -6,13 +6,13 @@ import GuestPostBodyHashtagSuggestions from "@/components/guest-post/GuestPostBo
 import { GUEST_POST_BODY_MAX_LENGTH } from "@/lib/guest-post/composeBody";
 import type { NightOutInput } from "@/lib/guest-post/nightOut";
 import type { Shop } from "@/lib/home/types";
-import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
+import type { PostMazaruSettings } from "@/lib/guest-post/mazaruSettings";
 import PostComposeSheet from "@/components/guest-post/compose/PostComposeSheet";
 import PostFinishToolRail, {
   type ToolId,
 } from "@/components/guest-post/compose/PostFinishToolRail";
 import GuestPostFinishMeta from "@/components/guest-post/compose/GuestPostFinishMeta";
-import TonightSocialContextPicker from "@/components/profile/TonightSocialContextPicker";
+import PostMazaruPicker from "@/components/guest-post/compose/PostMazaruPicker";
 
 type PostStepFinishProps = {
   shop: Shop;
@@ -20,8 +20,8 @@ type PostStepFinishProps = {
   videoFile: File | null;
   nightOut: NightOutInput;
   onNightOutChange: React.Dispatch<React.SetStateAction<NightOutInput>>;
-  socialContext: TonightSocialContext;
-  onSocialContextChange: (value: TonightSocialContext) => void;
+  mazaruSettings: PostMazaruSettings;
+  onMazaruSettingsChange: (value: PostMazaruSettings) => void;
   bodyText: string;
   onBodyTextChange: (value: string) => void;
   comment: string;
@@ -34,8 +34,8 @@ export default function PostStepFinish({
   videoFile,
   nightOut,
   onNightOutChange,
-  socialContext,
-  onSocialContextChange,
+  mazaruSettings,
+  onMazaruSettingsChange,
   bodyText,
   onBodyTextChange,
   comment,
@@ -53,7 +53,7 @@ export default function PostStepFinish({
           comment={comment}
           hashtags={hashtags}
           shop={shop}
-          authorSocialContext={socialContext}
+          mazaruSettings={mazaruSettings}
           fillHeight
           hideChrome
           immersive
@@ -75,7 +75,7 @@ export default function PostStepFinish({
       <PostFinishToolRail
         activeSheet={sheet}
         onOpen={setSheet}
-        socialContext={socialContext}
+        mazaruSettings={mazaruSettings}
         partySize={nightOut.partySize}
         hasComment={bodyText.trim().length > 0}
       />
@@ -105,12 +105,12 @@ export default function PostStepFinish({
 
       <PostComposeSheet
         open={sheet === "mood"}
-        title="合流・席の人数感"
+        title="マザる？"
         onClose={() => setSheet(null)}
       >
-        <TonightSocialContextPicker
-          value={socialContext}
-          onChange={onSocialContextChange}
+        <PostMazaruPicker
+          value={mazaruSettings}
+          onChange={onMazaruSettingsChange}
         />
       </PostComposeSheet>
 

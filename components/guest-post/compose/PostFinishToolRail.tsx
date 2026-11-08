@@ -3,19 +3,16 @@
 import {
   FeedCommentIcon,
   FeedPeopleIcon,
-  FeedWaveIcon,
 } from "@/components/icons/FeedActionIcons";
-import {
-  hasAnySocialContext,
-  type TonightSocialContext,
-} from "@/lib/profile/tonightSocialContext";
+import { hasMazaruSelection, type PostMazaruSettings } from "@/lib/guest-post/mazaruSettings";
+import { MazaruIcon } from "@/components/icons/MazaruModeIcons";
 
 type ToolId = "comment" | "mood" | "party";
 
 type PostFinishToolRailProps = {
   activeSheet: ToolId | null;
   onOpen: (id: ToolId) => void;
-  socialContext: TonightSocialContext;
+  mazaruSettings: PostMazaruSettings;
   partySize: number | null;
   hasComment: boolean;
 };
@@ -50,17 +47,10 @@ function RailButton({
 export default function PostFinishToolRail({
   activeSheet,
   onOpen,
-  socialContext,
+  mazaruSettings,
   partySize,
   hasComment,
 }: PostFinishToolRailProps) {
-  const mergeShort =
-    socialContext.mergeAttitude === "open"
-      ? "OK"
-      : socialContext.mergeAttitude === "closed"
-        ? "—"
-        : null;
-
   return (
     <div className="absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-3 pb-[env(safe-area-inset-bottom,0px)]">
       <RailButton
@@ -72,20 +62,18 @@ export default function PostFinishToolRail({
       </RailButton>
 
       <RailButton
-        label="合流・席の人数感"
-        active={activeSheet === "mood" || hasAnySocialContext(socialContext)}
+        label="マザる？"
+        active={activeSheet === "mood" || hasMazaruSelection(mazaruSettings)}
         onClick={() => onOpen("mood")}
       >
-        {mergeShort ? (
-          <span className="text-[10px] font-black text-white">{mergeShort}</span>
-        ) : socialContext.vibeScale === "solo" ? (
-          <span className="text-[10px] font-black text-white">1</span>
-        ) : socialContext.vibeScale === "small" ? (
-          <span className="text-[10px] font-black text-white">2</span>
-        ) : socialContext.vibeScale === "lively" ? (
-          <span className="text-[10px] font-black text-white">+</span>
+        {mazaruSettings.mode === "mazaru" ? (
+          <span className="text-[#00e87a]">
+            <MazaruIcon size={22} />
+          </span>
+        ) : mazaruSettings.mode === "mazaranai" ? (
+          <span className="text-[9px] font-black text-white/80">—</span>
         ) : (
-          <FeedWaveIcon size={20} color="#ffffff" />
+          <span className="text-[10px] font-black text-white">?</span>
         )}
       </RailButton>
 

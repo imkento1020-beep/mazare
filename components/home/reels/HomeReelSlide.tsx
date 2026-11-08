@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { HomeReelsPost } from "@/lib/home/fetchHomeReelsFeed";
 import { formatRelativePostedAt } from "@/lib/home/formatRelativePostedAt";
@@ -25,6 +25,8 @@ import {
   PostLikeIcon,
 } from "@/components/icons/FeedActionIcons";
 import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
+import MazaruPostCardPanel from "@/components/posts/MazaruPostCardPanel";
+import { parseMazaruFromRow } from "@/lib/guest-post/mazaruSettings";
 import {
   hasAnySocialContext,
   resolvePostAuthorSocialContext,
@@ -123,7 +125,17 @@ export default function HomeReelSlide({
     setLiveComments(commentCount);
   }, [commentCount]);
 
+  const handleSheetCommentCount = useCallback(
+    (count: number) => {
+      setLiveComments((prev) => (prev === count ? prev : count));
+      onCommentCountChange(count);
+    },
+    [onCommentCountChange],
+  );
+
   const { isVideo, videoUrl, images } = mediaOf(post);
+  const mazaruDisplay = parseMazaruFromRow(post);
+
   const authorSocial = resolvePostAuthorSocialContext({
     author_merge_attitude: post.author_merge_attitude,
     author_vibe_scale: post.author_vibe_scale,
@@ -303,7 +315,7 @@ export default function HomeReelSlide({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#080810]/95 via-[#080810]/55 to-transparent px-4 pb-5 pt-24">
         <div className="pointer-events-auto space-y-2.5 pr-14">
           <div className="flex flex-wrap items-center gap-1.5">
-            {hasAnySocialContext(authorSocial) ? (
+            {mazaruDisplay.mode ? null : hasAnySocialContext(authorSocial) ? (
               <TonightSocialContextBadges context={authorSocial} size="sm" />
             ) : null}
             {(cups != null || post.drink_name) && (
@@ -344,6 +356,10 @@ export default function HomeReelSlide({
             </>
           )}
 
+          {mazaruDisplay.mode ? (
+            <MazaruPostCardPanel settings={mazaruDisplay} size="sm" />
+          ) : null}
+
           <ReelCaption text={caption} />
         </div>
       </div>
@@ -352,10 +368,7 @@ export default function HomeReelSlide({
         vibePostId={post.id}
         open={commentsOpen}
         onClose={() => setCommentsOpen(false)}
-        onCountChange={(n) => {
-          setLiveComments(n);
-          onCommentCountChange(n);
-        }}
+        onCountChange={handleSheetCommentCount}
       />
     </article>
   );

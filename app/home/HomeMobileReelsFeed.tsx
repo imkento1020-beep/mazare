@@ -206,6 +206,7 @@ export default function HomeMobileReelsFeed() {
 
   const onCommentCountChange = useCallback((postId: string, count: number) => {
     setCommentCounts((prev) => {
+      if ((prev.get(postId) ?? 0) === count) return prev;
       const next = new Map(prev);
       next.set(postId, count);
       return next;

@@ -1,3 +1,7 @@
+import type {
+  MazaruDetails,
+  MazaruMode,
+} from "@/lib/guest-post/mazaruSettings";
 import { formatShopGenreDisplay } from "@/lib/home/genreDisplay";
 import { isPlacesPhotoMediaUrl } from "@/lib/places/photosConfig";
 import { formatOpenHoursSummary } from "@/lib/shop/openHoursDisplay";
@@ -44,6 +48,8 @@ export type VibePost = {
   author_tonight_social_mood?: string | null;
   author_merge_attitude?: string | null;
   author_vibe_scale?: string | null;
+  mazaru_mode?: MazaruMode | null;
+  mazaru_details?: MazaruDetails | null;
   shops: Shop | null;
 };
 

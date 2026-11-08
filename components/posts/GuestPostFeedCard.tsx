@@ -13,6 +13,11 @@ import {
 } from "@/lib/guest-post/nightOut";
 import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
 import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
+import {
+  parseMazaruFromRow,
+  type PostMazaruSettings,
+} from "@/lib/guest-post/mazaruSettings";
+import MazaruPostCardPanel from "@/components/posts/MazaruPostCardPanel";
 import VibePostCommentSheet from "@/components/comments/VibePostCommentSheet";
 import {
   FeedCommentIcon,
@@ -43,6 +48,7 @@ type GuestPostFeedCardProps = {
   /** 仕上げ画面など、4:5 ではなく親の高さいっぱい */
   fillViewport?: boolean;
   authorSocialContext?: TonightSocialContext | null;
+  mazaruSettings?: PostMazaruSettings | null;
 };
 
 function authorInitial(name: string | null | undefined) {
@@ -327,6 +333,7 @@ export default function GuestPostFeedCard({
   mediaFit = "cover",
   fillViewport = false,
   authorSocialContext = null,
+  mazaruSettings: mazaruSettingsProp = null,
 }: GuestPostFeedCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -368,6 +375,8 @@ export default function GuestPostFeedCard({
   const shopLink = shopHref ?? (shop?.id ? `/shop/${shop.id}` : undefined);
   const { hasMedia } = resolvePostMedia(post);
   const likeIconColor = interested ? "#ff3d00" : "#ffffff";
+
+  const mazaruDisplay = mazaruSettingsProp ?? parseMazaruFromRow(post);
 
   const amberPillParts: string[] = [];
   if (cupTotal != null) {
@@ -491,7 +500,7 @@ export default function GuestPostFeedCard({
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] space-y-2 p-3 pr-14">
           <div className="flex flex-wrap items-center gap-1.5">
-            {authorSocialContext ? (
+            {mazaruDisplay.mode ? null : authorSocialContext ? (
               <TonightSocialContextBadges
                 context={authorSocialContext}
                 size="sm"
@@ -538,6 +547,14 @@ export default function GuestPostFeedCard({
               </p>
             </div>
           )}
+
+          {mazaruDisplay.mode ? (
+            <MazaruPostCardPanel
+              settings={mazaruDisplay}
+              size="sm"
+              className="pointer-events-auto w-full max-w-full"
+            />
+          ) : null}
 
           {comment && (
             <div className="pointer-events-auto rounded-r-md border-l-2 border-[#ff3d00] bg-white/[0.06] px-2.5 py-1.5">

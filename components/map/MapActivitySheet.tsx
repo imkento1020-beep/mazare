@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CloseIcon } from "@/components/icons/MazareIcons";
 import type { MapShopActivity } from "@/lib/feed/recentFeed";
 import type { MapActivityMetricId } from "@/lib/map/mapActivityMetric";
 
@@ -55,9 +56,10 @@ export default function MapActivitySheet({
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-[#9994a8] hover:text-[#eeeaf4]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[#9994a8] transition hover:border-white/20 hover:text-[#eeeaf4]"
+            aria-label="閉じる"
           >
-            閉じる
+            <CloseIcon size={16} color="currentColor" />
           </button>
         </div>
 

@@ -6,6 +6,7 @@ import {
   isPostedTonightJST,
 } from "@/lib/home/dates";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
+import { parseMazaruFromRow } from "@/lib/guest-post/mazaruSettings";
 import { getRecentPostsWindowStart } from "@/lib/home/recentWindow";
 import {
   normalizeMoods,
@@ -19,8 +20,10 @@ import {
   SHOP_REGISTRATION_COMMENT,
 } from "@/lib/home/shopRegistration";
 
-const BROWSE_POST_SELECT =
+const BROWSE_POST_BASE =
   "id, shop_id, comment, moods, images, video_url, posted_at, hashtags, media_type, is_guest_post, author_id, stop_number, visit_order, drink_name, drink_cups, drink_count, party_size";
+
+const BROWSE_POST_SELECT = `${BROWSE_POST_BASE}, mazaru_mode, mazaru_details`;
 
 const BROWSE_CACHE_TTL_MS = 45_000;
 
@@ -50,6 +53,7 @@ function mapBrowsePostRow(
     author_id: typeof row.author_id === "string" ? row.author_id : null,
     shops: shop,
     ...parseNightOutFromRow(row),
+    ...parseMazaruFromRow(row),
   };
 }
 
@@ -61,19 +65,38 @@ export async function fetchBrowseVibePostsBundle(): Promise<{
   const since = getRecentPostsWindowStart().toISOString();
   const nowIso = new Date().toISOString();
 
-  const [postsResult, shopsResult] = await Promise.all([
+  const postsQuery = () =>
     supabase
       .from("vibe_posts")
       .select(BROWSE_POST_SELECT)
       .eq("is_guest_post", true)
       .gte("posted_at", since)
       .lte("posted_at", nowIso)
-      .order("posted_at", { ascending: false }),
+      .order("posted_at", { ascending: false });
+
+  const [postsResult, shopsResult] = await Promise.all([
+    postsQuery(),
     fetchShopsFromDb(),
   ]);
 
-  if (postsResult.error) {
-    return { data: null, error: postsResult.error.message };
+  let postsRows: Record<string, unknown>[] | null =
+    (postsResult.data as Record<string, unknown>[] | null) ?? null;
+  let postsError = postsResult.error;
+
+  if (postsError?.message?.includes("mazaru_mode")) {
+    const retry = await supabase
+      .from("vibe_posts")
+      .select(BROWSE_POST_BASE)
+      .eq("is_guest_post", true)
+      .gte("posted_at", since)
+      .lte("posted_at", nowIso)
+      .order("posted_at", { ascending: false });
+    postsRows = (retry.data as Record<string, unknown>[] | null) ?? null;
+    postsError = retry.error;
+  }
+
+  if (postsError) {
+    return { data: null, error: postsError.message };
   }
   if (shopsResult.error || !shopsResult.data) {
     return { data: null, error: shopsResult.error ?? "shops" };
@@ -83,7 +106,7 @@ export async function fetchBrowseVibePostsBundle(): Promise<{
     shopsResult.data.map((shop) => [shop.id, shop as Shop]),
   );
 
-  const posts = (postsResult.data ?? []).map((row) =>
+  const posts = (postsRows ?? []).map((row) =>
     mapBrowsePostRow(row as Record<string, unknown>, shopsMap.get(String(row.shop_id)) ?? null),
   );
 

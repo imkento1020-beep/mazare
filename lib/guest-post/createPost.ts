@@ -1,5 +1,11 @@
 import { supabase } from "@/lib/supabase";
 import { normalizeNightOutInput, type NightOutInput } from "@/lib/guest-post/nightOut";
+import {
+  defaultMazaruDetails,
+  mazaruToSocialContext,
+  normalizeMazaruDetails,
+  type PostMazaruSettings,
+} from "@/lib/guest-post/mazaruSettings";
 import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
 import { uploadGuestPostImages, uploadGuestPostVideo } from "@/lib/guest-post/uploadMedia";
 
@@ -62,6 +68,7 @@ export async function createGuestVibePost(input: {
   hashtags: string[];
   nightOut: NightOutInput;
   socialContext?: TonightSocialContext | null;
+  mazaruSettings?: PostMazaruSettings | null;
   comment?: string;
   imageFiles?: File[];
   videoFile?: File | null;
@@ -102,10 +109,14 @@ export async function createGuestVibePost(input: {
     mediaType = hasImages ? "mixed" : "video";
   }
 
-  const ctx = input.socialContext ?? {
-    mergeAttitude: null,
-    vibeScale: null,
-  };
+  const ctx =
+    input.socialContext ??
+    mazaruToSocialContext(
+      input.mazaruSettings ?? {
+        mode: null,
+        details: defaultMazaruDetails(),
+      },
+    );
 
   const baseRow = {
     shop_id: input.shopId,
@@ -129,10 +140,18 @@ export async function createGuestVibePost(input: {
   let data: { id: string } | null = null;
   let error: { message: string } | null = null;
 
+  const mazaru = input.mazaruSettings;
+  const mazaruDetails =
+    mazaru?.mode === "mazaru" && mazaru.details
+      ? normalizeMazaruDetails(mazaru.details)
+      : null;
+
   const withSnapshot = {
     ...baseRow,
     author_merge_attitude: ctx.mergeAttitude,
     author_vibe_scale: ctx.vibeScale,
+    mazaru_mode: mazaru?.mode ?? null,
+    mazaru_details: mazaruDetails,
   };
 
   const attempt = await supabase
@@ -145,7 +164,8 @@ export async function createGuestVibePost(input: {
 
   if (
     error?.message.includes("author_merge_attitude") ||
-    error?.message.includes("author_vibe_scale")
+    error?.message.includes("author_vibe_scale") ||
+    error?.message.includes("mazaru_mode")
   ) {
     const fallback = await supabase
       .from("vibe_posts")

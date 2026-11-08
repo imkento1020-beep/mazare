@@ -5,7 +5,10 @@ import GuestPostFeedCard from "@/components/posts/GuestPostFeedCard";
 import type { NightOutInput } from "@/lib/guest-post/nightOut";
 import { normalizeNightOutInput } from "@/lib/guest-post/nightOut";
 import type { Shop, VibePost } from "@/lib/home/types";
-import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
+import {
+  defaultMazaruSettings,
+  type PostMazaruSettings,
+} from "@/lib/guest-post/mazaruSettings";
 
 type GuestPostComposePreviewProps = {
   imageFiles: File[];
@@ -19,7 +22,7 @@ type GuestPostComposePreviewProps = {
   hideChrome?: boolean;
   /** 仕上げ画面: カードを画面いっぱいに */
   immersive?: boolean;
-  authorSocialContext?: TonightSocialContext | null;
+  mazaruSettings?: PostMazaruSettings | null;
 };
 
 function useObjectUrls(files: File[]) {
@@ -48,7 +51,7 @@ export default function GuestPostComposePreview({
   fillHeight = false,
   hideChrome = false,
   immersive = false,
-  authorSocialContext = null,
+  mazaruSettings = null,
 }: GuestPostComposePreviewProps) {
   const imageUrls = useObjectUrls(imageFiles);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
@@ -96,6 +99,8 @@ export default function GuestPostComposePreview({
     posted_at: existingPost?.posted_at ?? new Date().toISOString(),
     shops: shop ?? existingPost?.shops ?? null,
     ...normalized,
+    mazaru_mode: mazaruSettings?.mode ?? null,
+    mazaru_details: mazaruSettings?.details ?? null,
   };
 
   const mediaSummary =
@@ -112,7 +117,7 @@ export default function GuestPostComposePreview({
   const card = (
     <GuestPostFeedCard
       post={draftPost}
-      authorSocialContext={authorSocialContext}
+      mazaruSettings={mazaruSettings ?? defaultMazaruSettings()}
       showActions={false}
       mediaFit={immersive ? "cover" : "contain"}
       fillViewport={immersive}

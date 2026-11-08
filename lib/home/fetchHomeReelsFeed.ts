@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
+import { parseMazaruFromRow } from "@/lib/guest-post/mazaruSettings";
 import {
   POST_CARD_SHOP_RELATION,
   POST_CARD_SHOP_RELATION_LEGACY,
@@ -34,6 +35,10 @@ const SELECT = `
   drink_cups,
   drink_count,
   party_size,
+  mazaru_mode,
+  mazaru_details,
+  author_merge_attitude,
+  author_vibe_scale,
   ${POST_CARD_SHOP_RELATION}
 `;
 
@@ -67,6 +72,17 @@ function mapRow(row: Record<string, unknown>): HomeReelsPost {
     author_display_name: null,
     author_profile_image: null,
     ...parseNightOutFromRow(row),
+    ...parseMazaruFromRow(row),
+    author_merge_attitude:
+      row.author_merge_attitude === "open" || row.author_merge_attitude === "closed"
+        ? row.author_merge_attitude
+        : null,
+    author_vibe_scale:
+      row.author_vibe_scale === "solo" ||
+      row.author_vibe_scale === "small" ||
+      row.author_vibe_scale === "lively"
+        ? row.author_vibe_scale
+        : null,
   };
 }
 
@@ -123,7 +139,10 @@ export async function fetchHomeReelsFeed(): Promise<{
   let rows: unknown[] | null = primary.data as unknown[] | null;
   let fetchError = primary.error;
 
-  if (fetchError?.message?.includes("nearest_station")) {
+  if (
+    fetchError?.message?.includes("nearest_station") ||
+    fetchError?.message?.includes("mazaru_mode")
+  ) {
     const retry = await supabase
       .from("vibe_posts")
       .select(SELECT_LEGACY)
