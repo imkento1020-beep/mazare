@@ -8,13 +8,18 @@ import {
   fetchRecentVibePosts,
   type RecentShopFeedItem,
 } from "@/lib/feed/recentFeed";
-import { notifyPostInterestCreated } from "@/lib/notifications/api";
+import {
+  createContactRequest,
+  fetchContactRequestCountsByPostIds,
+  fetchUserContactedPostIds,
+} from "@/lib/matching/contactRequests";
+import { isPostOpenForContact } from "@/lib/profile/buildPostSocialContext";
+import { resolvePostAuthorSocialContext } from "@/lib/profile/tonightSocialContext";
 import { ensureFreshSession } from "@/lib/auth/session";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { fetchTonightInterests, cancelInterest } from "@/lib/mypage/api";
 import type { TodayInterestRow, VibePost } from "@/lib/home/types";
 import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
-import { fetchInterestCountsByPostIds } from "@/lib/interests/postInterestCounts";
 import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import RecentShopCard from "@/components/home/RecentShopCard";
@@ -38,9 +43,6 @@ export default function HomeDesktopFeed() {
   const userRef = useRef<User | null>(null);
   const [feedItems, setFeedItems] = useState<RecentShopFeedItem[]>([]);
   const [recentPosts, setRecentPosts] = useState<VibePost[]>([]);
-  const [interestedPostIds, setInterestedPostIds] = useState<Set<string>>(
-    new Set(),
-  );
   const [loading, setLoading] = useState(true);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,8 +57,11 @@ export default function HomeDesktopFeed() {
   const [cancelingTonightId, setCancelingTonightId] = useState<string | null>(
     null,
   );
-  const [interestCounts, setInterestCounts] = useState<Map<string, number>>(
+  const [contactCounts, setContactCounts] = useState<Map<string, number>>(
     new Map(),
+  );
+  const [contactedPostIds, setContactedPostIds] = useState<Set<string>>(
+    new Set(),
   );
   const [commentCounts, setCommentCounts] = useState<Map<string, number>>(
     new Map(),
@@ -71,15 +76,21 @@ export default function HomeDesktopFeed() {
 
     const postIds = data.map((p) => p.id);
     const loadEngagement = async (ids: string[]) => {
-      const [counts, commentMap] = await Promise.all([
-        fetchInterestCountsByPostIds(ids),
+      const [counts, commentMap, contacted] = await Promise.all([
+        fetchContactRequestCountsByPostIds(ids),
         fetchCommentCountsByPostIds(ids),
+        activeUser
+          ? fetchUserContactedPostIds(activeUser.id, ids)
+          : Promise.resolve(new Set<string>()),
       ]);
-      setInterestCounts((prev) => {
+      setContactCounts((prev) => {
         const next = new Map(prev);
         counts.forEach((v, k) => next.set(k, v));
         return next;
       });
+      if (activeUser) {
+        setContactedPostIds((prev) => new Set([...prev, ...contacted]));
+      }
       setCommentCounts((prev) => {
         const next = new Map(prev);
         commentMap.forEach((v, k) => next.set(k, v));
@@ -92,16 +103,7 @@ export default function HomeDesktopFeed() {
     }
 
     if (activeUser) {
-      void Promise.all([
-        supabase
-          .from("interests")
-          .select("vibe_post_id")
-          .eq("user_id", activeUser.id),
-        fetchTonightInterests(activeUser.id),
-      ]).then(([interestsRes, tonight]) => {
-        setInterestedPostIds(
-          new Set((interestsRes.data ?? []).map((row) => row.vibe_post_id)),
-        );
+      void fetchTonightInterests(activeUser.id).then((tonight) => {
         setTonightInterests(tonight.data);
       });
     }
@@ -182,75 +184,44 @@ export default function HomeDesktopFeed() {
     });
   }, [feedItems, search]);
 
-  async function handleInterest(item: RecentShopFeedItem) {
+  async function handleContact(item: RecentShopFeedItem, message: string) {
     const post = item.latestPost;
-    if (submittingId) return;
+    if (submittingId || !post.author_id) return;
+    if (!isPostOpenForContact(post)) {
+      setError("この投稿者は今夜の連絡を受け付けていません");
+      return;
+    }
     if (!isRegisteredUser(user)) {
       openAuthPrompt({
-        title: "ログインしていいね",
-        description: "投稿にいいねするにはログインが必要です。",
+        title: "ログインして連絡する",
+        description: "投稿者に連絡するにはログインが必要です。",
         returnPath: "/home",
       });
       return;
     }
 
-    const interested = interestedPostIds.has(post.id);
     setSubmittingId(post.id);
+    const result = await createContactRequest({
+      fromUserId: user.id,
+      toUserId: post.author_id,
+      vibePostId: post.id,
+      shopId: item.shop.id,
+      message,
+    });
+    setSubmittingId(null);
 
-    if (interested) {
-      const { error: deleteError } = await supabase
-        .from("interests")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("vibe_post_id", post.id);
-      if (deleteError) {
-        setError(deleteError.message);
-      } else {
-        setInterestedPostIds((prev) => {
-          const next = new Set(prev);
-          next.delete(post.id);
-          return next;
-        });
-        setInterestCounts((prev) => {
-          const next = new Map(prev);
-          next.set(post.id, Math.max(0, (next.get(post.id) ?? 0) - 1));
-          return next;
-        });
-      }
-    } else {
-      const { data, error: insertError } = await supabase
-        .from("interests")
-        .insert({
-          user_id: user.id,
-          shop_id: item.shop.id,
-          vibe_post_id: post.id,
-        })
-        .select("id")
-        .single();
-
-      if (insertError) {
-        setError(insertError.message);
-      } else if (data?.id) {
-        await notifyPostInterestCreated(data.id);
-        setInterestedPostIds((prev) => new Set(prev).add(post.id));
-        setInterestCounts((prev) => {
-          const next = new Map(prev);
-          next.set(post.id, (next.get(post.id) ?? 0) + 1);
-          return next;
-        });
-      }
+    if (result.error) {
+      setError(result.error);
+      throw new Error(result.error);
     }
 
-    setSubmittingId(null);
-    void fetchInterestCountsByPostIds([post.id]).then((counts) => {
-      setInterestCounts((prev) => {
-        const next = new Map(prev);
-        counts.forEach((v, k) => next.set(k, v));
-        return next;
-      });
+    setContactedPostIds((prev) => new Set(prev).add(post.id));
+    const counts = await fetchContactRequestCountsByPostIds([post.id]);
+    setContactCounts((prev) => {
+      const next = new Map(prev);
+      counts.forEach((v, k) => next.set(k, v));
+      return next;
     });
-    const tonight = await fetchTonightInterests(user.id);
-    setTonightInterests(tonight.data);
   }
 
   async function handleCancelTonightInterest(interestId: string) {
@@ -335,13 +306,19 @@ export default function HomeDesktopFeed() {
             <RecentShopCard
               key={item.shop.id}
               item={{ ...item, shop }}
-              onInterest={() => void handleInterest(item)}
-              interested={interestedPostIds.has(item.latestPost.id)}
-              interestLoading={submittingId === item.latestPost.id}
+              onContact={(message) => handleContact(item, message)}
+              contacted={contactedPostIds.has(item.latestPost.id)}
+              contactLoading={submittingId === item.latestPost.id}
+              contactCount={contactCounts.get(item.latestPost.id) ?? 0}
+              authorSocialContext={resolvePostAuthorSocialContext({
+                author_merge_attitude: item.latestPost.author_merge_attitude,
+                author_vibe_scale: item.latestPost.author_vibe_scale,
+                author_tonight_social_mood:
+                  item.latestPost.author_tonight_social_mood,
+              })}
               tonightTotalCups={
                 tonightCupTotals.get(item.latestPost.id) ?? null
               }
-              interestCount={interestCounts.get(item.latestPost.id) ?? 0}
               commentCount={commentCounts.get(item.latestPost.id) ?? 0}
               userLocation={userLocation}
             />

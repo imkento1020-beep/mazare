@@ -23,7 +23,7 @@ import {
 const BROWSE_POST_BASE =
   "id, shop_id, comment, moods, images, video_url, posted_at, hashtags, media_type, is_guest_post, author_id, stop_number, visit_order, drink_name, drink_cups, drink_count, party_size";
 
-const BROWSE_POST_SELECT = `${BROWSE_POST_BASE}, mazaru_mode, mazaru_details`;
+const BROWSE_POST_SELECT = `${BROWSE_POST_BASE}, mazaru_mode, mazaru_details, author_merge_attitude, author_vibe_scale`;
 
 const BROWSE_CACHE_TTL_MS = 45_000;
 
@@ -54,6 +54,17 @@ function mapBrowsePostRow(
     shops: shop,
     ...parseNightOutFromRow(row),
     ...parseMazaruFromRow(row),
+    author_merge_attitude:
+      row.author_merge_attitude === "open" ||
+      row.author_merge_attitude === "closed"
+        ? (row.author_merge_attitude as string)
+        : null,
+    author_vibe_scale:
+      row.author_vibe_scale === "solo" ||
+      row.author_vibe_scale === "small" ||
+      row.author_vibe_scale === "lively"
+        ? (row.author_vibe_scale as string)
+        : null,
   };
 }
 
@@ -83,10 +94,13 @@ export async function fetchBrowseVibePostsBundle(): Promise<{
     (postsResult.data as Record<string, unknown>[] | null) ?? null;
   let postsError = postsResult.error;
 
-  if (postsError?.message?.includes("mazaru_mode")) {
+  if (
+    postsError?.message?.includes("mazaru_mode") ||
+    postsError?.message?.includes("author_merge_attitude")
+  ) {
     const retry = await supabase
       .from("vibe_posts")
-      .select(BROWSE_POST_BASE)
+      .select(`${BROWSE_POST_BASE}, mazaru_mode, mazaru_details`)
       .eq("is_guest_post", true)
       .gte("posted_at", since)
       .lte("posted_at", nowIso)

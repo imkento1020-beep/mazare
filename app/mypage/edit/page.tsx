@@ -7,7 +7,10 @@ import { supabase } from "@/lib/supabase";
 import {
   fetchGuestProfile,
   updateGuestProfile,
+  updateTonightSocialContext,
 } from "@/lib/mypage/api";
+import TonightSocialContextPicker from "@/components/profile/TonightSocialContextPicker";
+import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
 import { uploadProfileImage } from "@/lib/mypage/uploadProfileImage";
 import { readFileAsDataUrl } from "@/lib/files";
 import GuestLayout from "@/components/layout/GuestLayout";
@@ -27,6 +30,10 @@ export default function MyPageEditPage() {
   const [bio, setBio] = useState("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [socialContext, setSocialContext] = useState<TonightSocialContext>({
+    mergeAttitude: null,
+    vibeScale: null,
+  });
 
   useEffect(() => {
     async function load() {
@@ -45,6 +52,10 @@ export default function MyPageEditPage() {
       setDisplayName(profile.display_name);
       setBio(profile.bio ?? "");
       setProfileImage(profile.profile_image);
+      setSocialContext({
+        mergeAttitude: profile.mergeAttitude,
+        vibeScale: profile.vibeScale,
+      });
       setLoading(false);
     }
 
@@ -85,17 +96,20 @@ export default function MyPageEditPage() {
       uploadedImage = url;
     }
 
-    const { error: updateError } = await updateGuestProfile({
-      userId: user.id,
-      displayName,
-      profileImage: uploadedImage,
-      bio,
-    });
+    const [{ error: updateError }, { error: socialError }] = await Promise.all([
+      updateGuestProfile({
+        userId: user.id,
+        displayName,
+        profileImage: uploadedImage,
+        bio,
+      }),
+      updateTonightSocialContext(user.id, socialContext),
+    ]);
 
     setSubmitting(false);
 
-    if (updateError) {
-      setError(updateError);
+    if (updateError || socialError) {
+      setError(updateError ?? socialError ?? "保存に失敗しました");
       return;
     }
 
@@ -173,6 +187,20 @@ export default function MyPageEditPage() {
               placeholder="ゲスト"
               className={inputClassName}
             />
+          </div>
+
+          <div className="rounded-2xl border border-white/[0.08] bg-[#111118] p-4">
+            <p className="text-sm font-black text-[#eeeaf4]">今夜のマザる設定</p>
+            <p className="mt-1 text-xs text-[#9994a8]">
+              投稿しなくても、プロフィールに今夜の合流意思を表示できます
+            </p>
+            <div className="mt-4">
+              <TonightSocialContextPicker
+                value={socialContext}
+                onChange={setSocialContext}
+                disabled={submitting}
+              />
+            </div>
           </div>
 
           <div>

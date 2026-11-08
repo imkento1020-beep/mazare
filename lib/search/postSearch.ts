@@ -120,10 +120,24 @@ export function filterPostSearchRows(
       if (!vibe || !filters.vibeScales.has(vibe)) return false;
     }
 
-    const party = post.party_size ?? 1;
-    if (filters.partySize === "solo" && party !== 1) return false;
-    if (filters.partySize === "small" && (party < 2 || party > 3)) return false;
-    if (filters.partySize === "large" && party < 4) return false;
+    if (filters.partySize !== "any") {
+      const party = post.party_size;
+      const vibe = post.author_vibe_scale;
+      if (filters.partySize === "solo") {
+        const solo =
+          party === 1 || vibe === "solo";
+        if (!solo) return false;
+      }
+      if (filters.partySize === "small") {
+        const small =
+          (party != null && party >= 2 && party <= 3) || vibe === "small";
+        if (!small) return false;
+      }
+      if (filters.partySize === "large") {
+        const large = (party != null && party >= 4) || vibe === "lively";
+        if (!large) return false;
+      }
+    }
 
     if (q) {
       const area = extractAreaFromAddress(shop.address);

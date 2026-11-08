@@ -12,7 +12,11 @@ import {
   getVisitOrder,
 } from "@/lib/guest-post/nightOut";
 import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
+import ContactPostSheet from "@/components/matching/ContactPostSheet";
 import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
+import { isPostOpenForContact } from "@/lib/profile/buildPostSocialContext";
+import { resolvePostAuthorSocialContext } from "@/lib/profile/tonightSocialContext";
+import { MazaruIcon } from "@/components/icons/MazaruModeIcons";
 import {
   parseMazaruFromRow,
   type PostMazaruSettings,
@@ -40,6 +44,10 @@ type GuestPostFeedCardProps = {
   onInterest?: () => void;
   interestLoading?: boolean;
   interested?: boolean;
+  onContact?: (message: string) => void | Promise<void>;
+  contactLoading?: boolean;
+  contacted?: boolean;
+  contactCount?: number;
   showActions?: boolean;
   shopHref?: string;
   className?: string;
@@ -327,6 +335,10 @@ export default function GuestPostFeedCard({
   onInterest,
   interestLoading = false,
   interested = false,
+  onContact,
+  contactLoading = false,
+  contacted = false,
+  contactCount = 0,
   showActions = true,
   shopHref,
   className = "",
@@ -337,6 +349,9 @@ export default function GuestPostFeedCard({
 }: GuestPostFeedCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const contactAllowed = isPostOpenForContact(post);
+  const useContact = Boolean(onContact && contactAllowed);
   const [liveCommentCount, setLiveCommentCount] = useState(commentCount);
 
   useEffect(() => {
@@ -377,13 +392,15 @@ export default function GuestPostFeedCard({
   const likeIconColor = interested ? "#ff3d00" : "#ffffff";
 
   const mazaruDisplay = mazaruSettingsProp ?? parseMazaruFromRow(post);
+  const socialForBadges =
+    authorSocialContext ??
+    resolvePostAuthorSocialContext({
+      author_merge_attitude: post.author_merge_attitude,
+      author_vibe_scale: post.author_vibe_scale,
+      author_tonight_social_mood: post.author_tonight_social_mood,
+    });
 
-  const amberPillParts: string[] = [];
-  if (cupTotal != null) {
-    amberPillParts.push(`今夜${cupTotal}杯目`);
-  }
-  if (post.drink_name) amberPillParts.push(post.drink_name);
-  const amberPill = amberPillParts.join(" · ");
+  const amberPill = null;
 
   async function handleShare() {
     const url =
@@ -451,23 +468,45 @@ export default function GuestPostFeedCard({
 
         {showActions && (
           <div className="absolute bottom-4 right-3 z-[3] flex flex-col gap-2">
-            <button
-              type="button"
-              disabled={!onInterest || interestLoading}
-              onClick={(e) => {
-                e.stopPropagation();
-                onInterest?.();
-              }}
-              className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-black/35 text-[10px] leading-none backdrop-blur-sm disabled:opacity-50"
-              aria-label="いいね"
-            >
-              <PostLikeIcon size={20} color={likeIconColor} filled={interested} />
-              {interestCount > 0 && (
-                <span className="mt-0.5 text-[8px] font-bold text-white">
-                  {interestCount}
+            {useContact ? (
+              <button
+                type="button"
+                disabled={contactLoading || contacted}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setContactOpen(true);
+                }}
+                className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-black/35 text-[10px] leading-none backdrop-blur-sm disabled:opacity-50"
+                aria-label={contacted ? "連絡済み" : "連絡する"}
+              >
+                <span className={contacted ? "text-[#00e87a]" : "text-white"}>
+                  <MazaruIcon size={20} />
                 </span>
-              )}
-            </button>
+                {contactCount > 0 && (
+                  <span className="mt-0.5 text-[8px] font-bold text-white">
+                    {contactCount}
+                  </span>
+                )}
+              </button>
+            ) : onInterest ? (
+              <button
+                type="button"
+                disabled={interestLoading}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onInterest();
+                }}
+                className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-black/35 text-[10px] leading-none backdrop-blur-sm disabled:opacity-50"
+                aria-label="今夜行くかも"
+              >
+                <PostLikeIcon size={20} color={likeIconColor} filled={interested} />
+                {interestCount > 0 && (
+                  <span className="mt-0.5 text-[8px] font-bold text-white">
+                    {interestCount}
+                  </span>
+                )}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={(e) => {
@@ -500,10 +539,11 @@ export default function GuestPostFeedCard({
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] space-y-2 p-3 pr-14">
           <div className="flex flex-wrap items-center gap-1.5">
-            {mazaruDisplay.mode ? null : authorSocialContext ? (
+            {socialForBadges ? (
               <TonightSocialContextBadges
-                context={authorSocialContext}
+                context={socialForBadges}
                 size="sm"
+                mergeFirst
               />
             ) : null}
             {amberPill && (
@@ -522,11 +562,6 @@ export default function GuestPostFeedCard({
           {shop && (
             <div className="pointer-events-auto space-y-0.5">
               <div className="flex flex-wrap items-center gap-2">
-                {visitOrder != null && (
-                  <span className="rounded bg-[rgba(255,61,0,0.9)] px-1.5 py-0.5 text-[9px] font-extrabold text-white">
-                    {visitOrder}軒目
-                  </span>
-                )}
                 {shopLink ? (
                   <Link
                     href={shopLink}
@@ -586,6 +621,20 @@ export default function GuestPostFeedCard({
         onClose={() => setCommentsOpen(false)}
         onCountChange={setLiveCommentCount}
       />
+
+      {useContact && (
+        <ContactPostSheet
+          open={contactOpen}
+          onClose={() => setContactOpen(false)}
+          shopName={shop?.name ?? "お店"}
+          authorName={displayName}
+          submitting={contactLoading}
+          onSubmit={async (message) => {
+            await onContact?.(message);
+            setContactOpen(false);
+          }}
+        />
+      )}
     </article>
   );
 }

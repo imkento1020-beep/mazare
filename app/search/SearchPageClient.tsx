@@ -273,7 +273,7 @@ export default function SearchPageClient() {
                 </SearchFilterChip>
               ))}
             </SearchFilterGroup>
-            <SearchFilterGroup label="合流・声かけ">
+            <SearchFilterGroup label="マザる（合流OK）">
               {MERGE_ATTITUDES.map((m) => (
                 <SearchFilterChip
                   key={m.id}
@@ -363,17 +363,6 @@ export default function SearchPageClient() {
                     key={post.id}
                     className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111118]"
                   >
-                    {(post.author_merge_attitude || post.author_vibe_scale) && (
-                      <div className="border-b border-white/[0.06] px-3 py-2">
-                        <TonightSocialContextBadges
-                          context={{
-                            mergeAttitude: post.author_merge_attitude,
-                            vibeScale: post.author_vibe_scale,
-                          }}
-                          size="md"
-                        />
-                      </div>
-                    )}
                     <GuestPostFeedCard
                       post={post}
                       authorSocialContext={{

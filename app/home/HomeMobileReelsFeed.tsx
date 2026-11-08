@@ -8,13 +8,17 @@ import {
   fetchHomeReelsFeed,
   type HomeReelsPost,
 } from "@/lib/home/fetchHomeReelsFeed";
-import { notifyPostInterestCreated } from "@/lib/notifications/api";
 import { ensureFreshSession } from "@/lib/auth/session";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
-import { fetchInterestCountsByPostIds } from "@/lib/interests/postInterestCounts";
 import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
+import {
+  createContactRequest,
+  fetchContactRequestCountsByPostIds,
+  fetchUserContactedPostIds,
+} from "@/lib/matching/contactRequests";
+import { isPostOpenForContact } from "@/lib/profile/buildPostSocialContext";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import HomeReelsScroller from "@/components/home/reels/HomeReelsScroller";
 import BottomNav from "@/components/BottomNav";
@@ -42,10 +46,10 @@ export default function HomeMobileReelsFeed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
-  const [interestedPostIds, setInterestedPostIds] = useState<Set<string>>(
+  const [contactedPostIds, setContactedPostIds] = useState<Set<string>>(
     new Set(),
   );
-  const [interestCounts, setInterestCounts] = useState<Map<string, number>>(
+  const [contactCounts, setContactCounts] = useState<Map<string, number>>(
     new Map(),
   );
   const [commentCounts, setCommentCounts] = useState<Map<string, number>>(
@@ -53,23 +57,33 @@ export default function HomeMobileReelsFeed() {
   );
   const { location: userLocation } = useUserLocation();
 
-  const loadCounts = useCallback(async (postIds: string[]) => {
-    if (postIds.length === 0) return;
-    const [interests, comments] = await Promise.all([
-      fetchInterestCountsByPostIds(postIds),
-      fetchCommentCountsByPostIds(postIds),
-    ]);
-    setInterestCounts((prev) => {
-      const next = new Map(prev);
-      interests.forEach((v, k) => next.set(k, v));
-      return next;
-    });
-    setCommentCounts((prev) => {
-      const next = new Map(prev);
-      comments.forEach((v, k) => next.set(k, v));
-      return next;
-    });
-  }, []);
+  const loadCounts = useCallback(
+    async (postIds: string[]) => {
+      if (postIds.length === 0) return;
+      const activeUser = userRef.current;
+      const [contacts, comments, contacted] = await Promise.all([
+        fetchContactRequestCountsByPostIds(postIds),
+        fetchCommentCountsByPostIds(postIds),
+        activeUser
+          ? fetchUserContactedPostIds(activeUser.id, postIds)
+          : Promise.resolve(new Set<string>()),
+      ]);
+      setContactCounts((prev) => {
+        const next = new Map(prev);
+        contacts.forEach((v, k) => next.set(k, v));
+        return next;
+      });
+      setCommentCounts((prev) => {
+        const next = new Map(prev);
+        comments.forEach((v, k) => next.set(k, v));
+        return next;
+      });
+      if (activeUser) {
+        setContactedPostIds((prev) => new Set([...prev, ...contacted]));
+      }
+    },
+    [],
+  );
 
   const reloadFeed = useCallback(
     async (activeUser: User | null) => {
@@ -92,17 +106,10 @@ export default function HomeMobileReelsFeed() {
       }
 
       if (activeUser) {
-        void supabase
-          .from("interests")
-          .select("vibe_post_id")
-          .eq("user_id", activeUser.id)
-          .then(({ data: rows }) => {
-            setInterestedPostIds(
-              new Set((rows ?? []).map((r) => r.vibe_post_id)),
-            );
-          });
+        const allIds = data.map((p) => p.id);
+        void fetchUserContactedPostIds(activeUser.id, allIds).then(setContactedPostIds);
       } else {
-        setInterestedPostIds(new Set());
+        setContactedPostIds(new Set());
       }
     },
     [loadCounts],
@@ -189,7 +196,7 @@ export default function HomeMobileReelsFeed() {
           {
             event: "*",
             schema: "public",
-            table: "interests",
+            table: "contact_requests",
             filter: `vibe_post_id=eq.${postId}`,
           },
           () => void loadCounts([postId]),
@@ -218,68 +225,41 @@ export default function HomeMobileReelsFeed() {
     });
   }, []);
 
-  async function handleInterest(post: HomeReelsPost) {
+  async function handleContact(post: HomeReelsPost, message: string) {
     if (submittingId) return;
     const shop = post.shops;
-    if (!shop) return;
+    if (!shop || !post.author_id) return;
+
+    if (!isPostOpenForContact(post)) {
+      setError("この投稿者は今夜の合流・連絡を受け付けていません");
+      return;
+    }
 
     if (!isRegisteredUser(user)) {
       openAuthPrompt({
-        title: "ログインしていいね",
-        description: "投稿にいいねするにはログインが必要です。",
+        title: "ログインして連絡する",
+        description: "投稿者に連絡するにはログインが必要です。",
         returnPath: "/home",
       });
       return;
     }
 
-    const already = interestedPostIds.has(post.id);
     setSubmittingId(post.id);
+    const result = await createContactRequest({
+      fromUserId: user!.id,
+      toUserId: post.author_id,
+      vibePostId: post.id,
+      shopId: shop.id,
+      message,
+    });
+    setSubmittingId(null);
 
-    if (already) {
-      const { error: deleteError } = await supabase
-        .from("interests")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("vibe_post_id", post.id);
-      if (deleteError) {
-        setError(deleteError.message);
-      } else {
-        setInterestedPostIds((prev) => {
-          const next = new Set(prev);
-          next.delete(post.id);
-          return next;
-        });
-        setInterestCounts((prev) => {
-          const next = new Map(prev);
-          next.set(post.id, Math.max(0, (next.get(post.id) ?? 0) - 1));
-          return next;
-        });
-      }
-    } else {
-      const { data, error: insertError } = await supabase
-        .from("interests")
-        .insert({
-          user_id: user.id,
-          shop_id: shop.id,
-          vibe_post_id: post.id,
-        })
-        .select("id")
-        .single();
-
-      if (insertError) {
-        setError(insertError.message);
-      } else if (data?.id) {
-        await notifyPostInterestCreated(data.id);
-        setInterestedPostIds((prev) => new Set(prev).add(post.id));
-        setInterestCounts((prev) => {
-          const next = new Map(prev);
-          next.set(post.id, (next.get(post.id) ?? 0) + 1);
-          return next;
-        });
-      }
+    if (result.error) {
+      setError(result.error);
+      throw new Error(result.error);
     }
 
-    setSubmittingId(null);
+    setContactedPostIds((prev) => new Set(prev).add(post.id));
     void loadCounts([post.id]);
   }
 
@@ -322,12 +302,12 @@ export default function HomeMobileReelsFeed() {
       <HomeReelsScroller
         posts={enrichedPosts}
         tonightCupTotals={tonightCupTotals}
-        interestCounts={interestCounts}
+        contactCounts={contactCounts}
         commentCounts={commentCounts}
-        interestedPostIds={interestedPostIds}
-        interestLoadingId={submittingId}
+        contactedPostIds={contactedPostIds}
+        contactLoadingId={submittingId}
         userLocation={userLocation}
-        onInterest={(post) => void handleInterest(post)}
+        onContact={handleContact}
         onVisiblePostChange={onVisiblePostChange}
         onCommentCountChange={onCommentCountChange}
       />

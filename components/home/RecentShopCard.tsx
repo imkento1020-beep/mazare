@@ -9,6 +9,11 @@ type RecentShopCardProps = {
   onInterest?: () => void;
   interestLoading?: boolean;
   interested?: boolean;
+  onContact?: (message: string) => void | Promise<void>;
+  contactLoading?: boolean;
+  contacted?: boolean;
+  contactCount?: number;
+  authorSocialContext?: import("@/lib/profile/tonightSocialContext").TonightSocialContext | null;
   tonightTotalCups?: number | null;
   interestCount?: number;
   commentCount?: number;
@@ -20,6 +25,11 @@ export default function RecentShopCard({
   onInterest,
   interestLoading,
   interested,
+  onContact,
+  contactLoading,
+  contacted,
+  contactCount = 0,
+  authorSocialContext = null,
   tonightTotalCups = null,
   interestCount = 0,
   commentCount = 0,
@@ -40,7 +50,12 @@ export default function RecentShopCard({
       onInterest={onInterest}
       interestLoading={interestLoading}
       interested={interested}
-      showActions={Boolean(onInterest)}
+      onContact={onContact}
+      contactLoading={contactLoading}
+      contacted={contacted}
+      contactCount={contactCount}
+      authorSocialContext={authorSocialContext}
+      showActions={Boolean(onInterest || onContact)}
       shopHref={`/shop/${item.shop.id}`}
     />
   );

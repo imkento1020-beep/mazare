@@ -14,6 +14,7 @@ import {
   fetchUserInterests,
 } from "@/lib/mypage/api";
 import ProfileHero from "@/components/profile/ProfileHero";
+import ContactInboxSection from "@/components/mypage/ContactInboxSection";
 import ProfileSection from "@/components/profile/ProfileSection";
 import MyPageTabBar, { type MyPageTab } from "@/components/mypage/MyPageTabBar";
 import DrinkLogStatsCard from "@/components/mypage/DrinkLogStatsCard";
@@ -268,6 +269,10 @@ export default function MyPage() {
       <ProfileHero
         displayName={displayName}
         avatarUrl={profile?.profile_image}
+        socialContext={{
+          mergeAttitude: profile?.mergeAttitude ?? null,
+          vibeScale: profile?.vibeScale ?? null,
+        }}
         stats={[
           { value: myPosts.length, label: "投稿" },
           { value: stats.totalInterests, label: "行くかも" },
@@ -318,6 +323,7 @@ export default function MyPage() {
 
       {tab === "tonight" && (
         <div className="mt-4 space-y-4 pb-4">
+          {user ? <ContactInboxSection userId={user.id} /> : null}
           <ProfileSection
             title="今夜の行くかも"
             description="17:00〜翌5:00に追加したお店"

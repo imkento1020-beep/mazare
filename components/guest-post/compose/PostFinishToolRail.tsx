@@ -62,7 +62,7 @@ export default function PostFinishToolRail({
       </RailButton>
 
       <RailButton
-        label="マザる？"
+        label="今夜マザる？"
         active={activeSheet === "mood" || hasMazaruSelection(mazaruSettings)}
         onClick={() => onOpen("mood")}
       >

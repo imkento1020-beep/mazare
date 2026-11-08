@@ -12,12 +12,12 @@ const SLIDE_CLASS =
 type HomeReelsScrollerProps = {
   posts: HomeReelsPost[];
   tonightCupTotals: Map<string, number>;
-  interestCounts: Map<string, number>;
+  contactCounts: Map<string, number>;
   commentCounts: Map<string, number>;
-  interestedPostIds: Set<string>;
-  interestLoadingId: string | null;
+  contactedPostIds: Set<string>;
+  contactLoadingId: string | null;
   userLocation: GeoPoint | null;
-  onInterest: (post: HomeReelsPost) => void;
+  onContact: (post: HomeReelsPost, message: string) => void | Promise<void>;
   onVisiblePostChange: (postId: string) => void;
   onCommentCountChange: (postId: string, count: number) => void;
 };
@@ -25,12 +25,12 @@ type HomeReelsScrollerProps = {
 export default function HomeReelsScroller({
   posts,
   tonightCupTotals,
-  interestCounts,
+  contactCounts,
   commentCounts,
-  interestedPostIds,
-  interestLoadingId,
+  contactedPostIds,
+  contactLoadingId,
   userLocation,
-  onInterest,
+  onContact,
   onVisiblePostChange,
   onCommentCountChange,
 }: HomeReelsScrollerProps) {
@@ -103,12 +103,12 @@ export default function HomeReelsScroller({
             post={post}
             isActive={activeId === post.id}
             tonightTotalCups={tonightCupTotals.get(post.id) ?? null}
-            interestCount={interestCounts.get(post.id) ?? 0}
+            contactCount={contactCounts.get(post.id) ?? 0}
             commentCount={commentCounts.get(post.id) ?? 0}
-            interested={interestedPostIds.has(post.id)}
-            interestLoading={interestLoadingId === post.id}
+            contacted={contactedPostIds.has(post.id)}
+            contactLoading={contactLoadingId === post.id}
             userLocation={userLocation}
-            onInterest={() => onInterest(post)}
+            onContact={(message) => onContact(post, message)}
             onCommentCountChange={(n) => onCommentCountChange(post.id, n)}
           />
         </section>

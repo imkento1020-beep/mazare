@@ -105,6 +105,12 @@ export async function notifyPostInterestCreated(interestId: string) {
   });
 }
 
+export async function notifyContactRequestCreated(requestId: string) {
+  return callNotifyRpc("notify_contact_request_created", {
+    p_request_id: requestId,
+  });
+}
+
 export async function notifyShopFavoritedCreated(favoriteId: string) {
   return callNotifyRpc("notify_shop_favorited_created", {
     p_favorite_id: favoriteId,

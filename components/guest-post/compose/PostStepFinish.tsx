@@ -105,7 +105,7 @@ export default function PostStepFinish({
 
       <PostComposeSheet
         open={sheet === "mood"}
-        title="マザる？"
+        title="今夜マザる？"
         onClose={() => setSheet(null)}
       >
         <PostMazaruPicker

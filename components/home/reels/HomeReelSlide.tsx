@@ -15,33 +15,34 @@ import { resolvePostMedia } from "@/lib/guest-post/resolvePostMedia";
 import VibePostCommentSheet from "@/components/comments/VibePostCommentSheet";
 import { usePostViewTracking } from "@/lib/home/usePostViewTracking";
 import ReelCaption from "@/components/home/reels/ReelCaption";
-import InterestHeartBurst from "@/components/home/reels/InterestHeartBurst";
 import {
   FeedCommentIcon,
   FeedGlassIcon,
   FeedPeopleIcon,
   FeedPinIcon,
   FeedShareIcon,
-  PostLikeIcon,
 } from "@/components/icons/FeedActionIcons";
 import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
 import MazaruPostCardPanel from "@/components/posts/MazaruPostCardPanel";
+import ContactPostSheet from "@/components/matching/ContactPostSheet";
 import { parseMazaruFromRow } from "@/lib/guest-post/mazaruSettings";
 import {
   hasAnySocialContext,
   resolvePostAuthorSocialContext,
 } from "@/lib/profile/tonightSocialContext";
+import { isPostOpenForContact } from "@/lib/profile/buildPostSocialContext";
+import { MazaruIcon } from "@/components/icons/MazaruModeIcons";
 
 type HomeReelSlideProps = {
   post: HomeReelsPost;
   tonightTotalCups: number | null;
-  interestCount: number;
+  contactCount: number;
   commentCount: number;
-  interested: boolean;
-  interestLoading: boolean;
+  contacted: boolean;
+  contactLoading: boolean;
   isActive: boolean;
   userLocation: GeoPoint | null;
-  onInterest: () => void;
+  onContact: (message: string) => void | Promise<void>;
   onCommentCountChange: (count: number) => void;
 };
 
@@ -104,13 +105,13 @@ function ActionButton({
 export default function HomeReelSlide({
   post,
   tonightTotalCups,
-  interestCount,
+  contactCount,
   commentCount,
-  interested,
-  interestLoading,
+  contacted,
+  contactLoading,
   isActive,
   userLocation,
-  onInterest,
+  onContact,
   onCommentCountChange,
 }: HomeReelSlideProps) {
   const viewRef = usePostViewTracking(post.id);
@@ -119,7 +120,8 @@ export default function HomeReelSlide({
   const [muted, setMuted] = useState(true);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [liveComments, setLiveComments] = useState(commentCount);
-  const [heartBurst, setHeartBurst] = useState(0);
+  const [contactOpen, setContactOpen] = useState(false);
+  const contactAllowed = isPostOpenForContact(post);
 
   useEffect(() => {
     setLiveComments(commentCount);
@@ -180,18 +182,13 @@ export default function HomeReelSlide({
     }
   }
 
-  const waveColor = interested ? "#ff3d00" : "#ffffff";
+  const connectColor = contacted ? "#00e87a" : "#ffffff";
 
   function handleMediaTap() {
     const now = Date.now();
-    if (now - lastTapRef.current < 320) {
+    if (now - lastTapRef.current < 320 && contactAllowed && !contacted) {
       lastTapRef.current = 0;
-      if (!interestLoading && !interested) {
-        setHeartBurst((n) => n + 1);
-        onInterest();
-      } else if (interested) {
-        setHeartBurst((n) => n + 1);
-      }
+      setContactOpen(true);
       return;
     }
     lastTapRef.current = now;
@@ -203,7 +200,6 @@ export default function HomeReelSlide({
       className="relative h-full w-full overflow-hidden bg-[#111118]"
       onClick={handleMediaTap}
     >
-      <InterestHeartBurst trigger={heartBurst} />
       {isVideo && videoUrl ? (
         <button
           type="button"
@@ -289,17 +285,18 @@ export default function HomeReelSlide({
       </div>
 
       <div className="absolute bottom-[22%] right-3 z-10 flex flex-col items-center gap-3">
-        <ActionButton
-          label="いいね"
-          count={interestCount}
-          disabled={interestLoading}
-          onClick={() => {
-            if (!interested) setHeartBurst((n) => n + 1);
-            onInterest();
-          }}
-        >
-          <PostLikeIcon color={waveColor} filled={interested} />
-        </ActionButton>
+        {contactAllowed ? (
+          <ActionButton
+            label={contacted ? "連絡済み" : "連絡する"}
+            count={contactCount}
+            disabled={contactLoading || contacted}
+            onClick={() => setContactOpen(true)}
+          >
+            <span className={contacted ? "text-[#00e87a]" : "text-white"}>
+              <MazaruIcon size={24} />
+            </span>
+          </ActionButton>
+        ) : null}
         <ActionButton
           label="コメント"
           count={liveComments}
@@ -315,25 +312,17 @@ export default function HomeReelSlide({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#080810]/95 via-[#080810]/55 to-transparent px-4 pb-5 pt-24">
         <div className="pointer-events-auto space-y-2.5 pr-14">
           <div className="flex flex-wrap items-center gap-1.5">
-            {mazaruDisplay.mode ? null : hasAnySocialContext(authorSocial) ? (
-              <TonightSocialContextBadges context={authorSocial} size="sm" />
+            {hasAnySocialContext(authorSocial) ? (
+              <TonightSocialContextBadges
+                context={authorSocial}
+                size="sm"
+                mergeFirst
+              />
             ) : null}
-            {(cups != null || post.drink_name) && (
-              <span className="inline-flex items-center rounded-full border border-[#ffaa00]/35 bg-[#ffaa00]/12 px-2.5 py-1 text-[10px] font-bold text-[#ffaa00]">
-                {cups != null && `今夜${cups}杯目`}
-                {cups != null && post.drink_name && " · "}
-                {post.drink_name}
-              </span>
-            )}
             {post.party_size != null && post.party_size >= 1 && (
               <span className="inline-flex items-center gap-1 rounded-full border border-[#00e87a]/35 bg-[#00e87a]/10 px-2.5 py-1 text-[10px] font-bold text-[#00e87a]">
                 <FeedPeopleIcon size={13} />
                 {post.party_size}人
-              </span>
-            )}
-            {visitOrder != null && (
-              <span className="inline-flex items-center rounded-full border border-white/15 bg-white/8 px-2.5 py-1 text-[10px] font-bold text-white/80">
-                {visitOrder}軒目
               </span>
             )}
           </div>
@@ -369,6 +358,18 @@ export default function HomeReelSlide({
         open={commentsOpen}
         onClose={() => setCommentsOpen(false)}
         onCountChange={handleSheetCommentCount}
+      />
+
+      <ContactPostSheet
+        open={contactOpen}
+        onClose={() => setContactOpen(false)}
+        shopName={shop?.name ?? "お店"}
+        authorName={name}
+        submitting={contactLoading}
+        onSubmit={async (message) => {
+          await onContact(message);
+          setContactOpen(false);
+        }}
       />
     </article>
   );

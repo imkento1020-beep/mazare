@@ -3,6 +3,7 @@ export type NotificationType =
   | "shop_reposted"
   | "post_interest"
   | "guest_post_interest"
+  | "contact_request"
   | "shop_favorited"
   | "staff_invite";
 

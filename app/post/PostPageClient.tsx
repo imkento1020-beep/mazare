@@ -29,9 +29,9 @@ import { supabase } from "@/lib/supabase";
 import { updateTonightSocialContext } from "@/lib/mypage/api";
 import {
   defaultMazaruSettings,
-  mazaruToSocialContext,
   type PostMazaruSettings,
 } from "@/lib/guest-post/mazaruSettings";
+import { buildPostSocialContext } from "@/lib/profile/buildPostSocialContext";
 import type { Shop } from "@/lib/home/types";
 import PostStepShop from "@/components/guest-post/compose/PostStepShop";
 import PostStepMedia from "@/components/guest-post/compose/PostStepMedia";
@@ -298,7 +298,25 @@ export default function PostPageClient() {
       return;
     }
 
-    const socialContext = mazaruToSocialContext(mazaruSettings);
+    let mazaruForSubmit = mazaruSettings;
+    if (
+      mazaruForSubmit.mode === "mazaru" &&
+      mazaruForSubmit.details.currentHeadcount == null &&
+      nightOut.partySize != null
+    ) {
+      mazaruForSubmit = {
+        ...mazaruForSubmit,
+        details: {
+          ...mazaruForSubmit.details,
+          currentHeadcount: nightOut.partySize,
+        },
+      };
+    }
+
+    const socialContext = buildPostSocialContext(
+      mazaruForSubmit,
+      nightOut.partySize,
+    );
     await updateTonightSocialContext(activeUser.id, socialContext);
 
     const priorCount = await countGuestPostsByUser(activeUser.id);
@@ -310,7 +328,7 @@ export default function PostPageClient() {
       hashtags,
       nightOut,
       socialContext,
-      mazaruSettings,
+      mazaruSettings: mazaruForSubmit,
       comment,
       imageFiles: videoFile ? undefined : imageFiles,
       videoFile,
