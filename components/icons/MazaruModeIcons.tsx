@@ -3,8 +3,10 @@ type IconProps = {
   className?: string;
 };
 
-/** 二人で踊る（マザる・合流OK） */
+/** マザる — 二人で踊る（合流・交流 OK） */
 export function MazaruIcon({ size = 28, className = "" }: IconProps) {
+  const stroke = 2.9;
+
   return (
     <svg
       width={size}
@@ -14,69 +16,32 @@ export function MazaruIcon({ size = 28, className = "" }: IconProps) {
       className={className}
       aria-hidden
     >
-      <circle cx="10.5" cy="8.5" r="3" fill="currentColor" />
-      <path
-        d="M10.5 11.5v5"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M10.5 13l-4-3.5M10.5 13.5l3-2"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M10.5 16.5l-3 8M10.5 16.5l2.5-6.5"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <circle cx="10" cy="8.5" r="3.7" fill="currentColor" />
+      <circle cx="22" cy="8.5" r="3.7" fill="currentColor" />
 
-      <circle cx="21.5" cy="8.5" r="3" fill="currentColor" />
-      <path
-        d="M21.5 11.5v5"
+      <g
         stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M21.5 13l4-3.5M21.5 13.5l-3-2"
-        stroke="currentColor"
-        strokeWidth="1.75"
+        strokeWidth={stroke}
         strokeLinecap="round"
         strokeLinejoin="round"
-      />
-      <path
-        d="M21.5 16.5l3 8M21.5 16.5l-2.5-6.5"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      >
+        <path d="M10 12.2v5.2" />
+        <path d="M10 12.8L6 7.5" />
+        <path d="M10 12.8L14 7.5" />
+        <path d="M10 17.4L7.2 25.5" />
+        <path d="M10 17.4L12.5 23.5" />
 
-      <path
-        d="M13.5 7.5l2.5 1.5M16 7.5l-2.5 1.5"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-        opacity="0.45"
-      />
-      <path
-        d="M5 26.5h22"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-        opacity="0.3"
-      />
+        <path d="M22 12.2v5.2" />
+        <path d="M22 12.8L18 7.5" />
+        <path d="M22 12.8L26 7.5" />
+        <path d="M22 17.4L19.5 23.5" />
+        <path d="M22 17.4L24.8 25.5" />
+      </g>
     </svg>
   );
 }
 
-/** グラスで乾杯（マザらない・内輪） */
+/** マザらない — ジョッキで乾杯（今夜は内輪） */
 export function MazaranaiIcon({ size = 28, className = "" }: IconProps) {
   return (
     <svg
@@ -87,70 +52,48 @@ export function MazaranaiIcon({ size = 28, className = "" }: IconProps) {
       className={className}
       aria-hidden
     >
-      <path
-        d="M7.2 17.8l2.8-9.5a1 1 0 011.9 0l2.8 9.5"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M8.3 15.5h6.2"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        opacity="0.7"
-      />
-      <path
-        d="M8.8 14.8h4.6c0 0 .4 2.2-4.6 1.8"
-        fill="currentColor"
-        fillOpacity="0.32"
-      />
-      <path
-        d="M11.4 17.8v5M9.2 22.8h4.4"
-        stroke="currentColor"
-        strokeWidth="1.45"
-        strokeLinecap="round"
-      />
+      <g transform="rotate(-16 9 23)">
+        <path
+          d="M4.2 14.2h7.1c.9 0 1.6.7 1.6 1.6v7.8c0 1.5-1.2 2.7-2.7 2.7H5.3c-1.5 0-2.7-1.2-2.7-2.7v-7.8c0-.9.7-1.6 1.6-1.6z"
+          fill="currentColor"
+          fillOpacity="0.2"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinejoin="round"
+        />
+        <path d="M4.5 14.2h6.5v3.4H4.5z" fill="currentColor" fillOpacity="0.55" />
+        <path
+          d="M3.5 16.8c-1.5 0-1.5 3.4 0 3.4"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+        />
+        <ellipse cx="7.3" cy="12.6" rx="3.8" ry="1.55" fill="currentColor" />
+      </g>
 
-      <path
-        d="M24.8 17.8l-2.8-9.5a1 1 0 00-1.9 0l-2.8 9.5"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M17.5 15.5h6.2"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        opacity="0.7"
-      />
-      <path
-        d="M18.6 14.8h4.6c0 0-.4 2.2 4.6 1.8"
-        fill="currentColor"
-        fillOpacity="0.32"
-      />
-      <path
-        d="M20.6 17.8v5M18.4 22.8h4.4"
-        stroke="currentColor"
-        strokeWidth="1.45"
-        strokeLinecap="round"
-      />
+      <g transform="rotate(16 23 23)">
+        <path
+          d="M20.7 14.2h7.1c.9 0 1.6.7 1.6 1.6v7.8c0 1.5-1.2 2.7-2.7 2.7h-4.3c-1.5 0-2.7-1.2-2.7-2.7v-7.8c0-.9.7-1.6 1.6-1.6z"
+          fill="currentColor"
+          fillOpacity="0.2"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinejoin="round"
+        />
+        <path d="M21 14.2h6.5v3.4H21z" fill="currentColor" fillOpacity="0.55" />
+        <path
+          d="M28.5 16.8c1.5 0 1.5 3.4 0 3.4"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+        />
+        <ellipse cx="24.7" cy="12.6" rx="3.8" ry="1.55" fill="currentColor" />
+      </g>
 
-      <path
-        d="M13.8 10.2l2.2-1.4 2.2 1.4"
-        stroke="#ffaa00"
-        strokeWidth="1.35"
-        strokeLinecap="round"
-      />
-      <circle cx="16" cy="9.6" r="1" fill="#ffaa00" opacity="0.88" />
-      <path
-        d="M15.1 8.1l.9.55M16.9 8.1l-.9.55"
-        stroke="#ffaa00"
-        strokeWidth="1"
-        strokeLinecap="round"
-        opacity="0.7"
-      />
+      <g stroke="#ffaa00" strokeLinecap="round">
+        <circle cx="16" cy="11.5" r="1.4" fill="#ffaa00" stroke="none" />
+        <path d="M14.2 9.8l1.1 1.6M17.8 9.8l-1.1 1.6" strokeWidth="1.25" />
+      </g>
     </svg>
   );
 }
