@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import GoogleAttribution from "@/components/places/GoogleAttribution";
 import GeolocationPermissionHelp from "@/components/geo/GeolocationPermissionHelp";
 import { CheckinOutlineIcon } from "@/components/icons/CreateActionIcons";
 import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
@@ -267,7 +266,6 @@ export default function CheckinPageClient() {
           </p>
         )}
 
-        <GoogleAttribution className="mt-8" />
       </main>
 
       {submitting ? (

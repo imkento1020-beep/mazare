@@ -11,7 +11,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { invalidateCachedPrefix } from "@/lib/cache/clientCache";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import GoogleAttribution from "@/components/places/GoogleAttribution";
 import { parseGuestPostBody } from "@/lib/guest-post/composeBody";
 import { createGuestVibePost } from "@/lib/guest-post/createPost";
 import type { NightOutInput } from "@/lib/guest-post/nightOut";
@@ -491,9 +490,6 @@ export default function PostPageClient() {
           </p>
         ) : null}
 
-        {step !== "finish" ? (
-          <GoogleAttribution className="mt-8" />
-        ) : null}
       </main>
 
       {isFinish ? (

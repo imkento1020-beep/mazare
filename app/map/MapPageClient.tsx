@@ -8,7 +8,6 @@ import MapActivityGoogleMapView from "@/components/map/MapActivityGoogleMapView"
 import MapActivitySheet from "@/components/map/MapActivitySheet";
 import MapActivityWindowFilter from "@/components/map/MapActivityWindowFilter";
 import MapActivityMetricFilter from "@/components/map/MapActivityMetricFilter";
-import GoogleAttribution from "@/components/places/GoogleAttribution";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 import {
   buildMapShopActivity,
@@ -369,9 +368,6 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
           onInterest={() => void handleInterest()}
         />
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-20 z-10 flex justify-center md:bottom-4">
-          <GoogleAttribution />
-        </div>
       </div>
 
       <BottomNav />

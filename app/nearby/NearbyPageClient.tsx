@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import GoogleAttribution from "@/components/places/GoogleAttribution";
 import type { PlaceSummary } from "@/lib/places/types";
 import {
   cachePlacesForPost,
@@ -209,9 +208,6 @@ export default function NearbyPageClient({ setupHint }: NearbyPageClientProps) {
           </p>
         )}
 
-        <div className="mt-8">
-          <GoogleAttribution />
-        </div>
       </main>
 
       <BottomNav />
