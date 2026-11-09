@@ -68,13 +68,27 @@ export const OWNER_BOTTOM_NAV: BottomNavItem[] = [
   { label: "設定", href: "/owner/profile", icon: "user" },
 ];
 
-/** Matches mobile BottomNav: h-16 row + safe-area padding on the nav element. */
+/** Tab bar row only (h-16). */
 export const MOBILE_TAB_BAR_INSET =
   "calc(4rem + env(safe-area-inset-bottom, 0px))";
 
-/** Fixed compose footer (次へ) + tab bar — scroll padding for step 1–2. */
+/**
+ * Full stack from viewport bottom: safe area + tab row + center FAB overshoot (~20px).
+ * Use this to place compose action bars above the tab bar without overlap.
+ */
+export const MOBILE_TAB_BAR_STACK_HEIGHT =
+  "calc(5.25rem + env(safe-area-inset-bottom, 0px))";
+
+/** Sticky compose action row (py-3 + 52px buttons). */
+export const MOBILE_COMPOSE_ACTION_HEIGHT = "4.75rem";
+
+/** Main scroll padding on /post: action dock + tab stack. */
+export const MOBILE_COMPOSE_MAIN_PADDING_BOTTOM =
+  "calc(5.25rem + 4.75rem + env(safe-area-inset-bottom, 0px))";
+
+/** @deprecated use MOBILE_COMPOSE_MAIN_PADDING_BOTTOM */
 export const MOBILE_COMPOSE_FOOTER_SCROLL_PADDING =
-  "calc(7.5rem + env(safe-area-inset-bottom, 0px))";
+  MOBILE_COMPOSE_MAIN_PADDING_BOTTOM;
 
 export function isActivePath(pathname: string, href: string) {
   if (href === "/home") return pathname === "/home";

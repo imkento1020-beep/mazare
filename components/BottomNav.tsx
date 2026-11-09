@@ -42,10 +42,12 @@ function NavItem({
   item,
   pathname,
   onOpenCreateSheet,
+  compactCenter = false,
 }: {
   item: BottomNavItem;
   pathname: string;
   onOpenCreateSheet: () => void;
+  compactCenter?: boolean;
 }) {
   const active = isActivePath(pathname, item.href);
   const color = active ? ACTIVE : INACTIVE;
@@ -60,13 +62,17 @@ function NavItem({
         aria-haspopup="dialog"
       >
         <span
-          className={`mt-[-20px] flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#ff3d00] transition-shadow duration-300 ease-out ${
-            active
-              ? "shadow-[0_4px_24px_rgba(255,61,0,0.6)]"
-              : "shadow-[0_4px_16px_rgba(255,61,0,0.4)]"
+          className={`flex items-center justify-center rounded-full bg-[#ff3d00] transition-shadow duration-300 ease-out ${
+            compactCenter
+              ? "mt-0 h-11 w-11 shadow-[0_2px_12px_rgba(255,61,0,0.35)]"
+              : `mt-[-20px] h-[52px] w-[52px] ${
+                  active
+                    ? "shadow-[0_4px_24px_rgba(255,61,0,0.6)]"
+                    : "shadow-[0_4px_16px_rgba(255,61,0,0.4)]"
+                }`
           }`}
         >
-          <CameraIcon size={24} color="#ffffff" />
+          <CameraIcon size={compactCenter ? 22 : 24} color="#ffffff" />
         </span>
         <span
           className={`text-[9px] leading-tight ${
@@ -87,13 +93,17 @@ function NavItem({
         aria-current={active ? "page" : undefined}
       >
         <span
-          className={`mt-[-20px] flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#ff3d00] transition-shadow duration-300 ease-out ${
-            active
-              ? "shadow-[0_4px_24px_rgba(255,61,0,0.6)]"
-              : "shadow-[0_4px_16px_rgba(255,61,0,0.4)]"
+          className={`flex items-center justify-center rounded-full bg-[#ff3d00] transition-shadow duration-300 ease-out ${
+            compactCenter
+              ? "mt-0 h-11 w-11 shadow-[0_2px_12px_rgba(255,61,0,0.35)]"
+              : `mt-[-20px] h-[52px] w-[52px] ${
+                  active
+                    ? "shadow-[0_4px_24px_rgba(255,61,0,0.6)]"
+                    : "shadow-[0_4px_16px_rgba(255,61,0,0.4)]"
+                }`
           }`}
         >
-          <CameraIcon size={24} color="#ffffff" />
+          <CameraIcon size={compactCenter ? 22 : 24} color="#ffffff" />
         </span>
         <span
           className={`text-[9px] leading-tight ${
@@ -157,6 +167,8 @@ export default function BottomNav() {
   const onOwnerSection = isOwnerAppPath(pathname);
   const onGuestSection = isGuestAppPath(pathname) && !onOwnerSection;
   const onNotifications = pathname.startsWith("/notifications");
+  const compactCenter =
+    pathname.startsWith("/post") || pathname.startsWith("/checkin");
 
   let items: BottomNavItem[] | null = null;
   if (onOwnerSection && roles.includes("owner")) {
@@ -182,6 +194,7 @@ export default function BottomNav() {
               item={item}
               pathname={pathname}
               onOpenCreateSheet={() => setCreateSheetOpen(true)}
+              compactCenter={compactCenter}
             />
           ))}
         </div>

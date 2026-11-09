@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { invalidateCachedPrefix } from "@/lib/cache/clientCache";
 import Header from "@/components/Header";
@@ -45,6 +51,8 @@ import {
   postComposeStepOrder,
   type SelectedPostShop,
 } from "@/lib/guest-post/postComposeSteps";
+import PostComposeActionDock from "@/components/guest-post/compose/PostComposeActionDock";
+import { MOBILE_COMPOSE_MAIN_PADDING_BOTTOM } from "@/lib/layout/nav";
 export default function PostPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -399,13 +407,16 @@ export default function PostPageClient() {
       <Header />
 
       <main
-        className={`mx-auto flex w-full max-w-lg min-h-0 flex-1 flex-col overflow-y-auto ${
+        className={`mx-auto flex w-full max-w-lg min-h-0 flex-1 flex-col overflow-y-auto max-md:pb-[var(--post-compose-main-pb)] md:pb-28 ${
           step === "finish"
-            ? "overflow-hidden px-0 py-0 pb-[calc(8.25rem+env(safe-area-inset-bottom,0px))] md:pb-[5.5rem]"
-            : showBack
-              ? "px-4 py-4 pb-[calc(8.25rem+env(safe-area-inset-bottom,0px))] md:pb-[5.5rem]"
-              : "px-4 py-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] md:pb-28"
+            ? "overflow-hidden px-0 py-0"
+            : "px-4 py-4"
         }`}
+        style={
+          {
+            "--post-compose-main-pb": MOBILE_COMPOSE_MAIN_PADDING_BOTTOM,
+          } as CSSProperties
+        }
       >
         {!mapsKeyLoading && !mapsApiKey && step === "shop" ? (
           <p className="mb-3 rounded-lg border border-[#ffaa00]/30 bg-[#ffaa00]/10 px-4 py-3 text-xs text-[#ffaa00]">
@@ -486,8 +497,8 @@ export default function PostPageClient() {
       </main>
 
       {isFinish ? (
-        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-[110] border-t border-white/[0.08] bg-[#080810]/98 px-4 py-3 backdrop-blur-md md:bottom-0">
-          <div className="mx-auto flex max-w-lg gap-3">
+        <PostComposeActionDock>
+          <div className="flex w-full gap-3">
             <button
               type="button"
               onClick={goBack}
@@ -505,11 +516,11 @@ export default function PostPageClient() {
               {submitting ? "投稿中…" : "投稿する"}
             </button>
           </div>
-        </div>
+        </PostComposeActionDock>
       ) : (
-        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-[110] border-t border-white/[0.08] bg-[#080810]/98 px-4 py-3 backdrop-blur-md md:bottom-0">
+        <PostComposeActionDock>
           <div
-            className={`mx-auto flex max-w-lg ${showBack ? "gap-3" : ""}`.trim()}
+            className={`flex w-full ${showBack ? "gap-3" : ""}`.trim()}
           >
             {showBack ? (
               <button
@@ -534,7 +545,7 @@ export default function PostPageClient() {
               次へ
             </button>
           </div>
-        </div>
+        </PostComposeActionDock>
       )}
 
       {submitting ? (
