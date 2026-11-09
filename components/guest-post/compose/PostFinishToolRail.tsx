@@ -5,7 +5,7 @@ import {
   FeedPeopleIcon,
 } from "@/components/icons/FeedActionIcons";
 import { hasMazaruSelection, type PostMazaruSettings } from "@/lib/guest-post/mazaruSettings";
-import { MazaruIcon } from "@/components/icons/MazaruModeIcons";
+import { MazaranaiIcon, MazaruIcon } from "@/components/icons/MazaruModeIcons";
 
 type ToolId = "comment" | "mood" | "party";
 
@@ -71,7 +71,9 @@ export default function PostFinishToolRail({
             <MazaruIcon size={22} />
           </span>
         ) : mazaruSettings.mode === "mazaranai" ? (
-          <span className="text-[9px] font-black text-white/80">—</span>
+          <span className="text-[#c4bfd6]">
+            <MazaranaiIcon size={22} />
+          </span>
         ) : (
           <span className="text-[10px] font-black text-white">?</span>
         )}
