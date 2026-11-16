@@ -12,9 +12,7 @@ function ChipRow({ label, items }: { label: string; items: string[] }) {
 
   return (
     <div>
-      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#5a5668]">
-        {label}
-      </p>
+      <p className="text-xs font-bold text-[#5a5668]">{label}</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {items.map((item) => (
           <span
@@ -86,9 +84,7 @@ export default function GuestPostInsightsPanel({
 
       {insights.tonightTimeline.length > 0 && (
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#5a5668]">
-            今夜の流れ
-          </p>
+          <p className="text-xs font-bold text-[#5a5668]">今夜の流れ</p>
           <ol className="mt-2 space-y-2">
             {insights.tonightTimeline.map(({ post, summary }) => (
               <li key={post.id}>

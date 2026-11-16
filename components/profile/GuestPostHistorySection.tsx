@@ -23,9 +23,7 @@ function ChipRow({ label, items }: { label: string; items: string[] }) {
 
   return (
     <div className="mt-3">
-      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#5a5668]">
-        {label}
-      </p>
+      <p className="text-xs font-bold text-[#5a5668]">{label}</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {items.map((item) => (
           <span
@@ -57,11 +55,9 @@ export default function GuestPostHistorySection({
   );
 
   return (
-    <section className="mt-8">
+    <section className="mt-6">
       <div className="flex items-end justify-between gap-3">
-        <h2 className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">
-          今までの投稿
-        </h2>
+        <h2 className="text-base font-black text-[#eeeaf4]">投稿履歴</h2>
         {showPostLink && (
           <Link
             href="/post"

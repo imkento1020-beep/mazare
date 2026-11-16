@@ -265,10 +265,12 @@ export default function MyPage() {
       posts={sidebarPosts}
       filteredCount={sidebarPosts.length}
     >
-      <div className="mx-auto max-w-2xl space-y-1">
+      <div className="mx-auto max-w-2xl space-y-4">
       <ProfileHero
         displayName={displayName}
         avatarUrl={profile?.profile_image}
+        bio={profile?.bio}
+        footnote={user?.email ?? undefined}
         socialContext={{
           mergeAttitude: profile?.mergeAttitude ?? null,
           vibeScale: profile?.vibeScale ?? null,
@@ -278,7 +280,6 @@ export default function MyPage() {
           { value: stats.totalInterests, label: "行くかも" },
           { value: stats.visitedShops, label: "行った店" },
         ]}
-        metaLine={profile?.bio ?? user?.email ?? undefined}
         actions={
           <>
             <Link

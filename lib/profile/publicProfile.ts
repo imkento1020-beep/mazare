@@ -14,6 +14,7 @@ export type PublicGuestProfile = {
   profile_image: string | null;
   user_type: string;
   created_at: string | null;
+  bio: string | null;
   mergeAttitude: MergeAttitude | null;
   vibeScale: VibeScale | null;
 };
@@ -46,7 +47,7 @@ export async function fetchPublicGuestProfile(userId: string): Promise<{
   let { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, display_name, profile_image, user_type, created_at, merge_attitude, vibe_scale, tonight_social_mood",
+      "id, display_name, profile_image, user_type, created_at, bio, merge_attitude, vibe_scale, tonight_social_mood",
     )
     .eq("id", userId)
     .maybeSingle();
@@ -80,6 +81,10 @@ export async function fetchPublicGuestProfile(userId: string): Promise<{
       profile_image: data.profile_image ?? null,
       user_type: data.user_type ?? "guest",
       created_at: data.created_at ?? null,
+      bio:
+        typeof data.bio === "string" && data.bio.trim()
+          ? data.bio.trim()
+          : null,
       mergeAttitude: social.mergeAttitude,
       vibeScale: social.vibeScale,
     },

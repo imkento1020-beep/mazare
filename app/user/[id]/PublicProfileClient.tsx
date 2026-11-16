@@ -15,12 +15,7 @@ import {
 import { computeGuestPostInsights } from "@/lib/profile/postInsights";
 import GuestPostInsightsPanel from "@/components/profile/GuestPostInsightsPanel";
 import ProfileHero from "@/components/profile/ProfileHero";
-import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
-import {
-  MERGE_ATTITUDES,
-  VIBE_SCALES,
-  hasAnySocialContext,
-} from "@/lib/profile/tonightSocialContext";
+import ProfileSocialSummary from "@/components/profile/ProfileSocialSummary";
 import PublicProfileTabBar, {
   type PublicProfileTab,
 } from "@/components/profile/PublicProfileTabBar";
@@ -85,8 +80,6 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
   }
 
   const isSelf = viewerId === profile.id;
-  const mergeMeta = MERGE_ATTITUDES.find((m) => m.id === profile.mergeAttitude);
-  const vibeMeta = VIBE_SCALES.find((v) => v.id === profile.vibeScale);
   const joinLine = profile.created_at
     ? `${new Date(profile.created_at).toLocaleDateString("ja-JP")} から mazare`
     : null;
@@ -99,11 +92,16 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
       showRightSidebar={false}
       showMobileSearch={false}
     >
-      <div className="mx-auto max-w-2xl space-y-1">
+      <div className="mx-auto max-w-2xl space-y-4">
         <ProfileHero
           displayName={profile.display_name}
           avatarUrl={profile.profile_image}
-          metaLine={joinLine}
+          subtitle={joinLine}
+          bio={profile.bio}
+          socialContext={{
+            mergeAttitude: profile.mergeAttitude,
+            vibeScale: profile.vibeScale,
+          }}
           stats={[
             { value: posts.length, label: "投稿" },
             { value: insights.tonightPostCount, label: "今夜" },
@@ -139,47 +137,21 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
         )}
 
         {tab === "profile" && (
-          <section className="mt-4 space-y-4 rounded-2xl border border-white/[0.07] bg-[#111118] p-5">
+          <section className="mt-4 space-y-3 rounded-2xl border border-white/[0.07] bg-[#111118] p-5">
             <div>
-              <p className="text-base font-black text-[#eeeaf4]">合流・席の人数感</p>
-              <p className="mt-1 text-xs text-[#9994a8]">
-                合流の意思と、今夜の席の雰囲気
+              <h2 className="text-base font-black text-[#eeeaf4]">
+                今夜のスタンス
+              </h2>
+              <p className="mt-1 text-xs leading-relaxed text-[#9994a8]">
+                合流の意思と、席の人数感
               </p>
             </div>
-            {hasAnySocialContext({
-              mergeAttitude: profile.mergeAttitude,
-              vibeScale: profile.vibeScale,
-            }) ? (
-              <div className="rounded-2xl border border-white/[0.08] bg-[#0d0d12] p-4">
-                <TonightSocialContextBadges
-                  context={{
-                    mergeAttitude: profile.mergeAttitude,
-                    vibeScale: profile.vibeScale,
-                  }}
-                  size="md"
-                />
-                {mergeMeta?.description && (
-                  <p className="mt-3 text-sm leading-relaxed text-[#9994a8]">
-                    {mergeMeta.description}
-                  </p>
-                )}
-                {vibeMeta?.description && (
-                  <p className="mt-2 text-sm leading-relaxed text-[#9994a8]">
-                    {vibeMeta.description}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="rounded-2xl border border-dashed border-white/10 bg-[#0d0d12] p-5 text-sm text-[#5a5668]">
-                まだ今夜の気分は設定されていません
-              </p>
-            )}
-            <div className="border-t border-white/[0.06] pt-4">
-              <p className="text-xs font-bold text-[#5a5668]">表示名</p>
-              <p className="mt-1 text-sm font-bold text-[#eeeaf4]">
-                {profile.display_name}
-              </p>
-            </div>
+            <ProfileSocialSummary
+              context={{
+                mergeAttitude: profile.mergeAttitude,
+                vibeScale: profile.vibeScale,
+              }}
+            />
           </section>
         )}
         </MotionPanel>
