@@ -105,9 +105,13 @@ export function AuthPromptProvider({ children }: { children: ReactNode }) {
       await startGoogleAuth(returnPath);
       closeAuthPrompt();
     } catch (error) {
-      setGoogleError(
-        error instanceof Error ? error.message : "Google 連携に失敗しました",
-      );
+      const raw = error instanceof Error ? error.message : "";
+      const normalized = raw.toLowerCase();
+      const friendly =
+        normalized.includes("manual linking") && normalized.includes("disabled")
+          ? "Google 連携の設定が未完成です。メール登録かログインをお試しください。"
+          : raw || "Google 連携に失敗しました";
+      setGoogleError(friendly);
     } finally {
       setGoogleLoading(false);
     }

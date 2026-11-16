@@ -27,21 +27,13 @@ export default function DrinkLogStatsCard({ stats }: DrinkLogStatsCardProps) {
         <StatCell label="杯数" value={stats.totalDrinks} />
         <StatCell label="訪問店" value={stats.uniqueShopCount} />
       </div>
-      <dl className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+      <dl className="mt-3 text-sm">
         <div className="rounded-xl bg-[#0d0d12] px-3 py-2.5">
           <dt className="text-[10px] font-bold uppercase tracking-wide text-[#5a5668]">
             よく行くエリア
           </dt>
           <dd className="mt-0.5 font-bold text-[#eeeaf4]">
             {stats.topArea ?? "—"}
-          </dd>
-        </div>
-        <div className="rounded-xl bg-[#0d0d12] px-3 py-2.5">
-          <dt className="text-[10px] font-bold uppercase tracking-wide text-[#5a5668]">
-            よく飲むドリンク
-          </dt>
-          <dd className="mt-0.5 font-bold text-[#eeeaf4]">
-            {stats.topDrink ?? "—"}
           </dd>
         </div>
       </dl>

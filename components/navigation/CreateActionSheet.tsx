@@ -48,9 +48,6 @@ export default function CreateActionSheet({
         >
           今夜の記録
         </p>
-        <p className="mt-1 text-center text-xs text-[#9994a8]">
-          写真なしでも、今いるお店を残せます
-        </p>
 
         <div className="mt-5 space-y-2.5">
           <Link

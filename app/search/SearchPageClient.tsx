@@ -225,9 +225,6 @@ export default function SearchPageClient() {
           <h1 className="text-2xl font-black tracking-tight text-[#eeeaf4]">
             探す
           </h1>
-          <p className="mt-1 text-sm text-[#9994a8]">
-            お店と今夜の投稿、どちらからでも
-          </p>
         </div>
 
         <SearchModeToggle mode={mode} onChange={setMode} />

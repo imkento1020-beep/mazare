@@ -7,7 +7,6 @@ export type DrinkLogMonthStats = {
   totalDrinks: number;
   uniqueShopCount: number;
   topArea: string | null;
-  topDrink: string | null;
   activeDays: number;
 };
 
@@ -47,7 +46,6 @@ export function computeDrinkLogMonthStats(
   const shopIds = new Set<string>();
   const dayKeys = new Set<string>();
   const areaCounts = new Map<string, number>();
-  const drinkCounts = new Map<string, number>();
   let totalDrinks = 0;
 
   for (const post of monthPosts) {
@@ -58,11 +56,6 @@ export function computeDrinkLogMonthStats(
     const area = extractAreaFromAddress(post.shops?.address ?? "");
     if (area) {
       areaCounts.set(area, (areaCounts.get(area) ?? 0) + 1);
-    }
-
-    const drink = post.drink_name?.trim();
-    if (drink) {
-      drinkCounts.set(drink, (drinkCounts.get(drink) ?? 0) + 1);
     }
   }
 
@@ -83,7 +76,6 @@ export function computeDrinkLogMonthStats(
     totalDrinks,
     uniqueShopCount: shopIds.size,
     topArea: topEntry(areaCounts),
-    topDrink: topEntry(drinkCounts),
     activeDays: dayKeys.size,
   };
 }
