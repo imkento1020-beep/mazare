@@ -63,6 +63,49 @@ export function FeedWaveIcon({ size = 22, color = "#ffffff" }: SvgIconProps) {
   );
 }
 
+/** 投稿者への連絡（コメントとは別の送信アクション） */
+export function FeedContactIcon({
+  size = 22,
+  color = "#ffffff",
+  sent = false,
+}: SvgIconProps & { sent?: boolean }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 28 28"
+      fill="none"
+      aria-hidden
+    >
+      {sent ? (
+        <>
+          <circle
+            cx="14"
+            cy="14"
+            r="10"
+            stroke={color}
+            strokeWidth={SW}
+          />
+          <path
+            d="M9 14.5L12.5 18L19 10.5"
+            stroke={color}
+            strokeWidth={SW}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      ) : (
+        <path
+          d="M5 14L23 6L15 22L12 15L5 14Z"
+          stroke={color}
+          strokeWidth={SW}
+          strokeLinejoin="round"
+        />
+      )}
+    </svg>
+  );
+}
+
 export function FeedCommentIcon({ size = 22, color = "#ffffff" }: SvgIconProps) {
   return (
     <svg

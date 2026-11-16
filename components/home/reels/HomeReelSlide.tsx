@@ -17,6 +17,7 @@ import { usePostViewTracking } from "@/lib/home/usePostViewTracking";
 import ReelCaption from "@/components/home/reels/ReelCaption";
 import {
   FeedCommentIcon,
+  FeedContactIcon,
   FeedGlassIcon,
   FeedPeopleIcon,
   FeedPinIcon,
@@ -31,8 +32,6 @@ import {
   resolvePostAuthorSocialContext,
 } from "@/lib/profile/tonightSocialContext";
 import { isPostOpenForContact } from "@/lib/profile/buildPostSocialContext";
-import { MazaruIcon } from "@/components/icons/MazaruModeIcons";
-
 type HomeReelSlideProps = {
   post: HomeReelsPost;
   tonightTotalCups: number | null;
@@ -68,12 +67,14 @@ function mediaOf(post: HomeReelsPost) {
 
 function ActionButton({
   label,
+  caption,
   count,
   onClick,
   disabled,
   children,
 }: {
   label: string;
+  caption?: string;
   count?: number;
   onClick: () => void;
   disabled?: boolean;
@@ -93,11 +94,15 @@ function ActionButton({
       <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/35 backdrop-blur-md">
         {children}
       </span>
-      {count != null && count > 0 && (
+      {count != null && count > 0 ? (
         <span className="text-[10px] font-bold tabular-nums text-white/90">
           {count}
         </span>
-      )}
+      ) : caption ? (
+        <span className="max-w-14 text-center text-[9px] font-bold leading-tight text-white/90">
+          {caption}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -288,13 +293,16 @@ export default function HomeReelSlide({
         {contactAllowed ? (
           <ActionButton
             label={contacted ? "連絡済み" : "連絡する"}
-            count={contactCount}
+            caption={contacted ? "連絡済" : "連絡する"}
+            count={contactCount > 0 ? contactCount : undefined}
             disabled={contactLoading || contacted}
             onClick={() => setContactOpen(true)}
           >
-            <span className={contacted ? "text-[#00e87a]" : "text-white"}>
-              <MazaruIcon size={24} />
-            </span>
+            <FeedContactIcon
+              size={24}
+              color={contacted ? "#00e87a" : "#ffffff"}
+              sent={contacted}
+            />
           </ActionButton>
         ) : null}
         <ActionButton

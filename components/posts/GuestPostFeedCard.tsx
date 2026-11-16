@@ -16,7 +16,7 @@ import ContactPostSheet from "@/components/matching/ContactPostSheet";
 import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
 import { isPostOpenForContact } from "@/lib/profile/buildPostSocialContext";
 import { resolvePostAuthorSocialContext } from "@/lib/profile/tonightSocialContext";
-import { MazaruIcon } from "@/components/icons/MazaruModeIcons";
+import { FeedContactIcon } from "@/components/icons/FeedActionIcons";
 import {
   parseMazaruFromRow,
   type PostMazaruSettings,
@@ -476,14 +476,19 @@ export default function GuestPostFeedCard({
                   e.stopPropagation();
                   setContactOpen(true);
                 }}
-                className="flex h-9 w-9 flex-col items-center justify-center rounded-full bg-black/35 text-[10px] leading-none backdrop-blur-sm disabled:opacity-50"
+                className="flex min-h-[52px] w-11 flex-col items-center justify-center gap-0.5 rounded-full bg-black/35 px-1 py-1.5 text-center leading-none backdrop-blur-sm disabled:opacity-50"
                 aria-label={contacted ? "連絡済み" : "連絡する"}
               >
-                <span className={contacted ? "text-[#00e87a]" : "text-white"}>
-                  <MazaruIcon size={20} />
+                <FeedContactIcon
+                  size={20}
+                  color={contacted ? "#00e87a" : "#ffffff"}
+                  sent={contacted}
+                />
+                <span className="text-[8px] font-bold leading-tight text-white/90">
+                  {contacted ? "連絡済" : "連絡"}
                 </span>
                 {contactCount > 0 && (
-                  <span className="mt-0.5 text-[8px] font-bold text-white">
+                  <span className="text-[8px] font-bold tabular-nums text-[#00e87a]">
                     {contactCount}
                   </span>
                 )}
