@@ -30,7 +30,7 @@ import LoadingScreen from "@/components/layout/LoadingScreen";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
 import type { User } from "@supabase/supabase-js";
 import { isRegisteredUser } from "@/lib/auth/anonymous";
-import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
+import { useContactAuthPrompt } from "@/hooks/useContactAuthPrompt";
 import {
   mergeShopNearestStations,
   useEnrichShopNearestStations,
@@ -38,7 +38,7 @@ import {
 
 export default function HomeDesktopFeed() {
   const { apiKey: resolvedMapsApiKey } = useGoogleMapsApiKey();
-  const { openAuthPrompt } = useAuthPrompt();
+  const { promptContactLogin } = useContactAuthPrompt();
   const { user: authUser, ready: authReady } = useAnonymousAuth();
   const [user, setUser] = useState<User | null>(null);
   const userRef = useRef<User | null>(null);
@@ -193,11 +193,7 @@ export default function HomeDesktopFeed() {
       return;
     }
     if (!isRegisteredUser(user)) {
-      openAuthPrompt({
-        title: "ログインして連絡する",
-        description: "投稿者に連絡するにはログインが必要です。",
-        returnPath: "/home",
-      });
+      promptContactLogin("/home");
       return;
     }
 
@@ -311,6 +307,8 @@ export default function HomeDesktopFeed() {
               key={item.shop.id}
               item={{ ...item, shop }}
               onContact={(message) => handleContact(item, message)}
+              viewerCanContact={isRegisteredUser(user)}
+              onContactLoginRequired={() => promptContactLogin("/home")}
               contacted={contactedPostIds.has(item.latestPost.id)}
               contactLoading={submittingId === item.latestPost.id}
               contactCount={contactCounts.get(item.latestPost.id) ?? 0}

@@ -48,6 +48,9 @@ type GuestPostFeedCardProps = {
   contactLoading?: boolean;
   contacted?: boolean;
   contactCount?: number;
+  /** 未ログイン時は false を渡し、連絡シートの代わりに onContactLoginRequired を呼ぶ */
+  viewerCanContact?: boolean;
+  onContactLoginRequired?: () => void;
   showActions?: boolean;
   shopHref?: string;
   className?: string;
@@ -339,6 +342,8 @@ export default function GuestPostFeedCard({
   contactLoading = false,
   contacted = false,
   contactCount = 0,
+  viewerCanContact = false,
+  onContactLoginRequired,
   showActions = true,
   shopHref,
   className = "",
@@ -353,6 +358,14 @@ export default function GuestPostFeedCard({
   const contactAllowed = isPostOpenForContact(post);
   const useContact = Boolean(onContact && contactAllowed);
   const [liveCommentCount, setLiveCommentCount] = useState(commentCount);
+
+  function openContactFlow() {
+    if (!viewerCanContact) {
+      onContactLoginRequired?.();
+      return;
+    }
+    setContactOpen(true);
+  }
 
   useEffect(() => {
     setLiveCommentCount(commentCount);
@@ -474,7 +487,7 @@ export default function GuestPostFeedCard({
                 disabled={contactLoading || contacted}
                 onClick={(e) => {
                   e.stopPropagation();
-                  setContactOpen(true);
+                  openContactFlow();
                 }}
                 className="flex min-h-[52px] w-11 flex-col items-center justify-center gap-0.5 rounded-full bg-black/35 px-1 py-1.5 text-center leading-none backdrop-blur-sm disabled:opacity-50"
                 aria-label={contacted ? "連絡済み" : "連絡する"}

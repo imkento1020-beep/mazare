@@ -42,6 +42,8 @@ type HomeReelSlideProps = {
   isActive: boolean;
   userLocation: GeoPoint | null;
   onContact: (message: string) => void | Promise<void>;
+  viewerCanContact: boolean;
+  onContactLoginRequired: () => void;
   onCommentCountChange: (count: number) => void;
 };
 
@@ -117,6 +119,8 @@ export default function HomeReelSlide({
   isActive,
   userLocation,
   onContact,
+  viewerCanContact,
+  onContactLoginRequired,
   onCommentCountChange,
 }: HomeReelSlideProps) {
   const viewRef = usePostViewTracking(post.id);
@@ -189,11 +193,19 @@ export default function HomeReelSlide({
 
   const connectColor = contacted ? "#00e87a" : "#ffffff";
 
+  function openContactFlow() {
+    if (!viewerCanContact) {
+      onContactLoginRequired();
+      return;
+    }
+    setContactOpen(true);
+  }
+
   function handleMediaTap() {
     const now = Date.now();
     if (now - lastTapRef.current < 320 && contactAllowed && !contacted) {
       lastTapRef.current = 0;
-      setContactOpen(true);
+      openContactFlow();
       return;
     }
     lastTapRef.current = now;
@@ -296,7 +308,7 @@ export default function HomeReelSlide({
             caption={contacted ? "連絡済" : "連絡する"}
             count={contactCount > 0 ? contactCount : undefined}
             disabled={contactLoading || contacted}
-            onClick={() => setContactOpen(true)}
+            onClick={() => openContactFlow()}
           >
             <FeedContactIcon
               size={24}

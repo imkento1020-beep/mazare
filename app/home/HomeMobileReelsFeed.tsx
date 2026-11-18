@@ -10,7 +10,7 @@ import {
 } from "@/lib/home/fetchHomeReelsFeed";
 import { ensureFreshSession } from "@/lib/auth/session";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
-import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
+import { useContactAuthPrompt } from "@/hooks/useContactAuthPrompt";
 import { buildTonightCumulativeCupTotals } from "@/lib/guest-post/tonightCups";
 import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
 import {
@@ -34,7 +34,7 @@ import { attachAuthorTonightMoods } from "@/lib/search/postSearch";
 
 export default function HomeMobileReelsFeed() {
   const searchParams = useSearchParams();
-  const { openAuthPrompt } = useAuthPrompt();
+  const { promptContactLogin } = useContactAuthPrompt();
   const { user: authUser, ready: authReady } = useAnonymousAuth();
   const [user, setUser] = useState<User | null>(null);
   const userRef = useRef<User | null>(null);
@@ -236,11 +236,7 @@ export default function HomeMobileReelsFeed() {
     }
 
     if (!isRegisteredUser(user)) {
-      openAuthPrompt({
-        title: "ログインして連絡する",
-        description: "投稿者に連絡するにはログインが必要です。",
-        returnPath: "/home",
-      });
+      promptContactLogin("/home");
       return;
     }
 
@@ -308,6 +304,8 @@ export default function HomeMobileReelsFeed() {
         contactLoadingId={submittingId}
         userLocation={userLocation}
         onContact={handleContact}
+        viewerCanContact={isRegisteredUser(user)}
+        onContactLoginRequired={() => promptContactLogin("/home")}
         onVisiblePostChange={onVisiblePostChange}
         onCommentCountChange={onCommentCountChange}
       />

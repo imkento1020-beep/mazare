@@ -13,6 +13,8 @@ type RecentShopCardProps = {
   contactLoading?: boolean;
   contacted?: boolean;
   contactCount?: number;
+  viewerCanContact?: boolean;
+  onContactLoginRequired?: () => void;
   authorSocialContext?: import("@/lib/profile/tonightSocialContext").TonightSocialContext | null;
   tonightTotalCups?: number | null;
   interestCount?: number;
@@ -29,6 +31,8 @@ export default function RecentShopCard({
   contactLoading,
   contacted,
   contactCount = 0,
+  viewerCanContact = false,
+  onContactLoginRequired,
   authorSocialContext = null,
   tonightTotalCups = null,
   interestCount = 0,
@@ -54,6 +58,8 @@ export default function RecentShopCard({
       contactLoading={contactLoading}
       contacted={contacted}
       contactCount={contactCount}
+      viewerCanContact={viewerCanContact}
+      onContactLoginRequired={onContactLoginRequired}
       authorSocialContext={authorSocialContext}
       showActions={Boolean(onInterest || onContact)}
       shopHref={`/shop/${item.shop.id}`}

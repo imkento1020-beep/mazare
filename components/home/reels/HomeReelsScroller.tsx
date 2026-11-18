@@ -18,6 +18,8 @@ type HomeReelsScrollerProps = {
   contactLoadingId: string | null;
   userLocation: GeoPoint | null;
   onContact: (post: HomeReelsPost, message: string) => void | Promise<void>;
+  viewerCanContact: boolean;
+  onContactLoginRequired: () => void;
   onVisiblePostChange: (postId: string) => void;
   onCommentCountChange: (postId: string, count: number) => void;
 };
@@ -31,6 +33,8 @@ export default function HomeReelsScroller({
   contactLoadingId,
   userLocation,
   onContact,
+  viewerCanContact,
+  onContactLoginRequired,
   onVisiblePostChange,
   onCommentCountChange,
 }: HomeReelsScrollerProps) {
@@ -109,6 +113,8 @@ export default function HomeReelsScroller({
             contactLoading={contactLoadingId === post.id}
             userLocation={userLocation}
             onContact={(message) => onContact(post, message)}
+            viewerCanContact={viewerCanContact}
+            onContactLoginRequired={onContactLoginRequired}
             onCommentCountChange={(n) => onCommentCountChange(post.id, n)}
           />
         </section>
