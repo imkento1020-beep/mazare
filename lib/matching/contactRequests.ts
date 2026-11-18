@@ -112,6 +112,58 @@ export async function fetchUserContactedPostIds(
   return set;
 }
 
+export async function fetchOutgoingContactRequests(
+  userId: string,
+  limit = 20,
+): Promise<{ data: ContactRequestRow[]; error: string | null }> {
+  const { data, error } = await supabase
+    .from("contact_requests")
+    .select(
+      "id, from_user_id, to_user_id, vibe_post_id, shop_id, message, status, created_at, responded_at",
+    )
+    .eq("from_user_id", userId)
+    .in("status", ["pending", "declined"])
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    if (isMissingTableError(error.message, "contact_requests")) {
+      return { data: [], error: null };
+    }
+    return { data: [], error: error.message };
+  }
+
+  const rows = (data ?? []) as ContactRequestRow[];
+  const toIds = [...new Set(rows.map((r) => r.to_user_id))];
+  const shopIds = [...new Set(rows.map((r) => r.shop_id))];
+
+  const [profiles, shops] = await Promise.all([
+    toIds.length
+      ? supabase
+          .from("profiles")
+          .select("id, display_name")
+          .in("id", toIds)
+      : Promise.resolve({ data: [] as { id: string; display_name: string | null }[] }),
+    shopIds.length
+      ? supabase.from("shops").select("id, name").in("id", shopIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+  ]);
+
+  const nameById = new Map(
+    (profiles.data ?? []).map((p) => [p.id, p.display_name]),
+  );
+  const shopById = new Map((shops.data ?? []).map((s) => [s.id, s.name]));
+
+  return {
+    data: rows.map((r) => ({
+      ...r,
+      from_display_name: nameById.get(r.to_user_id) ?? null,
+      shop_name: shopById.get(r.shop_id) ?? null,
+    })),
+    error: null,
+  };
+}
+
 export async function fetchIncomingContactRequests(
   userId: string,
   limit = 30,
@@ -183,5 +235,6 @@ export async function respondToContactRequest(input: {
     }
     return { error: error.message };
   }
+
   return { error: null };
 }

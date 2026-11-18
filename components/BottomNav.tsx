@@ -30,6 +30,7 @@ function isGuestAppPath(pathname: string) {
     pathname.startsWith("/favorites") ||
     pathname.startsWith("/mypage") ||
     pathname.startsWith("/notifications") ||
+    pathname.startsWith("/messages") ||
     pathname.startsWith("/shop")
   );
 }

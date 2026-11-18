@@ -26,6 +26,8 @@ export default function NotificationTypeIcon({
     case "guest_post_interest":
       return <FireIcon size={size} color={color} />;
     case "contact_request":
+    case "contact_request_accepted":
+    case "contact_message":
       return <FeedWaveIcon size={size} color={color} />;
     case "shop_favorited":
       return <StarIcon size={size} color={color} />;

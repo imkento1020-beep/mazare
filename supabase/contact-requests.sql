@@ -82,3 +82,5 @@ $$;
 
 REVOKE ALL ON FUNCTION public.notify_contact_request_created(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.notify_contact_request_created(UUID) TO authenticated;
+
+-- 承諾後のDMは contact-threads.sql を続けて実行してください。

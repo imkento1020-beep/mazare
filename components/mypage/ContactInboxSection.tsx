@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ensureContactThread } from "@/lib/matching/contactThreads";
 import {
   fetchIncomingContactRequests,
   respondToContactRequest,
@@ -12,6 +15,7 @@ type ContactInboxSectionProps = {
 };
 
 export default function ContactInboxSection({ userId }: ContactInboxSectionProps) {
+  const router = useRouter();
   const [items, setItems] = useState<ContactRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +48,18 @@ export default function ContactInboxSection({ userId }: ContactInboxSectionProps
       setError(err);
       return;
     }
+    if (status === "accepted") {
+      const { threadId, error: threadError } = await ensureContactThread(id);
+      if (threadError) {
+        setError(threadError);
+        return;
+      }
+      if (threadId) {
+        router.push(`/messages/${threadId}`);
+        return;
+      }
+    }
+
     setItems((prev) => prev.filter((r) => r.id !== id));
   }
 
@@ -57,8 +73,14 @@ export default function ContactInboxSection({ userId }: ContactInboxSectionProps
     <section id="contacts" className="scroll-mt-24 space-y-3">
       <h2 className="text-sm font-black text-[#eeeaf4]">届いた連絡</h2>
       <p className="text-xs text-[#9994a8]">
-        あなたの投稿に送られた合流の申請です。承諾すると相手に通知されます（チャットは今後追加予定）。
+        あなたの投稿に送られた合流の申請です。承諾するとDMでやり取りできます。
       </p>
+      <Link
+        href="/messages"
+        className="inline-block text-xs font-bold text-[#00e87a]"
+      >
+        メッセージ一覧を開く →
+      </Link>
       {error ? (
         <p className="text-xs text-red-400">{error}</p>
       ) : null}

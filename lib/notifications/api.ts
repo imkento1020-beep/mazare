@@ -111,6 +111,18 @@ export async function notifyContactRequestCreated(requestId: string) {
   });
 }
 
+export async function notifyContactRequestAccepted(requestId: string) {
+  return callNotifyRpc("notify_contact_request_accepted", {
+    p_request_id: requestId,
+  });
+}
+
+export async function notifyContactMessageCreated(messageId: string) {
+  return callNotifyRpc("notify_contact_message_created", {
+    p_message_id: messageId,
+  });
+}
+
 export async function notifyShopFavoritedCreated(favoriteId: string) {
   return callNotifyRpc("notify_shop_favorited_created", {
     p_favorite_id: favoriteId,

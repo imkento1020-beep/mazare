@@ -4,6 +4,8 @@ export type NotificationType =
   | "post_interest"
   | "guest_post_interest"
   | "contact_request"
+  | "contact_request_accepted"
+  | "contact_message"
   | "shop_favorited"
   | "staff_invite";
 
