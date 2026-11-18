@@ -10,7 +10,6 @@ import {
   GUEST_POST_BODY_MAX_LENGTH,
   parseGuestPostBody,
 } from "@/lib/guest-post/composeBody";
-import GuestPostMetaFields from "@/components/guest-post/GuestPostMetaFields";
 import GuestPostBodyHashtagSuggestions from "@/components/guest-post/GuestPostBodyHashtagSuggestions";
 import GuestPostComposePreview from "@/components/guest-post/GuestPostComposePreview";
 import LoadingScreen from "@/components/layout/LoadingScreen";
@@ -190,14 +189,6 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
               className="block w-full text-xs text-[#9994a8]"
             />
           </div>
-
-          <GuestPostMetaFields
-            userId={user?.id ?? null}
-            value={nightOut}
-            onChange={setNightOut}
-            suggestStopNumber={false}
-            excludePostId={post.id}
-          />
 
           <div className="space-y-3 rounded-[16px] border border-white/10 bg-[#111118] p-5">
             <label htmlFor="edit-guest-comment" className="text-sm font-black">
