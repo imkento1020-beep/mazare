@@ -32,9 +32,7 @@ export default function GuestPostInsightsPanel({
   className = "mt-4",
 }: GuestPostInsightsPanelProps) {
   const hasTonight =
-    insights.tonightPostCount > 0 ||
-    insights.topDrinks.length > 0 ||
-    insights.topAreas.length > 0;
+    insights.tonightPostCount > 0 || insights.topAreas.length > 0;
 
   if (!hasTonight) {
     return (
@@ -79,7 +77,6 @@ export default function GuestPostInsightsPanel({
         </div>
       </div>
 
-      <ChipRow label="よく飲んでいる" items={insights.topDrinks} />
       <ChipRow label="よく出ているエリア" items={insights.topAreas} />
 
       {insights.tonightTimeline.length > 0 && (

@@ -90,7 +90,6 @@ export default function GuestPostHistorySection({
                 <p className="mt-0.5 text-[10px] text-[#5a5668]">訪れた店</p>
               </div>
             </div>
-            <ChipRow label="よく飲んでいる" items={allTime.topDrinks} />
             <ChipRow label="よく出ているエリア" items={allTime.topAreas} />
           </div>
 
