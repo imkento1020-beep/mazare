@@ -31,6 +31,20 @@ export async function createContactRequest(input: {
     return { id: null, error: "自分の投稿には連絡できません" };
   }
 
+  const { data: prior } = await supabase
+    .from("contact_requests")
+    .select("id")
+    .eq("from_user_id", input.fromUserId)
+    .eq("to_user_id", input.toUserId)
+    .maybeSingle();
+
+  if (prior?.id) {
+    return {
+      id: null,
+      error: "このユーザーにはすでに連絡済みです。別の投稿からは送れません。",
+    };
+  }
+
   const { data, error } = await supabase
     .from("contact_requests")
     .insert({
@@ -52,7 +66,10 @@ export async function createContactRequest(input: {
       };
     }
     if (error.message.includes("duplicate") || error.code === "23505") {
-      return { id: null, error: "この投稿にはすでに連絡済みです" };
+      return {
+        id: null,
+        error: "このユーザーにはすでに連絡済みです。別の投稿からは送れません。",
+      };
     }
     return { id: null, error: error.message };
   }
@@ -108,6 +125,29 @@ export async function fetchUserContactedPostIds(
 
   for (const row of data ?? []) {
     set.add(String(row.vibe_post_id));
+  }
+  return set;
+}
+
+/** 連絡を送った投稿者（同一相手へは1回のみ） */
+export async function fetchUserContactedAuthorIds(
+  userId: string,
+): Promise<Set<string>> {
+  const set = new Set<string>();
+  if (!userId) return set;
+
+  const { data, error } = await supabase
+    .from("contact_requests")
+    .select("to_user_id")
+    .eq("from_user_id", userId);
+
+  if (error) {
+    if (isMissingTableError(error.message, "contact_requests")) return set;
+    return set;
+  }
+
+  for (const row of data ?? []) {
+    set.add(String(row.to_user_id));
   }
   return set;
 }

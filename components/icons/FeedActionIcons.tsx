@@ -224,3 +224,33 @@ export function FeedGlassIcon({ size = 48, color = "rgba(255,61,0,0.35)" }: SvgI
     </svg>
   );
 }
+
+/** ヘッダー：DM / メッセージ一覧 */
+export function MessageInboxIcon({
+  size = 22,
+  color = "#ffffff",
+}: SvgIconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 28 28"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M5 9H23V20C23 20.5523 22.5523 21 22 21H6C5.44772 21 5 20.5523 5 20V9Z"
+        stroke={color}
+        strokeWidth={SW}
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5 9L14 15L23 9"
+        stroke={color}
+        strokeWidth={SW}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

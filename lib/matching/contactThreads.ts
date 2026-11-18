@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { isMissingTableError } from "@/lib/supabase/errors";
+import { dispatchMessagesUnreadChanged } from "@/lib/messages/events";
 
 export type ContactMessageRow = {
   id: string;
@@ -327,4 +328,61 @@ export async function sendContactMessage(input: {
   }
 
   return { id: data?.id ?? null, error: null };
+}
+
+export async function fetchUnreadContactMessageCount(): Promise<{
+  count: number;
+  error: string | null;
+}> {
+  const { data, error } = await supabase.rpc(
+    "fetch_unread_contact_message_count",
+  );
+
+  if (error) {
+    if (
+      isMissingTableError(error.message, "contact_thread_reads") ||
+      error.message.includes("Could not find the function")
+    ) {
+      return { count: 0, error: null };
+    }
+    return { count: 0, error: error.message };
+  }
+
+  return { count: typeof data === "number" ? data : 0, error: null };
+}
+
+export async function markContactThreadRead(
+  threadId: string,
+  userId: string,
+): Promise<{ error: string | null }> {
+  const now = new Date().toISOString();
+  const { error: insertError } = await supabase
+    .from("contact_thread_reads")
+    .insert({ thread_id: threadId, user_id: userId, last_read_at: now });
+
+  if (insertError && insertError.code !== "23505") {
+    if (isMissingTableError(insertError.message, "contact_thread_reads")) {
+      return { error: null };
+    }
+  }
+
+  if (insertError?.code === "23505") {
+    const { error: updateError } = await supabase
+      .from("contact_thread_reads")
+      .update({ last_read_at: now })
+      .eq("thread_id", threadId)
+      .eq("user_id", userId);
+
+    if (updateError) {
+      if (isMissingTableError(updateError.message, "contact_thread_reads")) {
+        return { error: null };
+      }
+      return { error: updateError.message };
+    }
+  } else if (insertError) {
+    return { error: insertError.message };
+  }
+
+  dispatchMessagesUnreadChanged();
+  return { error: null };
 }

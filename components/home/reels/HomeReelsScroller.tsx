@@ -14,7 +14,7 @@ type HomeReelsScrollerProps = {
   tonightCupTotals: Map<string, number>;
   contactCounts: Map<string, number>;
   commentCounts: Map<string, number>;
-  contactedPostIds: Set<string>;
+  contactedAuthorIds: Set<string>;
   contactLoadingId: string | null;
   userLocation: GeoPoint | null;
   onContact: (post: HomeReelsPost, message: string) => void | Promise<void>;
@@ -29,7 +29,7 @@ export default function HomeReelsScroller({
   tonightCupTotals,
   contactCounts,
   commentCounts,
-  contactedPostIds,
+  contactedAuthorIds,
   contactLoadingId,
   userLocation,
   onContact,
@@ -109,7 +109,11 @@ export default function HomeReelsScroller({
             tonightTotalCups={tonightCupTotals.get(post.id) ?? null}
             contactCount={contactCounts.get(post.id) ?? 0}
             commentCount={commentCounts.get(post.id) ?? 0}
-            contacted={contactedPostIds.has(post.id)}
+            contacted={
+              post.author_id
+                ? contactedAuthorIds.has(post.author_id)
+                : false
+            }
             contactLoading={contactLoadingId === post.id}
             userLocation={userLocation}
             onContact={(message) => onContact(post, message)}

@@ -12,7 +12,7 @@ import {
 import {
   createContactRequest,
   fetchContactRequestCountsByPostIds,
-  fetchUserContactedPostIds,
+  fetchUserContactedAuthorIds,
 } from "@/lib/matching/contactRequests";
 import { isPostOpenForContact } from "@/lib/profile/buildPostSocialContext";
 import { resolvePostAuthorSocialContext } from "@/lib/profile/tonightSocialContext";
@@ -61,7 +61,7 @@ export default function HomeDesktopFeed() {
   const [contactCounts, setContactCounts] = useState<Map<string, number>>(
     new Map(),
   );
-  const [contactedPostIds, setContactedPostIds] = useState<Set<string>>(
+  const [contactedAuthorIds, setContactedAuthorIds] = useState<Set<string>>(
     new Set(),
   );
   const [commentCounts, setCommentCounts] = useState<Map<string, number>>(
@@ -77,21 +77,15 @@ export default function HomeDesktopFeed() {
 
     const postIds = data.map((p) => p.id);
     const loadEngagement = async (ids: string[]) => {
-      const [counts, commentMap, contacted] = await Promise.all([
+      const [counts, commentMap] = await Promise.all([
         fetchContactRequestCountsByPostIds(ids),
         fetchCommentCountsByPostIds(ids),
-        activeUser
-          ? fetchUserContactedPostIds(activeUser.id, ids)
-          : Promise.resolve(new Set<string>()),
       ]);
       setContactCounts((prev) => {
         const next = new Map(prev);
         counts.forEach((v, k) => next.set(k, v));
         return next;
       });
-      if (activeUser) {
-        setContactedPostIds((prev) => new Set([...prev, ...contacted]));
-      }
       setCommentCounts((prev) => {
         const next = new Map(prev);
         commentMap.forEach((v, k) => next.set(k, v));
@@ -107,6 +101,9 @@ export default function HomeDesktopFeed() {
       void fetchTonightInterests(activeUser.id).then((tonight) => {
         setTonightInterests(tonight.data);
       });
+      void fetchUserContactedAuthorIds(activeUser.id).then(setContactedAuthorIds);
+    } else {
+      setContactedAuthorIds(new Set());
     }
   }, []);
 
@@ -197,6 +194,11 @@ export default function HomeDesktopFeed() {
       return;
     }
 
+    if (post.author_id && contactedAuthorIds.has(post.author_id)) {
+      setError("このユーザーにはすでに連絡済みです");
+      return;
+    }
+
     setSubmittingId(post.id);
     const result = await createContactRequest({
       fromUserId: user.id,
@@ -212,7 +214,10 @@ export default function HomeDesktopFeed() {
       throw new Error(result.error);
     }
 
-    setContactedPostIds((prev) => new Set(prev).add(post.id));
+    if (post.author_id) {
+      const authorId = post.author_id;
+      setContactedAuthorIds((prev) => new Set(prev).add(authorId));
+    }
     const counts = await fetchContactRequestCountsByPostIds([post.id]);
     setContactCounts((prev) => {
       const next = new Map(prev);
@@ -309,7 +314,11 @@ export default function HomeDesktopFeed() {
               onContact={(message) => handleContact(item, message)}
               viewerCanContact={isRegisteredUser(user)}
               onContactLoginRequired={() => promptContactLogin("/home")}
-              contacted={contactedPostIds.has(item.latestPost.id)}
+              contacted={
+                item.latestPost.author_id
+                  ? contactedAuthorIds.has(item.latestPost.author_id)
+                  : false
+              }
               contactLoading={submittingId === item.latestPost.id}
               contactCount={contactCounts.get(item.latestPost.id) ?? 0}
               authorSocialContext={resolvePostAuthorSocialContext({

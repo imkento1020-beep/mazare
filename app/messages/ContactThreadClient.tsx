@@ -9,6 +9,7 @@ import { getLoginPathWithReturn } from "@/lib/auth/authPaths";
 import {
   fetchContactMessages,
   fetchContactThreadDetail,
+  markContactThreadRead,
   sendContactMessage,
   type ContactMessageRow,
   type ContactThreadDetail,
@@ -64,6 +65,7 @@ export default function ContactThreadClient({
     setDetail(detailResult.data);
     setMessages(msgResult.data);
     setError(msgResult.error);
+    await markContactThreadRead(threadId, user.id);
     setLoading(false);
   }, [router, threadId]);
 
@@ -94,6 +96,9 @@ export default function ContactThreadClient({
             if (prev.some((m) => m.id === row.id)) return prev;
             return [...prev, row];
           });
+          if (row.sender_user_id !== viewerId) {
+            void markContactThreadRead(threadId, viewerId);
+          }
         },
       )
       .subscribe();

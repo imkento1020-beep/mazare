@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.contact_requests (
     CHECK (status IN ('pending', 'accepted', 'declined')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   responded_at TIMESTAMPTZ,
-  UNIQUE (from_user_id, vibe_post_id)
+  UNIQUE (from_user_id, to_user_id)
 );
 
 CREATE INDEX IF NOT EXISTS contact_requests_to_user_idx
@@ -84,3 +84,4 @@ REVOKE ALL ON FUNCTION public.notify_contact_request_created(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.notify_contact_request_created(UUID) TO authenticated;
 
 -- 承諾後のDMは contact-threads.sql を続けて実行してください。
+-- 既存DBで投稿ごとユニークのままの場合は contact-request-user-pair.sql も実行。

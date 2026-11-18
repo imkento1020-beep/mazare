@@ -16,7 +16,7 @@ import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
 import {
   createContactRequest,
   fetchContactRequestCountsByPostIds,
-  fetchUserContactedPostIds,
+  fetchUserContactedAuthorIds,
 } from "@/lib/matching/contactRequests";
 import { isPostOpenForContact } from "@/lib/profile/buildPostSocialContext";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -46,7 +46,7 @@ export default function HomeMobileReelsFeed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
-  const [contactedPostIds, setContactedPostIds] = useState<Set<string>>(
+  const [contactedAuthorIds, setContactedAuthorIds] = useState<Set<string>>(
     new Set(),
   );
   const [contactCounts, setContactCounts] = useState<Map<string, number>>(
@@ -61,12 +61,9 @@ export default function HomeMobileReelsFeed() {
     async (postIds: string[]) => {
       if (postIds.length === 0) return;
       const activeUser = userRef.current;
-      const [contacts, comments, contacted] = await Promise.all([
+      const [contacts, comments] = await Promise.all([
         fetchContactRequestCountsByPostIds(postIds),
         fetchCommentCountsByPostIds(postIds),
-        activeUser
-          ? fetchUserContactedPostIds(activeUser.id, postIds)
-          : Promise.resolve(new Set<string>()),
       ]);
       setContactCounts((prev) => {
         const next = new Map(prev);
@@ -78,9 +75,6 @@ export default function HomeMobileReelsFeed() {
         comments.forEach((v, k) => next.set(k, v));
         return next;
       });
-      if (activeUser) {
-        setContactedPostIds((prev) => new Set([...prev, ...contacted]));
-      }
     },
     [],
   );
@@ -106,10 +100,11 @@ export default function HomeMobileReelsFeed() {
       }
 
       if (activeUser) {
-        const allIds = data.map((p) => p.id);
-        void fetchUserContactedPostIds(activeUser.id, allIds).then(setContactedPostIds);
+        void fetchUserContactedAuthorIds(activeUser.id).then(
+          setContactedAuthorIds,
+        );
       } else {
-        setContactedPostIds(new Set());
+        setContactedAuthorIds(new Set());
       }
     },
     [loadCounts],
@@ -228,7 +223,8 @@ export default function HomeMobileReelsFeed() {
   async function handleContact(post: HomeReelsPost, message: string) {
     if (submittingId) return;
     const shop = post.shops;
-    if (!shop || !post.author_id) return;
+    const authorId = post.author_id;
+    if (!shop || !authorId) return;
 
     if (!isPostOpenForContact(post)) {
       setError("この投稿者は今夜の合流・連絡を受け付けていません");
@@ -240,10 +236,15 @@ export default function HomeMobileReelsFeed() {
       return;
     }
 
+    if (contactedAuthorIds.has(authorId)) {
+      setError("このユーザーにはすでに連絡済みです");
+      return;
+    }
+
     setSubmittingId(post.id);
     const result = await createContactRequest({
       fromUserId: user!.id,
-      toUserId: post.author_id,
+      toUserId: authorId,
       vibePostId: post.id,
       shopId: shop.id,
       message,
@@ -255,7 +256,7 @@ export default function HomeMobileReelsFeed() {
       throw new Error(result.error);
     }
 
-    setContactedPostIds((prev) => new Set(prev).add(post.id));
+    setContactedAuthorIds((prev) => new Set(prev).add(authorId));
     void loadCounts([post.id]);
   }
 
@@ -300,7 +301,7 @@ export default function HomeMobileReelsFeed() {
         tonightCupTotals={tonightCupTotals}
         contactCounts={contactCounts}
         commentCounts={commentCounts}
-        contactedPostIds={contactedPostIds}
+        contactedAuthorIds={contactedAuthorIds}
         contactLoadingId={submittingId}
         userLocation={userLocation}
         onContact={handleContact}

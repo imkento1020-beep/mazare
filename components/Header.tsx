@@ -10,6 +10,7 @@ import { useAppMode } from "@/hooks/useAppMode";
 import AppModeSwitcher from "@/components/auth/AppModeSwitcher";
 import MazareLogo from "@/components/MazareLogo";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import MessageInboxBell from "@/components/messages/MessageInboxBell";
 import SearchIcon from "@/components/icons/SearchIcon";
 import UserIcon from "@/components/icons/UserIcon";
 type HeaderProps = {
@@ -188,6 +189,7 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
             {isDualRole && (
               <AppModeSwitcher mode={mode} onModeChange={setMode} compact />
             )}
+            <MessageInboxBell />
             <NotificationBell />
             <LiveStatusPill />
             <IconButton href="/owner/profile" label="プロフィール">
@@ -224,6 +226,7 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
           {isDualRole && (
             <AppModeSwitcher mode={mode} onModeChange={setMode} compact />
           )}
+          <MessageInboxBell />
           <NotificationBell />
           <div className="hidden md:contents">
             <IconButton href="/mypage" label="プロフィール">
