@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import RegisteredOnlyLink from "@/components/auth/RegisteredOnlyLink";
 import type { VibePost } from "@/lib/home/types";
 import { resolvePostMedia } from "@/lib/guest-post/resolvePostMedia";
 import { FeedGlassIcon } from "@/components/icons/FeedActionIcons";
@@ -28,12 +31,12 @@ export default function MyPostGrid({ posts }: MyPostGridProps) {
     return (
       <div className="rounded-2xl border border-dashed border-white/10 bg-[#111118] px-6 py-12 text-center">
         <p className="text-sm font-bold text-[#eeeaf4]">まだ投稿がありません</p>
-        <Link
+        <RegisteredOnlyLink
           href="/post"
           className="mt-3 inline-block text-sm font-bold text-[#ff3d00]"
         >
           今夜の一杯を投稿 →
-        </Link>
+        </RegisteredOnlyLink>
       </div>
     );
   }

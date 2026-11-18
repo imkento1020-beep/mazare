@@ -20,7 +20,11 @@ import { FireIcon } from "@/components/icons/MazareIcons";
 import {
   countGuestPostsByUser,
   ensureAnonymousSession,
+  isRegisteredUser,
 } from "@/lib/auth/anonymous";
+import PostRegistrationGateScreen from "@/components/auth/PostRegistrationGateScreen";
+import { usePostRegistrationGate } from "@/hooks/usePostRegistrationGate";
+import { usePostAuthPrompt } from "@/hooks/usePostAuthPrompt";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import type { PlaceSummary } from "@/lib/places/types";
 import {
@@ -41,7 +45,7 @@ import type { Shop } from "@/lib/home/types";
 import PostStepShop from "@/components/guest-post/compose/PostStepShop";
 import PostStepMedia from "@/components/guest-post/compose/PostStepMedia";
 import PostStepFinish from "@/components/guest-post/compose/PostStepFinish";
-import {
+import LoadingScreen, {
   LoadingBlock,
   LoadingOverlay,
 } from "@/components/layout/LoadingScreen";
@@ -60,6 +64,13 @@ export default function PostPageClient() {
   const { apiKey: mapsApiKey, loading: mapsKeyLoading } = useGoogleMapsApiKey();
 
   const urlShopId = searchParams.get("shopId")?.trim() || null;
+  const composeReturnPath = useMemo(() => {
+    if (!urlShopId) return "/post";
+    return `/post?shopId=${encodeURIComponent(urlShopId)}`;
+  }, [urlShopId]);
+  const { ready: registrationReady, blocked: registrationBlocked } =
+    usePostRegistrationGate(composeReturnPath);
+  const { promptRegistration } = usePostAuthPrompt();
 
   const [step, setStep] = useState<PostComposeStep>(
     urlShopId ? "media" : "shop",
@@ -305,6 +316,12 @@ export default function PostPageClient() {
       return;
     }
 
+    if (!isRegisteredUser(activeUser)) {
+      setSubmitting(false);
+      promptRegistration(composeReturnPath);
+      return;
+    }
+
     let mazaruForSubmit = mazaruSettings;
     if (
       mazaruForSubmit.mode === "mazaru" &&
@@ -363,6 +380,19 @@ export default function PostPageClient() {
           "これ以降も投稿や履歴を残すには正式登録（Google またはメール）をお願いします。",
       });
     }
+  }
+
+  if (!authReady || !registrationReady) {
+    return (
+      <LoadingScreen
+        message="投稿画面を準備しています"
+        submessage="認証状態を確認しています"
+      />
+    );
+  }
+
+  if (registrationBlocked) {
+    return <PostRegistrationGateScreen returnPath={composeReturnPath} />;
   }
 
   if (successShopName) {

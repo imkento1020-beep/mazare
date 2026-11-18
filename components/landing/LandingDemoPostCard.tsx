@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import RegisteredOnlyLink from "@/components/auth/RegisteredOnlyLink";
 import type { LandingDemoPost } from "@/lib/landing/demoPosts";
 import {
   FeedCommentIcon,
@@ -30,7 +32,7 @@ export default function LandingDemoPostCard({
   const amberPill = amberPillParts.join(" · ");
 
   return (
-    <Link
+    <RegisteredOnlyLink
       href="/post"
       className={`block shrink-0 overflow-hidden rounded-[12px] bg-[#080810] ${className}`}
     >
@@ -108,6 +110,6 @@ export default function LandingDemoPostCard({
       <p className="px-1 pt-1.5 text-[10px] text-[#9994a8]">
         今日 {post.postedAtLabel}
       </p>
-    </Link>
+    </RegisteredOnlyLink>
   );
 }

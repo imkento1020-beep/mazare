@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import RegisteredOnlyLink from "@/components/auth/RegisteredOnlyLink";
 import { supabase } from "@/lib/supabase";
 import { clearStoredAppMode, setStoredAppMode } from "@/lib/auth/mode";
 import {
@@ -288,12 +289,12 @@ export default function MyPage() {
             >
               プロフィール編集
             </Link>
-            <Link
+            <RegisteredOnlyLink
               href="/post"
               className="flex-1 rounded-xl bg-[#ff3d00] px-4 py-2.5 text-center text-xs font-bold text-white shadow-[0_4px_20px_rgba(255,61,0,0.35)] transition hover:bg-[#e63600]"
             >
               今夜を投稿
-            </Link>
+            </RegisteredOnlyLink>
           </>
         }
       />

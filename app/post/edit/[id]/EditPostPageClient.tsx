@@ -14,7 +14,9 @@ import GuestPostBodyHashtagSuggestions from "@/components/guest-post/GuestPostBo
 import GuestPostComposePreview from "@/components/guest-post/GuestPostComposePreview";
 import LoadingScreen from "@/components/layout/LoadingScreen";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
-import { ensureAnonymousSession } from "@/lib/auth/anonymous";
+import { ensureAnonymousSession, isRegisteredUser } from "@/lib/auth/anonymous";
+import PostRegistrationGateScreen from "@/components/auth/PostRegistrationGateScreen";
+import { usePostRegistrationGate } from "@/hooks/usePostRegistrationGate";
 import {
   fetchGuestPostForEdit,
   nightOutInputFromPost,
@@ -31,6 +33,9 @@ type EditPostPageClientProps = {
 export default function EditPostPageClient({ postId }: EditPostPageClientProps) {
   const router = useRouter();
   const { user, ready: authReady } = useAnonymousAuth();
+  const editReturnPath = `/post/edit/${postId}`;
+  const { ready: registrationReady, blocked: registrationBlocked } =
+    usePostRegistrationGate(editReturnPath);
   const [loading, setLoading] = useState(true);
   const [post, setPost] = useState<VibePost | null>(null);
   const [bodyText, setBodyText] = useState("");
@@ -101,6 +106,12 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
       return;
     }
 
+    if (!isRegisteredUser(activeUser)) {
+      setSubmitting(false);
+      setError("投稿の編集にはログインが必要です");
+      return;
+    }
+
     const replaceMedia = imageFiles.length > 0 || Boolean(videoFile);
 
     const { comment, hashtags } = parseGuestPostBody(bodyText);
@@ -126,7 +137,11 @@ export default function EditPostPageClient({ postId }: EditPostPageClientProps) 
     router.replace("/mypage#my-posts");
   }
 
-  if (loading) return <LoadingScreen />;
+  if (loading || !authReady || !registrationReady) return <LoadingScreen />;
+
+  if (registrationBlocked) {
+    return <PostRegistrationGateScreen returnPath={editReturnPath} />;
+  }
 
   if (!post) {
     return (

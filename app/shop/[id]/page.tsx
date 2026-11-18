@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import RegisteredOnlyLink from "@/components/auth/RegisteredOnlyLink";
 import { supabase } from "@/lib/supabase";
 import {
   fetchLatestVibePostForInterest,
@@ -56,6 +57,8 @@ import { fetchCommentCountsByPostIds } from "@/lib/comments/api";
 import { useAuthPrompt } from "@/components/auth/AuthPromptProvider";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { isRegisteredUser } from "@/lib/auth/anonymous";
+import { POST_REGISTRATION_PROMPT } from "@/lib/auth/postAccessPrompt";
+import { getFormalSignupPathWithReturn } from "@/lib/auth/authPaths";
 import GenreIcon from "@/components/icons/GenreIcon";
 import { FeedPinIcon } from "@/components/icons/FeedActionIcons";
 import { CheckIcon, CheckinIcon } from "@/components/icons/MazareIcons";
@@ -327,6 +330,17 @@ export default function ShopDetailPage() {
     if (checkinLoading) return;
     if (!user) return;
 
+    if (!checkedIn && !isRegisteredUser(user)) {
+      const returnPath = `/shop/${shopId}`;
+      openAuthPrompt({
+        returnPath,
+        signupPath: getFormalSignupPathWithReturn(returnPath),
+        title: POST_REGISTRATION_PROMPT.title,
+        description: POST_REGISTRATION_PROMPT.description,
+      });
+      return;
+    }
+
     setCheckinLoading(true);
     setError(null);
 
@@ -480,12 +494,12 @@ export default function ShopDetailPage() {
           )}
         </div>
 
-        <Link
+        <RegisteredOnlyLink
           href={`/post?shopId=${shopId}`}
           className="mt-3 flex w-full items-center justify-center rounded-lg border border-[#ff3d00]/35 bg-[#ff3d00]/10 py-3 text-sm font-bold text-[#ff3d00] transition hover:bg-[#ff3d00]/15"
         >
           このお店で投稿する
-        </Link>
+        </RegisteredOnlyLink>
 
         <div className="mt-3">
           <button

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import RegisteredOnlyLink from "@/components/auth/RegisteredOnlyLink";
 import MyGuestPostCard from "@/components/mypage/MyGuestPostCard";
 import type { VibePost } from "@/lib/home/types";
 import {
@@ -59,12 +60,12 @@ export default function GuestPostHistorySection({
       <div className="flex items-end justify-between gap-3">
         <h2 className="text-base font-black text-[#eeeaf4]">投稿履歴</h2>
         {showPostLink && (
-          <Link
+          <RegisteredOnlyLink
             href="/post"
             className="text-xs font-semibold text-[#ff3d00] hover:underline"
           >
             投稿する →
-          </Link>
+          </RegisteredOnlyLink>
         )}
       </div>
 

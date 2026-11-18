@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import RegisteredOnlyLink from "@/components/auth/RegisteredOnlyLink";
 import type { HomeReelsPost } from "@/lib/home/fetchHomeReelsFeed";
 import type { GeoPoint } from "@/lib/geo/haversine";
 import HomeReelSlide from "@/components/home/reels/HomeReelSlide";
@@ -82,12 +82,12 @@ export default function HomeReelsScroller({
         <p className="mt-2 text-sm text-[#9994a8]">
           今いるお店の雰囲気をシェアして、街の夜を動かそう。
         </p>
-        <Link
+        <RegisteredOnlyLink
           href="/post"
           className="mt-8 rounded-full bg-[#ff3d00] px-10 py-3.5 text-sm font-bold text-white shadow-[0_8px_32px_rgba(255,61,0,0.45)]"
         >
           投稿する
-        </Link>
+        </RegisteredOnlyLink>
       </div>
     );
   }

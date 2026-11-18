@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import RegisteredOnlyLink from "@/components/auth/RegisteredOnlyLink";
 import { supabase } from "@/lib/supabase";
 import {
   buildRecentShopFeed,
@@ -277,9 +278,12 @@ export default function HomeDesktopFeed() {
         <p className="text-[13px] font-bold uppercase tracking-[0.15em] text-[#5a5668]">
           直近24時間の盛り上がり
         </p>
-        <Link href="/post" className="text-xs font-bold text-[#ff3d00]">
+        <RegisteredOnlyLink
+          href="/post"
+          className="text-xs font-bold text-[#ff3d00]"
+        >
           投稿する →
-        </Link>
+        </RegisteredOnlyLink>
       </div>
 
       {filteredFeed.length === 0 ? (
@@ -290,12 +294,12 @@ export default function HomeDesktopFeed() {
           <p className="mt-2 text-xs text-[#9994a8]">
             まだ投稿がありません。今夜の様子を、一番に投稿しよう。
           </p>
-          <Link
+          <RegisteredOnlyLink
             href="/post"
             className="mt-4 inline-block text-xs font-semibold text-[#ff3d00]"
           >
             投稿する →
-          </Link>
+          </RegisteredOnlyLink>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

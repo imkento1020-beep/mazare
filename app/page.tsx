@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LandingPostCta from "@/components/landing/LandingPostCta";
 import { Noto_Sans_JP, Outfit } from "next/font/google";
 import MazareLogo from "@/components/MazareLogo";
 import {
@@ -112,12 +113,11 @@ export default async function LandingPage() {
               </p>
 
               <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                <Link
-                  href="/post"
+                <LandingPostCta
                   className={`inline-flex w-full max-w-xs items-center justify-center rounded-[14px] bg-[#ff3d00] px-8 py-4 text-base font-extrabold text-white sm:w-auto ${outfit.className}`}
                 >
                   今夜の飲みを投稿する
-                </Link>
+                </LandingPostCta>
                 <Link
                   href="/home"
                   className="inline-flex w-full max-w-xs items-center justify-center rounded-[14px] border border-white/[0.12] bg-[#111118] px-8 py-4 text-sm font-bold text-[#eeeaf4] sm:w-auto"

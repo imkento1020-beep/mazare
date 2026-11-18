@@ -16,13 +16,22 @@ import {
 } from "@/lib/places/clientPlaces";
 import { loadNearbyFromUserGesture } from "@/lib/places/loadNearbyFromUserGesture";
 import { useGoogleMapsApiKey } from "@/lib/map/useGoogleMapsApiKey";
-import { ensureAnonymousSession } from "@/lib/auth/anonymous";
+import { ensureAnonymousSession, isRegisteredUser } from "@/lib/auth/anonymous";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
-import { LoadingBlock, LoadingOverlay } from "@/components/layout/LoadingScreen";
+import LoadingScreen, {
+  LoadingBlock,
+  LoadingOverlay,
+} from "@/components/layout/LoadingScreen";
+import PostRegistrationGateScreen from "@/components/auth/PostRegistrationGateScreen";
+import { usePostRegistrationGate } from "@/hooks/usePostRegistrationGate";
+import { usePostAuthPrompt } from "@/hooks/usePostAuthPrompt";
 
 export default function CheckinPageClient() {
   const { apiKey: mapsApiKey, loading: mapsKeyLoading } = useGoogleMapsApiKey();
   const { user, ready: authReady, authError } = useAnonymousAuth();
+  const { ready: registrationReady, blocked: registrationBlocked } =
+    usePostRegistrationGate("/checkin");
+  const { promptRegistration } = usePostAuthPrompt();
   const [places, setPlaces] = useState<PlaceSummary[]>([]);
   const [userCoords, setUserCoords] = useState<{
     latitude: number;
@@ -116,6 +125,12 @@ export default function CheckinPageClient() {
       }
     }
 
+    if (!isRegisteredUser(activeUser)) {
+      setSubmitting(false);
+      promptRegistration("/checkin");
+      return;
+    }
+
     await syncGuestDisplayName(activeUser.id, getDisplayName(activeUser));
 
     const { error: checkinError } = await createCheckin({
@@ -131,6 +146,19 @@ export default function CheckinPageClient() {
     }
 
     setSuccessShopName(selectedPlace.name);
+  }
+
+  if (!authReady || !registrationReady) {
+    return (
+      <LoadingScreen
+        message="チェックイン画面を準備しています"
+        submessage="認証状態を確認しています"
+      />
+    );
+  }
+
+  if (registrationBlocked) {
+    return <PostRegistrationGateScreen returnPath="/checkin" />;
   }
 
   if (successShopName) {

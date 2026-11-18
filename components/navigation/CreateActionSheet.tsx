@@ -1,11 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import {
   CheckinOutlineIcon,
   PostOutlineIcon,
 } from "@/components/icons/CreateActionIcons";
+import { isRegisteredUser } from "@/lib/auth/anonymous";
+import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
+import { usePostAuthPrompt } from "@/hooks/usePostAuthPrompt";
 
 type CreateActionSheetProps = {
   open: boolean;
@@ -16,6 +19,20 @@ export default function CreateActionSheet({
   open,
   onClose,
 }: CreateActionSheetProps) {
+  const router = useRouter();
+  const { user, ready: authReady } = useAnonymousAuth();
+  const { promptRegistration } = usePostAuthPrompt();
+
+  function navigateToComposer(href: string) {
+    onClose();
+    if (!authReady) return;
+    if (isRegisteredUser(user)) {
+      router.push(href);
+      return;
+    }
+    promptRegistration(href);
+  }
+
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -50,10 +67,10 @@ export default function CreateActionSheet({
         </p>
 
         <div className="mt-5 space-y-2.5">
-          <Link
-            href="/post"
-            onClick={onClose}
-            className="flex items-center gap-4 rounded-2xl border border-[#ff3d00]/35 bg-[#ff3d00]/10 px-4 py-4 transition active:scale-[0.99]"
+          <button
+            type="button"
+            onClick={() => navigateToComposer("/post")}
+            className="flex w-full items-center gap-4 rounded-2xl border border-[#ff3d00]/35 bg-[#ff3d00]/10 px-4 py-4 text-left transition active:scale-[0.99]"
           >
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#ff3d00]/20 text-[#ff3d00]">
               <PostOutlineIcon size={26} color="#ff3d00" />
@@ -66,12 +83,12 @@ export default function CreateActionSheet({
                 お店の写真・動画で、今夜の空気を届ける
               </span>
             </span>
-          </Link>
+          </button>
 
-          <Link
-            href="/checkin"
-            onClick={onClose}
-            className="flex items-center gap-4 rounded-2xl border border-[#ffaa00]/35 bg-[#ffaa00]/10 px-4 py-4 transition active:scale-[0.99]"
+          <button
+            type="button"
+            onClick={() => navigateToComposer("/checkin")}
+            className="flex w-full items-center gap-4 rounded-2xl border border-[#ffaa00]/35 bg-[#ffaa00]/10 px-4 py-4 text-left transition active:scale-[0.99]"
           >
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#ffaa00]/15 text-[#ffaa00]">
               <CheckinOutlineIcon size={26} color="#ffaa00" />
@@ -84,7 +101,7 @@ export default function CreateActionSheet({
                 写真なしで記録。マップに「今夜ここ」が載る
               </span>
             </span>
-          </Link>
+          </button>
         </div>
 
         <button
