@@ -6,15 +6,11 @@ import MergeContextDetailSheet from "@/components/posts/MergeContextDetailSheet"
 import { MazaranaiIcon } from "@/components/icons/MazaruModeIcons";
 import {
   buildMergeContextSummary,
+  buildMazaruDetailRows,
   canShowMergeContextSheet,
 } from "@/lib/guest-post/mergeDetailContent";
 import type { PostMazaruSettings } from "@/lib/guest-post/mazaruSettings";
-import {
-  hasAnySocialContext,
-  labelForMergeAttitude,
-  labelForVibeScale,
-  type TonightSocialContext,
-} from "@/lib/profile/tonightSocialContext";
+import { labelForMergeAttitude, type TonightSocialContext } from "@/lib/profile/tonightSocialContext";
 
 type PostMergeContextBlockProps = {
   authorName: string;
@@ -32,19 +28,8 @@ function buildInlineFeedLabel(
   if (mazaru.mode === "mazaranai") {
     return "マザらない · 今夜は投稿のみ";
   }
-  if (mazaru.mode === "mazaru") {
-    return buildMergeContextSummary(mazaru, social, partySize);
-  }
 
-  const parts: string[] = [];
-  const merge = labelForMergeAttitude(social.mergeAttitude);
-  const vibe = labelForVibeScale(social.vibeScale);
-  if (merge) parts.push(merge);
-  if (vibe) parts.push(`席は${vibe}`);
-  if (partySize != null && partySize >= 1 && social.mergeAttitude !== "closed") {
-    parts.push(`${partySize}人`);
-  }
-  return parts.length > 0 ? parts.join(" · ") : null;
+  return buildMergeContextSummary(mazaru, social, partySize);
 }
 
 export default function PostMergeContextBlock({
@@ -57,10 +42,15 @@ export default function PostMergeContextBlock({
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const showSheet = canShowMergeContextSheet(mazaru, social, partySize);
-  const hasSocial = hasAnySocialContext(social);
+  const detailRows = buildMazaruDetailRows(mazaru.details);
   const inlineLabel = buildInlineFeedLabel(mazaru, social, partySize);
 
-  if (!showSheet && !mazaru.mode && !hasSocial) return null;
+  const hasContent =
+    Boolean(mazaru.mode) ||
+    Boolean(social.mergeAttitude) ||
+    detailRows.length > 0;
+
+  if (!hasContent) return null;
 
   function openSheet(e?: React.MouseEvent) {
     e?.stopPropagation();
@@ -106,13 +96,20 @@ export default function PostMergeContextBlock({
         <button
           type="button"
           onClick={openSheet}
-          className="flex w-full items-center justify-between gap-2 rounded-lg border border-white/12 bg-[#111118]/80 px-2.5 py-2 text-left backdrop-blur-sm transition hover:border-[#00e87a]/35"
+          className="flex w-full flex-col items-stretch gap-1.5 rounded-lg border border-white/12 bg-[#111118]/80 px-2.5 py-2 text-left backdrop-blur-sm transition hover:border-[#00e87a]/35"
         >
-          <span className="line-clamp-2 text-[10px] font-semibold leading-snug text-[#ddd8e8]">
-            {inlineLabel}
-          </span>
-          <span className="shrink-0 text-[10px] font-bold text-[#00e87a]">
-            詳細 ›
+          {social.mergeAttitude ? (
+            <span className="text-[10px] font-bold text-[#00e87a]">
+              {labelForMergeAttitude(social.mergeAttitude)}
+            </span>
+          ) : null}
+          <span className="flex items-center justify-between gap-2">
+            <span className="line-clamp-3 text-[10px] font-semibold leading-snug text-[#ddd8e8]">
+              {inlineLabel}
+            </span>
+            <span className="shrink-0 text-[10px] font-bold text-[#00e87a]">
+              詳細 ›
+            </span>
           </span>
         </button>
       ) : null}

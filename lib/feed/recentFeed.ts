@@ -4,6 +4,8 @@ import { getRecentPostsWindowStart, isWithinRecentPostsWindow } from "@/lib/home
 import { getTrendingTagWindowJST } from "@/lib/home/recentWindow";
 import { parseMediaTypeField } from "@/lib/guest-post/parseMediaTypeField";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
+import { parseMazaruFromRow } from "@/lib/guest-post/mazaruSettings";
+import type { MergeAttitude, VibeScale } from "@/lib/profile/tonightSocialContext";
 import { attachAuthorDisplayNames } from "@/lib/profile/publicProfile";
 import type { Shop, VibePost } from "@/lib/home/types";
 
@@ -20,8 +22,13 @@ export type TrendingTag = {
   count: number;
 };
 
-const POST_SELECT =
+const POST_SELECT_BASE =
   "id, shop_id, comment, moods, images, video_url, posted_at, hashtags, media_type, is_guest_post, author_id, stop_number, visit_order, drink_name, drink_cups, drink_count, party_size";
+
+const POST_SELECT_VARIANTS = [
+  `${POST_SELECT_BASE}, mazaru_mode, mazaru_details, author_merge_attitude, author_vibe_scale`,
+  POST_SELECT_BASE,
+];
 
 function normalizeHashtags(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
@@ -35,16 +42,29 @@ export async function fetchRecentVibePosts(): Promise<{
   const since = getRecentPostsWindowStart().toISOString();
   const nowIso = new Date().toISOString();
 
-  const [postsResult, shopsResult] = await Promise.all([
-    supabase
+  let postsResult: { data: unknown[] | null; error: { message: string } | null } = {
+    data: null,
+    error: null,
+  };
+
+  for (const select of POST_SELECT_VARIANTS) {
+    postsResult = await supabase
       .from("vibe_posts")
-      .select(POST_SELECT)
+      .select(select)
       .gte("posted_at", since)
       .lte("posted_at", nowIso)
       .eq("is_guest_post", true)
-      .order("posted_at", { ascending: false }),
-    fetchShopsFromDb(),
-  ]);
+      .order("posted_at", { ascending: false });
+    if (!postsResult.error) break;
+    if (
+      !postsResult.error.message.includes("mazaru_mode") &&
+      !postsResult.error.message.includes("author_merge_attitude")
+    ) {
+      break;
+    }
+  }
+
+  const [shopsResult] = await Promise.all([fetchShopsFromDb()]);
 
   if (postsResult.error) {
     return { data: [], error: postsResult.error.message };
@@ -57,9 +77,11 @@ export async function fetchRecentVibePosts(): Promise<{
     (shopsResult.data ?? []).map((shop) => [shop.id, shop as Shop]),
   );
 
-  const rows = (postsResult.data ?? []).map((row) =>
-    mapPostRow(row as Record<string, unknown>, shopsMap.get(String(row.shop_id)) ?? null),
-  );
+  const rows = (postsResult.data ?? []).map((raw) => {
+    const row = raw as Record<string, unknown>;
+    const shopId = typeof row.shop_id === "string" ? row.shop_id : String(row.shop_id ?? "");
+    return mapPostRow(row, shopsMap.get(shopId) ?? null);
+  });
   const withAuthors = await attachAuthorDisplayNames(rows);
   return { data: withAuthors, error: null };
 }
@@ -81,7 +103,40 @@ function mapPostRow(row: Record<string, unknown>, shop: Shop | null): VibePost {
     author_id: typeof row.author_id === "string" ? row.author_id : null,
     shops: shop,
     ...parseNightOutFromRow(row),
+    ...parseMazaruFromRow(row),
+    author_merge_attitude:
+      row.author_merge_attitude === "open" ||
+      row.author_merge_attitude === "closed"
+        ? (row.author_merge_attitude as MergeAttitude)
+        : null,
+    author_vibe_scale:
+      row.author_vibe_scale === "solo" ||
+      row.author_vibe_scale === "small" ||
+      row.author_vibe_scale === "lively"
+        ? (row.author_vibe_scale as VibeScale)
+        : null,
   };
+}
+
+type PostsQueryResult = {
+  data: unknown[] | null;
+  error: { message: string } | null;
+};
+
+async function queryPostsWithSelect(
+  build: (select: string) => PromiseLike<PostsQueryResult>,
+): Promise<PostsQueryResult> {
+  for (const select of POST_SELECT_VARIANTS) {
+    const result = await build(select);
+    if (!result.error) return result;
+    if (
+      !result.error.message.includes("mazaru_mode") &&
+      !result.error.message.includes("author_merge_attitude")
+    ) {
+      return result;
+    }
+  }
+  return { data: [], error: { message: "投稿の取得に失敗しました" } };
 }
 
 async function fetchPostsInWindow(filters: {
@@ -89,21 +144,24 @@ async function fetchPostsInWindow(filters: {
   beforeIso?: string;
   hashtag?: string;
 }): Promise<{ data: VibePost[]; error: string | null }> {
-  let query = supabase
-    .from("vibe_posts")
-    .select(POST_SELECT)
-    .gte("posted_at", filters.sinceIso)
-    .eq("is_guest_post", true)
-    .order("posted_at", { ascending: false });
+  const postsResult = await queryPostsWithSelect((select) => {
+    let query = supabase
+      .from("vibe_posts")
+      .select(select)
+      .gte("posted_at", filters.sinceIso)
+      .eq("is_guest_post", true)
+      .order("posted_at", { ascending: false });
 
-  if (filters.beforeIso) {
-    query = query.lt("posted_at", filters.beforeIso);
-  }
-  if (filters.hashtag) {
-    query = query.contains("hashtags", [filters.hashtag]);
-  }
+    if (filters.beforeIso) {
+      query = query.lt("posted_at", filters.beforeIso);
+    }
+    if (filters.hashtag) {
+      query = query.contains("hashtags", [filters.hashtag]);
+    }
+    return query;
+  });
 
-  const [postsResult, shopsResult] = await Promise.all([query, fetchShopsFromDb()]);
+  const [shopsResult] = await Promise.all([fetchShopsFromDb()]);
 
   if (postsResult.error) {
     return { data: [], error: postsResult.error.message };
@@ -117,12 +175,12 @@ async function fetchPostsInWindow(filters: {
   );
 
   return {
-    data: (postsResult.data ?? []).map((row) =>
-      mapPostRow(
-        row as Record<string, unknown>,
-        shopsMap.get(String(row.shop_id)) ?? null,
-      ),
-    ),
+    data: (postsResult.data ?? []).map((raw) => {
+      const row = raw as Record<string, unknown>;
+      const shopId =
+        typeof row.shop_id === "string" ? row.shop_id : String(row.shop_id ?? "");
+      return mapPostRow(row, shopsMap.get(shopId) ?? null);
+    }),
     error: null,
   };
 }

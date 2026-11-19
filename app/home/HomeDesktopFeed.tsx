@@ -15,7 +15,7 @@ import {
   fetchUserContactedAuthorIds,
 } from "@/lib/matching/contactRequests";
 import { isPostOpenForContact } from "@/lib/profile/buildPostSocialContext";
-import { resolvePostAuthorSocialContext } from "@/lib/profile/tonightSocialContext";
+import { resolvePostFeedSocialContext } from "@/lib/guest-post/postFeedMergeContext";
 import { ensureFreshSession } from "@/lib/auth/session";
 import { useAnonymousAuth } from "@/components/auth/AnonymousAuthProvider";
 import { fetchTonightInterests, cancelInterest } from "@/lib/mypage/api";
@@ -321,12 +321,7 @@ export default function HomeDesktopFeed() {
               }
               contactLoading={submittingId === item.latestPost.id}
               contactCount={contactCounts.get(item.latestPost.id) ?? 0}
-              authorSocialContext={resolvePostAuthorSocialContext({
-                author_merge_attitude: item.latestPost.author_merge_attitude,
-                author_vibe_scale: item.latestPost.author_vibe_scale,
-                author_tonight_social_mood:
-                  item.latestPost.author_tonight_social_mood,
-              })}
+              authorSocialContext={resolvePostFeedSocialContext(item.latestPost)}
               tonightTotalCups={
                 tonightCupTotals.get(item.latestPost.id) ?? null
               }

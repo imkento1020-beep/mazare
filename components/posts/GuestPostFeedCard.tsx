@@ -15,12 +15,12 @@ import PostMergeContextBlock from "@/components/posts/PostMergeContextBlock";
 import ContactPostSheet from "@/components/matching/ContactPostSheet";
 import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
 import { isPostOpenForContact } from "@/lib/profile/buildPostSocialContext";
-import { resolvePostAuthorSocialContext } from "@/lib/profile/tonightSocialContext";
-import { FeedContactIcon } from "@/components/icons/FeedActionIcons";
 import {
-  parseMazaruFromRow,
-  type PostMazaruSettings,
-} from "@/lib/guest-post/mazaruSettings";
+  effectiveMazaruOnPost,
+  resolvePostFeedSocialContext,
+} from "@/lib/guest-post/postFeedMergeContext";
+import { FeedContactIcon } from "@/components/icons/FeedActionIcons";
+import type { PostMazaruSettings } from "@/lib/guest-post/mazaruSettings";
 import VibePostCommentSheet from "@/components/comments/VibePostCommentSheet";
 import {
   FeedCommentIcon,
@@ -403,14 +403,9 @@ export default function GuestPostFeedCard({
   const { hasMedia } = resolvePostMedia(post);
   const likeIconColor = interested ? "#ff3d00" : "#ffffff";
 
-  const mazaruDisplay = mazaruSettingsProp ?? parseMazaruFromRow(post);
+  const mazaruDisplay = mazaruSettingsProp ?? effectiveMazaruOnPost(post);
   const socialForBadges =
-    authorSocialContext ??
-    resolvePostAuthorSocialContext({
-      author_merge_attitude: post.author_merge_attitude,
-      author_vibe_scale: post.author_vibe_scale,
-      author_tonight_social_mood: post.author_tonight_social_mood,
-    });
+    authorSocialContext ?? resolvePostFeedSocialContext(post);
 
   const amberPill = null;
 

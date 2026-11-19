@@ -1,14 +1,13 @@
 "use client";
 
 import PostComposeSheet from "@/components/guest-post/compose/PostComposeSheet";
-import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
 import { MazaranaiIcon, MazaruIcon } from "@/components/icons/MazaruModeIcons";
 import {
   buildMazaruDetailRows,
   mergeAttitudeDescription,
-  vibeScaleDescription,
   type MergeDetailRow,
 } from "@/lib/guest-post/mergeDetailContent";
+import { labelForMergeAttitude } from "@/lib/profile/tonightSocialContext";
 import type { PostMazaruSettings } from "@/lib/guest-post/mazaruSettings";
 import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
 
@@ -114,33 +113,20 @@ export default function MergeContextDetailSheet({
             title="合流・声かけ"
             description={mergeAttitudeDescription(social.mergeAttitude)}
           >
-            <TonightSocialContextBadges
-              context={{ mergeAttitude: social.mergeAttitude, vibeScale: null }}
-              size="md"
-            />
-          </DetailBlock>
-        ) : null}
-
-        {social.vibeScale ? (
-          <DetailBlock
-            title="席の人数感"
-            description={vibeScaleDescription(social.vibeScale)}
-          >
-            <TonightSocialContextBadges
-              context={{ mergeAttitude: null, vibeScale: social.vibeScale }}
-              size="md"
-            />
+            <p className="text-sm font-bold text-[#00e87a]">
+              {labelForMergeAttitude(social.mergeAttitude)}
+            </p>
           </DetailBlock>
         ) : null}
 
         {partySize != null && partySize >= 1 ? (
-          <DetailBlock title="「誰と？」の人数">
-            <p className="text-sm font-bold text-[#00e87a]">{partySize}人で来店</p>
+          <DetailBlock title="「誰と？」（投稿の同行人数）">
+            <p className="text-sm font-bold text-[#eeeaf4]">{partySize}人</p>
           </DetailBlock>
         ) : null}
 
         {mazaru.mode === "mazaru" ? (
-          <DetailBlock title="合流の詳細">
+          <DetailBlock title="登録した合流の詳細">
             <MazaruRows rows={mazaruRows} />
           </DetailBlock>
         ) : null}

@@ -24,8 +24,10 @@ import {
 } from "@/components/icons/FeedActionIcons";
 import PostMergeContextBlock from "@/components/posts/PostMergeContextBlock";
 import ContactPostSheet from "@/components/matching/ContactPostSheet";
-import { parseMazaruFromRow } from "@/lib/guest-post/mazaruSettings";
-import { resolvePostAuthorSocialContext } from "@/lib/profile/tonightSocialContext";
+import {
+  effectiveMazaruOnPost,
+  resolvePostFeedSocialContext,
+} from "@/lib/guest-post/postFeedMergeContext";
 import { isPostOpenForContact } from "@/lib/profile/buildPostSocialContext";
 type HomeReelSlideProps = {
   post: HomeReelsPost;
@@ -140,13 +142,8 @@ export default function HomeReelSlide({
   );
 
   const { isVideo, videoUrl, images } = mediaOf(post);
-  const mazaruDisplay = parseMazaruFromRow(post);
-
-  const authorSocial = resolvePostAuthorSocialContext({
-    author_merge_attitude: post.author_merge_attitude,
-    author_vibe_scale: post.author_vibe_scale,
-    author_tonight_social_mood: post.author_tonight_social_mood,
-  });
+  const mazaruDisplay = effectiveMazaruOnPost(post);
+  const authorSocial = resolvePostFeedSocialContext(post);
 
   const shop = post.shops;
   const visitOrder = getVisitOrder(post);

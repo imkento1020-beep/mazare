@@ -17,17 +17,13 @@ export function partyCountToVibeScale(
 /** 投稿時のマザる設定と「誰と？」人数からプロフィール・スナップショット用2軸を組み立てる */
 export function buildPostSocialContext(
   mazaru: PostMazaruSettings,
-  partySize: number | null,
+  _partySize: number | null,
 ): TonightSocialContext {
   const base = mazaruToSocialContext(mazaru);
-  const headcount =
-    mazaru.mode === "mazaru" && mazaru.details.currentHeadcount != null
-      ? mazaru.details.currentHeadcount
-      : partySize;
-  const vibe = partyCountToVibeScale(headcount) ?? partyCountToVibeScale(partySize);
   return {
     mergeAttitude: base.mergeAttitude,
-    vibeScale: vibe ?? base.vibeScale,
+    // 席の人数感（ひとり/少人数など）は投稿フォームにないためスナップショットに保存しない
+    vibeScale: null,
   };
 }
 

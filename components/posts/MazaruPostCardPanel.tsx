@@ -3,6 +3,7 @@
 import { buildMazaruDetailRows } from "@/lib/guest-post/mergeDetailContent";
 import type { PostMazaruSettings } from "@/lib/guest-post/mazaruSettings";
 import { MazaranaiIcon, MazaruIcon } from "@/components/icons/MazaruModeIcons";
+import { labelForMergeAttitude } from "@/lib/profile/tonightSocialContext";
 
 type MazaruPostCardPanelProps = {
   settings: Pick<PostMazaruSettings, "mode" | "details">;
@@ -51,7 +52,7 @@ export default function MazaruPostCardPanel({
         compact ? "px-2.5 py-2" : "px-3 py-2.5"
       } ${className}`}
     >
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         <span className="text-[#00e87a]">
           <MazaruIcon size={compact ? 16 : 20} />
         </span>
@@ -62,7 +63,9 @@ export default function MazaruPostCardPanel({
         >
           マザる
         </span>
-        <span className="text-[9px] text-[#7dffb8]/80">合流ウェルカム</span>
+        <span className="rounded-full border border-[#00e87a]/40 bg-[#00e87a]/15 px-2 py-0.5 text-[9px] font-bold text-[#00e87a]">
+          {labelForMergeAttitude("open") ?? "合流・声かけ OK"}
+        </span>
       </div>
       {rows.length > 0 ? (
         <div className="mt-1.5 space-y-1">

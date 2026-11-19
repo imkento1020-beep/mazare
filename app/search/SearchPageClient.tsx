@@ -16,6 +16,7 @@ import SearchModeToggle, {
 } from "@/components/search/SearchModeToggle";
 import SearchShopCard from "@/components/search/SearchShopCard";
 import GuestPostFeedCard from "@/components/posts/GuestPostFeedCard";
+import { resolvePostFeedSocialContext } from "@/lib/guest-post/postFeedMergeContext";
 import MotionPanel from "@/components/ui/MotionPanel";
 import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
 import {
@@ -362,10 +363,7 @@ export default function SearchPageClient() {
                   >
                     <GuestPostFeedCard
                       post={post}
-                      authorSocialContext={{
-                        mergeAttitude: post.author_merge_attitude,
-                        vibeScale: post.author_vibe_scale,
-                      }}
+                      authorSocialContext={resolvePostFeedSocialContext(post)}
                       tonightTotalCups={tonightCupTotals.get(post.id) ?? null}
                       interestCount={interestCounts.get(post.id) ?? 0}
                       commentCount={commentCounts.get(post.id) ?? 0}

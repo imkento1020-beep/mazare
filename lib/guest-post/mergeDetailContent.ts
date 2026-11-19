@@ -6,11 +6,8 @@ import {
   type PostMazaruSettings,
 } from "@/lib/guest-post/mazaruSettings";
 import {
-  hasAnySocialContext,
   labelForMergeAttitude,
-  labelForVibeScale,
   MERGE_ATTITUDES,
-  VIBE_SCALES,
   type TonightSocialContext,
 } from "@/lib/profile/tonightSocialContext";
 
@@ -24,40 +21,41 @@ export function buildMazaruDetailRows(
   if (details.currentHeadcount != null) {
     rows.push({
       label: "いまの人数",
-      value: `${details.currentHeadcount}人${
-        genderMixLabel(details.currentGenderMix)
-          ? ` · ${genderMixLabel(details.currentGenderMix)}`
-          : ""
-      }`,
+      value: `${details.currentHeadcount}人`,
     });
-  } else if (details.currentGenderMix) {
+  }
+
+  if (details.currentGenderMix) {
     rows.push({
-      label: "いまの席",
+      label: "いまの男女比",
       value: genderMixLabel(details.currentGenderMix) ?? "",
     });
   }
 
   if (details.mergeMaxHeadcount != null) {
     rows.push({
-      label: "合流の上限",
-      value: `最大${details.mergeMaxHeadcount}人まで${
-        genderMixLabel(details.mergeGenderMix)
-          ? ` · ${genderMixLabel(details.mergeGenderMix)}`
-          : ""
-      }`,
+      label: "合流後の最大人数",
+      value: `${details.mergeMaxHeadcount}人まで`,
+    });
+  }
+
+  if (details.mergeGenderMix) {
+    rows.push({
+      label: "求める男女比",
+      value: genderMixLabel(details.mergeGenderMix) ?? "",
     });
   }
 
   if (details.mergeMood) {
     rows.push({
-      label: "合流の雰囲気",
+      label: "今夜の飲みの気分",
       value: mergeMoodLabel(details.mergeMood) ?? "",
     });
   }
 
   if (details.mergeMeetup) {
     rows.push({
-      label: "合流場所",
+      label: "どこで合流する？",
       value: mergeMeetupLabel(details.mergeMeetup) ?? "",
     });
   }
@@ -72,26 +70,23 @@ export function buildMergeContextSummary(
 ): string | null {
   const parts: string[] = [];
 
+  const mergeLabel = labelForMergeAttitude(social.mergeAttitude);
+  if (mergeLabel) parts.push(mergeLabel);
+
   if (mazaru.mode === "mazaru") {
     const rows = buildMazaruDetailRows(mazaru.details);
-    for (const row of rows.slice(0, 2)) {
-      parts.push(`${row.label} ${row.value}`);
+    for (const row of rows.slice(0, 3)) {
+      parts.push(`${row.value}`);
     }
-  }
-
-  if (parts.length === 0) {
-    const mergeLabel = labelForMergeAttitude(social.mergeAttitude);
-    if (mergeLabel) parts.push(mergeLabel);
-    const vibeLabel = labelForVibeScale(social.vibeScale);
-    if (vibeLabel) parts.push(`席は${vibeLabel}`);
   }
 
   if (
     partySize != null &&
     partySize >= 1 &&
-    mazaru.details.currentHeadcount == null
+    mazaru.details.currentHeadcount == null &&
+    mazaru.mode !== "mazaru"
   ) {
-    parts.push(`同行 ${partySize}人`);
+    parts.push(`誰と？ ${partySize}人`);
   }
 
   return parts.length > 0 ? parts.join(" · ") : null;
@@ -103,7 +98,8 @@ export function canShowMergeContextSheet(
   partySize: number | null | undefined,
 ): boolean {
   if (mazaru.mode) return true;
-  if (hasAnySocialContext(social)) return true;
+  if (social.mergeAttitude) return true;
+  if (buildMazaruDetailRows(mazaru.details).length > 0) return true;
   if (partySize != null && partySize >= 1) return true;
   return false;
 }
@@ -115,9 +111,6 @@ export function mergeAttitudeDescription(
   return MERGE_ATTITUDES.find((m) => m.id === attitude)?.description ?? null;
 }
 
-export function vibeScaleDescription(
-  scale: TonightSocialContext["vibeScale"],
-): string | null {
-  if (!scale) return null;
-  return VIBE_SCALES.find((v) => v.id === scale)?.description ?? null;
+export function hasMazaruDetailFields(details: MazaruDetails): boolean {
+  return buildMazaruDetailRows(details).length > 0;
 }
