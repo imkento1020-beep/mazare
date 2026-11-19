@@ -108,7 +108,9 @@ export default function FavoritesPage() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {favorites.length === 0 ? (
             <div className="col-span-full rounded-[14px] border border-white/7 bg-[#111118] p-8 text-center">
-              <HeartIcon size={48} color="#5a5668" />
+              <div className="flex justify-center">
+                <HeartIcon size={48} color="#5a5668" className="block" />
+              </div>
               <p className="mt-4 text-sm font-bold text-[#eeeaf4]">
                 お気に入りのお店はまだありません
               </p>

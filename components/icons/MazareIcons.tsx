@@ -71,11 +71,12 @@ export function HeartIcon({
   size = 24,
   color = "currentColor",
   filled = false,
+  className,
 }: SvgIconProps & { filled?: boolean }) {
   return (
-    <IconShell size={size}>
+    <IconShell size={size} className={className}>
       <path
-        d="M14 23C14 23 4 17 4 10.5C4 7.5 6.5 5 9.5 5C11.2 5 12.8 5.8 14 7.1C15.2 5.8 16.8 5 18.5 5C21.5 5 24 7.5 24 10.5C24 17 14 23 14 23Z"
+        d="M14 24.25S5.5 18.5 5.5 11.75C5.5 8.5 8 6.25 11 6.25C12.55 6.25 13.95 7.05 14 8.15C14.05 7.05 15.45 6.25 17 6.25C20 6.25 22.5 8.5 22.5 11.75C22.5 18.5 14 24.25 14 24.25Z"
         stroke={color}
         strokeWidth={SW}
         strokeLinecap="round"
