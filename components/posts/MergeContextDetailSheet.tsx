@@ -4,7 +4,6 @@ import PostComposeSheet from "@/components/guest-post/compose/PostComposeSheet";
 import { MazaranaiIcon, MazaruIcon } from "@/components/icons/MazaruModeIcons";
 import {
   buildMazaruDetailRows,
-  mergeAttitudeDescription,
   type MergeDetailRow,
 } from "@/lib/guest-post/mergeDetailContent";
 import { labelForMergeAttitude } from "@/lib/profile/tonightSocialContext";
@@ -82,20 +81,10 @@ export default function MergeContextDetailSheet({
       title="今夜の合流・席の情報"
       onClose={onClose}
     >
-      <p className="text-xs leading-relaxed text-[#9994a8]">
-        <span className="font-bold text-[#eeeaf4]">{authorName}</span>
-        さんが投稿時に登録した内容です。
-      </p>
-
       {mazaru.mode === "mazaru" ? (
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#00e87a]/35 bg-[#00e87a]/10 px-4 py-3">
+        <div className="flex items-center gap-2 rounded-xl border border-[#00e87a]/35 bg-[#00e87a]/10 px-4 py-3">
           <MazaruIcon size={22} className="text-[#00e87a]" />
-          <div>
-            <p className="text-sm font-black text-[#00e87a]">マザる（合流ウェルカム）</p>
-            <p className="text-[11px] text-[#7dffb8]/90">
-              下に人数や雰囲気の詳細があります
-            </p>
-          </div>
+          <p className="text-sm font-black text-[#00e87a]">マザる（合流ウェルカム）</p>
         </div>
       ) : mazaru.mode === "mazaranai" ? (
         <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3">
@@ -109,10 +98,7 @@ export default function MergeContextDetailSheet({
 
       <div className="mt-4 space-y-3">
         {social.mergeAttitude ? (
-          <DetailBlock
-            title="合流・声かけ"
-            description={mergeAttitudeDescription(social.mergeAttitude)}
-          >
+          <DetailBlock title="合流・声かけ">
             <p className="text-sm font-bold text-[#00e87a]">
               {labelForMergeAttitude(social.mergeAttitude)}
             </p>
@@ -131,9 +117,12 @@ export default function MergeContextDetailSheet({
           </DetailBlock>
         ) : null}
 
-        {mazaru.mode === "mazaru" && social.mergeAttitude === "open" ? (
-          <p className="text-center text-[11px] text-[#5a5668]">
-            合流の意思が伝わったら、投稿の「連絡する」からメッセージを送れます。
+        {(mazaru.mode === "mazaru" || social.mergeAttitude === "open") ? (
+          <p className="text-xs leading-relaxed text-[#9994a8]">
+            <span className="font-bold text-[#eeeaf4]">{authorName}</span>
+            さんと合流したい場合、「連絡する」ボタンからメッセージを送れます。
+            <span className="font-bold text-[#eeeaf4]">{authorName}</span>
+            さんがあなたからのメッセージを承認した場合、連絡ができるようになります。
           </p>
         ) : null}
       </div>
