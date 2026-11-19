@@ -1,11 +1,7 @@
 "use client";
 
-import {
-  genderMixLabel,
-  mergeMeetupLabel,
-  mergeMoodLabel,
-  type PostMazaruSettings,
-} from "@/lib/guest-post/mazaruSettings";
+import { buildMazaruDetailRows } from "@/lib/guest-post/mergeDetailContent";
+import type { PostMazaruSettings } from "@/lib/guest-post/mazaruSettings";
 import { MazaranaiIcon, MazaruIcon } from "@/components/icons/MazaruModeIcons";
 
 type MazaruPostCardPanelProps = {
@@ -47,48 +43,7 @@ export default function MazaruPostCardPanel({
     );
   }
 
-  const rows: { label: string; value: string }[] = [];
-
-  if (details.currentHeadcount != null) {
-    rows.push({
-      label: "いま",
-      value: `${details.currentHeadcount}人${
-        genderMixLabel(details.currentGenderMix)
-          ? ` · ${genderMixLabel(details.currentGenderMix)}`
-          : ""
-      }`,
-    });
-  } else if (details.currentGenderMix) {
-    rows.push({
-      label: "いま",
-      value: genderMixLabel(details.currentGenderMix) ?? "",
-    });
-  }
-
-  if (details.mergeMaxHeadcount != null) {
-    rows.push({
-      label: "合流",
-      value: `最大${details.mergeMaxHeadcount}人まで${
-        genderMixLabel(details.mergeGenderMix)
-          ? ` · ${genderMixLabel(details.mergeGenderMix)}`
-          : ""
-      }`,
-    });
-  }
-
-  if (details.mergeMood) {
-    rows.push({
-      label: "雰囲気",
-      value: mergeMoodLabel(details.mergeMood) ?? "",
-    });
-  }
-
-  if (details.mergeMeetup) {
-    rows.push({
-      label: "場所",
-      value: mergeMeetupLabel(details.mergeMeetup) ?? "",
-    });
-  }
+  const rows = buildMazaruDetailRows(details);
 
   return (
     <div

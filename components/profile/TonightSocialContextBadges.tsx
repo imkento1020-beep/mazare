@@ -43,32 +43,58 @@ type TonightSocialContextBadgesProps = {
   size?: "sm" | "md";
   /** 合流バッジだけ強調 */
   mergeFirst?: boolean;
+  /** 合流バッジタップで詳細を開く（投稿カード用） */
+  onMergePress?: () => void;
+  onVibePress?: () => void;
+  showMergeDetailHint?: boolean;
 };
 
 function Badge({
   label,
   style,
   size,
+  onClick,
+  detailHint,
 }: {
   label: string;
   style: { border: string; bg: string; text: string };
   size: "sm" | "md";
+  onClick?: () => void;
+  detailHint?: boolean;
 }) {
   const sizeClass =
     size === "md" ? "px-3 py-1 text-xs" : "px-2.5 py-0.5 text-[10px]";
-  return (
-    <span
-      className={`inline-flex max-w-full items-center rounded-full border font-bold ${sizeClass} ${style.border} ${style.bg} ${style.text}`}
-    >
+  const className = `inline-flex max-w-full items-center gap-1 rounded-full border font-bold ${sizeClass} ${style.border} ${style.bg} ${style.text} ${
+    onClick ? "cursor-pointer transition hover:brightness-110" : ""
+  }`;
+
+  const content = (
+    <>
       <span className="truncate">{label}</span>
-    </span>
+      {detailHint ? (
+        <span className="shrink-0 text-[9px] font-extrabold opacity-90">詳細</span>
+      ) : null}
+    </>
   );
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={className}>
+        {content}
+      </button>
+    );
+  }
+
+  return <span className={className}>{content}</span>;
 }
 
 export default function TonightSocialContextBadges({
   context,
   size = "sm",
   mergeFirst = true,
+  onMergePress,
+  onVibePress,
+  showMergeDetailHint = false,
 }: TonightSocialContextBadgesProps) {
   const mergeLabel = labelForMergeAttitude(context.mergeAttitude);
   const vibeLabel = labelForVibeScale(context.vibeScale);
@@ -80,6 +106,8 @@ export default function TonightSocialContextBadges({
         label={mergeLabel}
         style={MERGE_STYLE[context.mergeAttitude] ?? MERGE_STYLE.open}
         size={size}
+        onClick={onMergePress}
+        detailHint={showMergeDetailHint}
       />
     ) : null;
 
@@ -90,6 +118,8 @@ export default function TonightSocialContextBadges({
         label={vibeLabel}
         style={VIBE_STYLE[context.vibeScale] ?? VIBE_STYLE.small}
         size={size}
+        onClick={onVibePress}
+        detailHint={Boolean(onVibePress)}
       />
     ) : null;
 

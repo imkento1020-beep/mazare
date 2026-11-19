@@ -19,18 +19,13 @@ import {
   FeedCommentIcon,
   FeedContactIcon,
   FeedGlassIcon,
-  FeedPeopleIcon,
   FeedPinIcon,
   FeedShareIcon,
 } from "@/components/icons/FeedActionIcons";
-import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
-import MazaruPostCardPanel from "@/components/posts/MazaruPostCardPanel";
+import PostMergeContextBlock from "@/components/posts/PostMergeContextBlock";
 import ContactPostSheet from "@/components/matching/ContactPostSheet";
 import { parseMazaruFromRow } from "@/lib/guest-post/mazaruSettings";
-import {
-  hasAnySocialContext,
-  resolvePostAuthorSocialContext,
-} from "@/lib/profile/tonightSocialContext";
+import { resolvePostAuthorSocialContext } from "@/lib/profile/tonightSocialContext";
 import { isPostOpenForContact } from "@/lib/profile/buildPostSocialContext";
 type HomeReelSlideProps = {
   post: HomeReelsPost;
@@ -331,21 +326,12 @@ export default function HomeReelSlide({
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#080810]/95 via-[#080810]/55 to-transparent px-4 pb-5 pt-24">
         <div className="pointer-events-auto space-y-2.5 pr-14">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {hasAnySocialContext(authorSocial) ? (
-              <TonightSocialContextBadges
-                context={authorSocial}
-                size="sm"
-                mergeFirst
-              />
-            ) : null}
-            {post.party_size != null && post.party_size >= 1 && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-[#00e87a]/35 bg-[#00e87a]/10 px-2.5 py-1 text-[10px] font-bold text-[#00e87a]">
-                <FeedPeopleIcon size={13} />
-                {post.party_size}人
-              </span>
-            )}
-          </div>
+          <PostMergeContextBlock
+            authorName={name}
+            mazaru={mazaruDisplay}
+            social={authorSocial}
+            partySize={post.party_size}
+          />
 
           {shop && (
             <>
@@ -364,10 +350,6 @@ export default function HomeReelSlide({
               )}
             </>
           )}
-
-          {mazaruDisplay.mode ? (
-            <MazaruPostCardPanel settings={mazaruDisplay} size="sm" />
-          ) : null}
 
           <ReelCaption text={caption} />
         </div>

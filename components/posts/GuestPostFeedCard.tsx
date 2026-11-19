@@ -11,7 +11,7 @@ import {
   getTonightCupDisplay,
   getVisitOrder,
 } from "@/lib/guest-post/nightOut";
-import TonightSocialContextBadges from "@/components/profile/TonightSocialContextBadges";
+import PostMergeContextBlock from "@/components/posts/PostMergeContextBlock";
 import ContactPostSheet from "@/components/matching/ContactPostSheet";
 import type { TonightSocialContext } from "@/lib/profile/tonightSocialContext";
 import { isPostOpenForContact } from "@/lib/profile/buildPostSocialContext";
@@ -21,7 +21,6 @@ import {
   parseMazaruFromRow,
   type PostMazaruSettings,
 } from "@/lib/guest-post/mazaruSettings";
-import MazaruPostCardPanel from "@/components/posts/MazaruPostCardPanel";
 import VibePostCommentSheet from "@/components/comments/VibePostCommentSheet";
 import {
   FeedCommentIcon,
@@ -556,23 +555,16 @@ export default function GuestPostFeedCard({
         )}
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] space-y-2 p-3 pr-14">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {socialForBadges ? (
-              <TonightSocialContextBadges
-                context={socialForBadges}
-                size="sm"
-                mergeFirst
-              />
-            ) : null}
+          <div className="pointer-events-auto">
+            <PostMergeContextBlock
+              authorName={displayName}
+              mazaru={mazaruDisplay}
+              social={socialForBadges}
+              partySize={post.party_size}
+            />
             {amberPill && (
-              <span className="inline-flex items-center rounded-[20px] border border-[rgba(255,170,0,0.3)] bg-[rgba(255,170,0,0.15)] px-2 py-0.5 text-[9px] font-bold leading-snug text-[#ffaa00]">
+              <span className="mt-1 inline-flex items-center rounded-[20px] border border-[rgba(255,170,0,0.3)] bg-[rgba(255,170,0,0.15)] px-2 py-0.5 text-[9px] font-bold leading-snug text-[#ffaa00]">
                 {amberPill}
-              </span>
-            )}
-            {post.party_size != null && post.party_size >= 1 && (
-              <span className="inline-flex items-center gap-1 rounded-[20px] border border-[rgba(0,232,122,0.3)] bg-[rgba(0,232,122,0.1)] px-2 py-0.5 text-[9px] font-bold text-[#00e87a]">
-                <FeedPeopleIcon size={12} />
-                {post.party_size}人
               </span>
             )}
           </div>
@@ -600,14 +592,6 @@ export default function GuestPostFeedCard({
               </p>
             </div>
           )}
-
-          {mazaruDisplay.mode ? (
-            <MazaruPostCardPanel
-              settings={mazaruDisplay}
-              size="sm"
-              className="pointer-events-auto w-full max-w-full"
-            />
-          ) : null}
 
           {comment && (
             <div className="pointer-events-auto rounded-r-md border-l-2 border-[#ff3d00] bg-white/[0.06] px-2.5 py-1.5">
