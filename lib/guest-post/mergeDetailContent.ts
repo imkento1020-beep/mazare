@@ -63,33 +63,33 @@ export function buildMazaruDetailRows(
   return rows;
 }
 
-export function buildMergeContextSummary(
-  mazaru: Pick<PostMazaruSettings, "mode" | "details">,
+/** フィード上のタグ用（人数・男女比などは出さない） */
+export function feedMergeIntentLabel(
+  mazaru: Pick<PostMazaruSettings, "mode">,
   social: TonightSocialContext,
-  partySize: number | null | undefined,
-): string | null {
-  const parts: string[] = [];
-
-  const mergeLabel = labelForMergeAttitude(social.mergeAttitude);
-  if (mergeLabel) parts.push(mergeLabel);
-
+): string {
   if (mazaru.mode === "mazaru") {
-    const rows = buildMazaruDetailRows(mazaru.details);
-    for (const row of rows.slice(0, 3)) {
-      parts.push(`${row.value}`);
-    }
+    return labelForMergeAttitude("open") ?? "合流・声かけ OK";
   }
-
-  if (
-    partySize != null &&
-    partySize >= 1 &&
-    mazaru.details.currentHeadcount == null &&
-    mazaru.mode !== "mazaru"
-  ) {
-    parts.push(`誰と？ ${partySize}人`);
+  if (mazaru.mode === "mazaranai") {
+    return "マザらない";
   }
+  return (
+    labelForMergeAttitude(social.mergeAttitude) ?? "合流・マザる設定"
+  );
+}
 
-  return parts.length > 0 ? parts.join(" · ") : null;
+export function feedMergeIntentTone(
+  mazaru: Pick<PostMazaruSettings, "mode">,
+  social: TonightSocialContext,
+): "open" | "closed" | "neutral" {
+  if (mazaru.mode === "mazaru" || social.mergeAttitude === "open") {
+    return "open";
+  }
+  if (mazaru.mode === "mazaranai" || social.mergeAttitude === "closed") {
+    return "closed";
+  }
+  return "neutral";
 }
 
 export function canShowMergeContextSheet(
