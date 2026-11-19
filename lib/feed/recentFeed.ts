@@ -4,7 +4,7 @@ import { getRecentPostsWindowStart, isWithinRecentPostsWindow } from "@/lib/home
 import { getTrendingTagWindowJST } from "@/lib/home/recentWindow";
 import { parseMediaTypeField } from "@/lib/guest-post/parseMediaTypeField";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
-import { parseMazaruFromRow } from "@/lib/guest-post/mazaruSettings";
+import { vibePostMazaruFieldsFromRow } from "@/lib/guest-post/mazaruSettings";
 import type { MergeAttitude, VibeScale } from "@/lib/profile/tonightSocialContext";
 import { attachAuthorDisplayNames } from "@/lib/profile/publicProfile";
 import type { Shop, VibePost } from "@/lib/home/types";
@@ -103,7 +103,7 @@ function mapPostRow(row: Record<string, unknown>, shop: Shop | null): VibePost {
     author_id: typeof row.author_id === "string" ? row.author_id : null,
     shops: shop,
     ...parseNightOutFromRow(row),
-    ...parseMazaruFromRow(row),
+    ...vibePostMazaruFieldsFromRow(row),
     author_merge_attitude:
       row.author_merge_attitude === "open" ||
       row.author_merge_attitude === "closed"

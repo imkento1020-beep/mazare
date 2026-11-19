@@ -6,7 +6,7 @@ import {
   isPostedTonightJST,
 } from "@/lib/home/dates";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
-import { parseMazaruFromRow } from "@/lib/guest-post/mazaruSettings";
+import { vibePostMazaruFieldsFromRow } from "@/lib/guest-post/mazaruSettings";
 import { getRecentPostsWindowStart } from "@/lib/home/recentWindow";
 import {
   normalizeMoods,
@@ -53,7 +53,7 @@ function mapBrowsePostRow(
     author_id: typeof row.author_id === "string" ? row.author_id : null,
     shops: shop,
     ...parseNightOutFromRow(row),
-    ...parseMazaruFromRow(row),
+    ...vibePostMazaruFieldsFromRow(row),
     author_merge_attitude:
       row.author_merge_attitude === "open" ||
       row.author_merge_attitude === "closed"

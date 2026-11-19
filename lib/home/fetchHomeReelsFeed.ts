@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { parseNightOutFromRow } from "@/lib/guest-post/nightOut";
-import { parseMazaruFromRow } from "@/lib/guest-post/mazaruSettings";
+import { vibePostMazaruFieldsFromRow } from "@/lib/guest-post/mazaruSettings";
 import {
   POST_CARD_SHOP_RELATION,
   POST_CARD_SHOP_RELATION_LEGACY,
@@ -83,7 +83,7 @@ function mapRow(row: Record<string, unknown>): HomeReelsPost {
     author_display_name: null,
     author_profile_image: null,
     ...parseNightOutFromRow(row),
-    ...parseMazaruFromRow(row),
+    ...vibePostMazaruFieldsFromRow(row),
     author_merge_attitude:
       row.author_merge_attitude === "open" ||
       row.author_merge_attitude === "closed"

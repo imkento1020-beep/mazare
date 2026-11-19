@@ -162,18 +162,41 @@ export async function createGuestVibePost(input: {
   data = attempt.data;
   error = attempt.error;
 
-  if (
-    error?.message.includes("author_merge_attitude") ||
-    error?.message.includes("author_vibe_scale") ||
-    error?.message.includes("mazaru_mode")
-  ) {
+  if (error) {
+    const msg = error.message;
+    const authorColumnMissing =
+      msg.includes("author_merge_attitude") ||
+      msg.includes("author_vibe_scale");
+    const mazaruColumnMissing =
+      msg.includes("mazaru_mode") || msg.includes("mazaru_details");
+
+    const partialRow: Record<string, unknown> = { ...baseRow };
+    if (!authorColumnMissing) {
+      partialRow.author_merge_attitude = ctx.mergeAttitude;
+      partialRow.author_vibe_scale = ctx.vibeScale;
+    }
+    if (!mazaruColumnMissing) {
+      partialRow.mazaru_mode = mazaru?.mode ?? null;
+      partialRow.mazaru_details = mazaruDetails;
+    }
+
     const fallback = await supabase
       .from("vibe_posts")
-      .insert(baseRow)
+      .insert(partialRow)
       .select("id")
       .single();
     data = fallback.data;
     error = fallback.error;
+
+    if (error) {
+      const lastResort = await supabase
+        .from("vibe_posts")
+        .insert(baseRow)
+        .select("id")
+        .single();
+      data = lastResort.data;
+      error = lastResort.error;
+    }
   }
 
   if (error || !data) {

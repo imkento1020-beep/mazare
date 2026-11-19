@@ -116,14 +116,25 @@ export function parseMazaruDetails(raw: unknown): MazaruDetails {
 export function parseMazaruFromRow(row: {
   mazaru_mode?: unknown;
   mazaru_details?: unknown;
+  /** @internal 誤って mode/details だけ付与された VibePost 用 */
+  mode?: unknown;
+  details?: unknown;
 }): Pick<PostMazaruSettings, "mode" | "details"> {
-  const modeRaw = row.mazaru_mode;
+  const modeRaw = row.mazaru_mode ?? row.mode;
   const mode: MazaruMode | null =
     modeRaw === "mazaru" || modeRaw === "mazaranai" ? modeRaw : null;
   return {
     mode,
-    details: parseMazaruDetails(row.mazaru_details),
+    details: parseMazaruDetails(row.mazaru_details ?? row.details),
   };
+}
+
+/** DB 行 → VibePost の mazaru_mode / mazaru_details（spread 用） */
+export function vibePostMazaruFieldsFromRow(
+  row: Record<string, unknown>,
+): { mazaru_mode: MazaruMode | null; mazaru_details: MazaruDetails } {
+  const parsed = parseMazaruFromRow(row);
+  return { mazaru_mode: parsed.mode, mazaru_details: parsed.details };
 }
 
 export function genderMixLabel(id: GenderMix | null): string | null {
