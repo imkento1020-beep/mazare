@@ -37,6 +37,14 @@ export default function ProfileHero({
 }: ProfileHeroProps) {
   const bioText = bio?.trim() ?? "";
   const hasSocial = socialContext && hasAnySocialContext(socialContext);
+  const statColumnClass =
+    stats.length <= 1
+      ? "grid-cols-1"
+      : stats.length === 2
+        ? "grid-cols-2"
+        : "grid-cols-3";
+  const statGridWidthClass =
+    stats.length === 2 ? "mx-auto w-full max-w-[14rem]" : "";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#111118]">
@@ -89,7 +97,9 @@ export default function ProfileHero({
         </div>
 
         {stats.length > 0 ? (
-          <dl className="mt-5 grid grid-cols-3 divide-x divide-white/[0.08] rounded-xl border border-white/[0.07] bg-[#0d0d12] py-3.5">
+          <dl
+            className={`mt-5 grid divide-x divide-white/[0.08] rounded-xl border border-white/[0.07] bg-[#0d0d12] py-3.5 ${statColumnClass} ${statGridWidthClass}`}
+          >
             {stats.map((stat) => (
               <div key={stat.label} className="px-2 text-center">
                 <dt className="sr-only">{stat.label}</dt>
