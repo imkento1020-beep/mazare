@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MazareLogo from "@/components/MazareLogo";
-import {
-  CheckinOutlineIcon,
-  PostOutlineIcon,
-} from "@/components/icons/CreateActionIcons";
+import { PostOutlineIcon } from "@/components/icons/CreateActionIcons";
+import { FeedWaveIcon } from "@/components/icons/FeedActionIcons";
+import { FireIcon } from "@/components/icons/MazareIcons";
+import { MazaruIcon } from "@/components/icons/MazaruModeIcons";
 import {
   hasCompletedGuestOnboarding,
   markGuestOnboardingCompleted,
@@ -14,12 +14,42 @@ import {
 
 const SLIDES = [
   {
-    id: "post",
-    kicker: "01 · 投稿",
-    title: "今夜の一杯を、\nその場でシェア",
-    body: "お店の写真や動画を投稿すると、「楽しそう」と感じた人が自然と集まってきます。",
+    id: "discover",
+    kicker: "01 · 今夜の空気",
+    title: "いま盛り上がっている\nお店がわかる",
+    body: "ホーム・地図・探すから、今夜の投稿やお店の Vibe をチェック。静的な店舗情報ではなく、「今この瞬間」の雰囲気で行き先を選べます。",
     accent: "#ff3d00",
-    Icon: PostOutlineIcon,
+    mock: (
+      <div className="relative mx-auto aspect-[4/5] w-[min(72vw,280px)] overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d12] shadow-[0_24px_64px_rgba(255,61,0,0.2)]">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#ff3d00]/20 via-transparent to-[#080810]" />
+        <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-[#ff3d00]/90 px-2.5 py-1">
+          <FireIcon size={14} color="#fff" />
+          <span className="text-[10px] font-bold text-white">LIVE</span>
+        </div>
+        <div className="absolute inset-x-3 top-14 space-y-2">
+          <div className="rounded-xl border border-white/10 bg-[#111118]/95 p-3">
+            <p className="text-[10px] font-bold text-[#ffaa00]">渋谷 · 立ち飲み</p>
+            <p className="mt-1 text-xs font-black text-[#eeeaf4]">カウンターわいわい #今夜</p>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-[#111118]/80 p-3 opacity-80">
+            <p className="text-[10px] font-bold text-[#9994a8]">新宿 · バー</p>
+            <p className="mt-1 text-xs font-semibold text-[#c4bfd6]">混ざり歓迎の空気…</p>
+          </div>
+        </div>
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#080810] p-4 pt-12">
+          <p className="text-center text-[11px] font-semibold text-[#9994a8]">
+            ホーム · 地図 · 探す
+          </p>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "post",
+    kicker: "02 · 投稿",
+    title: "今夜の一杯を、\nその場でシェア",
+    body: "お店での写真や動画を投稿すると、今夜の空気が伝わります。誰と・何杯目などの飲みログも一緒に残せます。",
+    accent: "#ff3d00",
     mock: (
       <div className="relative mx-auto aspect-[4/5] w-[min(72vw,280px)] overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d12] shadow-[0_24px_64px_rgba(255,61,0,0.2)]">
         <div className="absolute inset-0 bg-gradient-to-br from-[#ff3d00]/25 via-transparent to-[#080810]" />
@@ -32,46 +62,72 @@ const SLIDES = [
         </div>
         <div className="absolute left-3 top-3 flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#ff3d00] text-xs font-bold text-white">
-            K
+            <PostOutlineIcon size={16} color="#fff" />
           </span>
-          <span className="text-xs font-semibold text-white/90">kento</span>
+          <span className="text-xs font-semibold text-white/90">今夜を投稿</span>
         </div>
       </div>
     ),
   },
   {
-    id: "checkin",
-    kicker: "02 · チェックイン",
-    title: "写真がなくても、\n今夜の記録は残る",
-    body: "チェックインだけでも飲みログに残り、マップに「今夜ここにいる」が反映されます。",
-    accent: "#ffaa00",
-    Icon: CheckinOutlineIcon,
+    id: "mazaru",
+    kicker: "03 · マザる",
+    title: "合流したい意思を\n投稿で示せる",
+    body: "「マザる」を選ぶと合流ウェルカムのタグが付きます。人数や男女比などはタップで詳細表示。気になったら「連絡する」からメッセージを送れます。",
+    accent: "#00e87a",
     mock: (
-      <div className="relative mx-auto aspect-[4/5] w-[min(72vw,280px)] overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d12] shadow-[0_24px_64px_rgba(255,170,0,0.15)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(255,170,0,0.18),transparent_55%)]" />
+      <div className="relative mx-auto aspect-[4/5] w-[min(72vw,280px)] overflow-hidden rounded-2xl border border-[#00e87a]/25 bg-[#0d0d12] shadow-[0_24px_64px_rgba(0,232,122,0.12)]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(0,232,122,0.15),transparent_55%)]" />
         <div className="flex h-full flex-col items-center justify-center gap-4 px-6">
-          <span className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#ffaa00]/50 bg-[#ffaa00]/10">
-            <CheckinOutlineIcon size={32} color="#ffaa00" />
+          <span className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#00e87a]/50 bg-[#00e87a]/10 text-[#00e87a]">
+            <MazaruIcon size={36} />
           </span>
-          <p className="text-center text-sm font-black text-[#eeeaf4]">
-            今ここにチェックイン
-          </p>
-          <div className="w-full rounded-xl border border-white/10 bg-[#111118]/90 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#5a5668]">
-              今夜のマップ
-            </p>
-            <div className="mt-2 flex gap-1">
-              {[1, 2, 3].map((n) => (
-                <span
-                  key={n}
-                  className={`h-2 flex-1 rounded-full ${n === 2 ? "bg-[#ffaa00]" : "bg-[#ff3d00]/40"}`}
-                />
-              ))}
-            </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#00e87a]/40 bg-[#00e87a]/15 px-3 py-1.5 text-[11px] font-bold text-[#00e87a]">
+            合流・声かけ OK ›
+          </span>
+          <div className="w-full rounded-xl border border-white/10 bg-[#111118]/90 p-3 text-left">
+            <p className="text-[10px] font-bold text-[#5a5668]">登録した合流の詳細</p>
             <p className="mt-2 text-[11px] text-[#9994a8]">
-              お店の盛り上がりと一緒に表示
+              いまの人数 · 合流後の人数 · どこで合流？
             </p>
           </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "tonight",
+    kicker: "04 · 行くかも",
+    title: "今夜行きたいお店を\nリストに残す",
+    body: "気になったお店に「行くかも」を付けて、今夜の候補を整理。投稿は「いま現場」、行くかもは「これから行く」というシグナルです。",
+    accent: "#ffaa00",
+    mock: (
+      <div className="relative mx-auto aspect-[4/5] w-[min(72vw,280px)] overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d12] shadow-[0_24px_64px_rgba(255,170,0,0.15)]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(255,170,0,0.14),transparent_55%)]" />
+        <div className="flex h-full flex-col justify-center gap-3 px-5">
+          <p className="text-center text-[10px] font-bold uppercase tracking-wider text-[#5a5668]">
+            今夜の行くかも
+          </p>
+          {[
+            { name: "立ち飲みバー A", on: true },
+            { name: "カラオケスナック B", on: false },
+          ].map((row) => (
+            <div
+              key={row.name}
+              className={`flex items-center gap-3 rounded-xl border p-3 ${
+                row.on
+                  ? "border-[#ffaa00]/40 bg-[#ffaa00]/10"
+                  : "border-white/10 bg-[#111118]/80"
+              }`}
+            >
+              <FeedWaveIcon size={22} color={row.on ? "#ffaa00" : "#5a5668"} />
+              <span
+                className={`text-xs font-bold ${row.on ? "text-[#eeeaf4]" : "text-[#9994a8]"}`}
+              >
+                {row.name}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     ),
