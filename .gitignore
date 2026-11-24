@@ -43,3 +43,11 @@ public/swe-worker*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Capacitor native build artifacts (keep ios/ and android/ projects)
+ios/App/Pods/
+ios/DerivedData/
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
