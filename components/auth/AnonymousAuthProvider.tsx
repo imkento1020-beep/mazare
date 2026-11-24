@@ -10,7 +10,13 @@ import {
 } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
-import { ensureAnonymousSession, isAnonymousUser } from "@/lib/auth/anonymous";
+import {
+  ensureAnonymousSession,
+  isAnonymousUser,
+  isRegisteredUser,
+} from "@/lib/auth/anonymous";
+import { useNativeApp } from "@/hooks/useNativeApp";
+import { hasNativeGuestBrowse } from "@/lib/native/guestBrowse";
 
 type AnonymousAuthContextValue = {
   user: User | null;
@@ -27,6 +33,7 @@ const AnonymousAuthContext = createContext<AnonymousAuthContextValue>({
 });
 
 export function AnonymousAuthProvider({ children }: { children: ReactNode }) {
+  const { isNative } = useNativeApp();
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -36,6 +43,20 @@ export function AnonymousAuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function bootstrap() {
+      if (isNative && !hasNativeGuestBrowse()) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (cancelled) return;
+
+        const sessionUser = session?.user ?? null;
+        bootstrapDoneRef.current = true;
+        setUser(isRegisteredUser(sessionUser) ? sessionUser : sessionUser);
+        setAuthError(null);
+        setReady(true);
+        return;
+      }
+
       const { user: sessionUser, error } = await ensureAnonymousSession();
       if (cancelled) return;
 
@@ -59,7 +80,7 @@ export function AnonymousAuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isNative]);
 
   return (
     <AnonymousAuthContext.Provider

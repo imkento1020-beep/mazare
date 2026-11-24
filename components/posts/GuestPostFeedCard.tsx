@@ -455,19 +455,19 @@ export default function GuestPostFeedCard({
         />
 
         <div className="absolute left-3 top-3 z-[3] flex items-center gap-2">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#ff3d00] text-[11px] font-extrabold text-white">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#ff3d00] text-[11px] font-extrabold leading-none text-white">
             {authorInitial(post.author_display_name)}
           </span>
           {post.author_id ? (
             <Link
               href={`/user/${post.author_id}`}
               onClick={(e) => e.stopPropagation()}
-              className="pointer-events-auto text-xs font-semibold text-[#eeeaf4] hover:underline"
+              className="pointer-events-auto text-xs font-semibold leading-none text-[#eeeaf4] hover:underline"
             >
               {displayName}
             </Link>
           ) : (
-            <span className="text-xs font-semibold text-[#eeeaf4]">
+            <span className="text-xs font-semibold leading-none text-[#eeeaf4]">
               {displayName}
             </span>
           )}

@@ -254,37 +254,39 @@ export default function HomeReelSlide({
       />
 
       <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4 pt-[max(16px,env(safe-area-inset-top))]">
-        <div className="flex min-w-0 items-center gap-2.5">
-          {post.author_profile_image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={post.author_profile_image}
-              alt=""
-              className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-white/25"
-            />
-          ) : (
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ff3d00] text-xs font-extrabold text-white ring-2 ring-white/25">
-              {authorInitial(post.author_display_name)}
-            </span>
-          )}
-          <div className="min-w-0">
+        <div className="min-w-0">
+          <div className="flex max-w-[min(100%,14rem)] items-center gap-2">
+            {post.author_profile_image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={post.author_profile_image}
+                alt=""
+                className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-white/25"
+              />
+            ) : (
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ff3d00] text-[11px] font-extrabold leading-none text-white ring-2 ring-white/25">
+                {authorInitial(post.author_display_name)}
+              </span>
+            )}
             {post.author_id ? (
               <Link
                 href={`/user/${post.author_id}`}
                 onClick={(e) => e.stopPropagation()}
-                className="pointer-events-auto block truncate text-[13px] font-bold text-[#eeeaf4] [text-shadow:0_1px_6px_rgba(0,0,0,0.85)]"
+                className="pointer-events-auto truncate text-[13px] font-bold leading-none text-[#eeeaf4] [text-shadow:0_1px_6px_rgba(0,0,0,0.85)]"
               >
                 {name}
               </Link>
             ) : (
-              <p className="truncate text-[13px] font-bold text-[#eeeaf4] [text-shadow:0_1px_6px_rgba(0,0,0,0.85)]">
+              <p className="truncate text-[13px] font-bold leading-none text-[#eeeaf4] [text-shadow:0_1px_6px_rgba(0,0,0,0.85)]">
                 {name}
               </p>
             )}
-            {when && (
-              <p className="text-[10px] font-medium text-white/55">{when}</p>
-            )}
           </div>
+          {when ? (
+            <p className="mt-1 pl-10 text-[10px] font-medium leading-none text-white/55">
+              {when}
+            </p>
+          ) : null}
         </div>
         {isRecentTonight && (
           <span className="shrink-0 rounded-full border border-[#ff3d00]/40 bg-[#ff3d00]/15 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#ff3d00]">

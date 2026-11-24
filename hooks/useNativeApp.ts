@@ -1,0 +1,1 @@
+export { useNativeApp } from "@/components/native/NativeAppProvider";

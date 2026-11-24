@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
+import AuthScreenTopBar from "@/components/auth/AuthScreenTopBar";
+import { useNativeApp } from "@/hooks/useNativeApp";
 import { completeAuthFlow } from "@/lib/auth/postAuth";
 import { getLoginPathWithReturn, getSignupPathWithReturn } from "@/lib/auth/authPaths";
 import { getSafeRedirectPath } from "@/lib/auth/safeRedirectPath";
@@ -13,6 +15,7 @@ import { getAuthErrorMessage, isEmailNotConfirmed } from "@/lib/auth/errors";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { isNative } = useNativeApp();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -106,7 +109,10 @@ export default function LoginPage() {
 
   return (
     <AuthLayout>
-      <h2 className="text-2xl font-semibold text-[#eeeaf4]">ログイン</h2>
+      <AuthScreenTopBar title={isNative ? "ログイン" : undefined} />
+      {!isNative ? (
+        <h2 className="text-2xl font-semibold text-[#eeeaf4]">ログイン</h2>
+      ) : null}
       <p className="mt-2 text-sm text-[#9994a8]">
         アカウントにログインして、今夜の場所を探しましょう。
       </p>

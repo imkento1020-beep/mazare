@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AuthLayout from "@/components/auth/AuthLayout";
+import AuthScreenTopBar from "@/components/auth/AuthScreenTopBar";
+import { useNativeApp } from "@/hooks/useNativeApp";
 import { isAnonymousUser } from "@/lib/auth/anonymous";
 import { storePendingReturnPath } from "@/lib/auth/pendingReturnPath";
 import { getLoginPathWithReturn, getSignupPathWithReturn } from "@/lib/auth/authPaths";
@@ -51,6 +53,7 @@ async function resendSignupConfirmation(input: {
 export default function SignupPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isNative } = useNativeApp();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -198,7 +201,10 @@ export default function SignupPageClient() {
 
   return (
     <AuthLayout>
-      <h2 className="text-2xl font-semibold text-[#eeeaf4]">アカウント作成</h2>
+      <AuthScreenTopBar title={isNative ? "アカウント作成" : undefined} />
+      {!isNative ? (
+        <h2 className="text-2xl font-semibold text-[#eeeaf4]">アカウント作成</h2>
+      ) : null}
       <p className="mt-2 text-sm text-[#9994a8]">
         {searchParams.get("invite")
           ? "スタッフ招待を承認するためにアカウントを作成します。"

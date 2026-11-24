@@ -13,9 +13,13 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import MessageInboxBell from "@/components/messages/MessageInboxBell";
 import SearchIcon from "@/components/icons/SearchIcon";
 import UserIcon from "@/components/icons/UserIcon";
+import { useNativeApp } from "@/hooks/useNativeApp";
+
 type HeaderProps = {
   search?: string;
   onSearchChange?: (value: string) => void;
+  /** ネイティブ地図などロゴ非表示 */
+  hideBrand?: boolean;
 };
 
 const headerShellClassName =
@@ -60,10 +64,16 @@ function IconButton({
   );
 }
 
-export default function Header({ search, onSearchChange }: HeaderProps) {
+export default function Header({
+  search,
+  onSearchChange,
+  hideBrand = false,
+}: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { isNative } = useNativeApp();
   const { mode, setMode, isDualRole, ready: modeReady } = useAppMode();
+  const suppressBrand = hideBrand || isNative;
   const [loggedIn, setLoggedIn] = useState(false);
   const [shopName, setShopName] = useState<string | null>(null);
   const [hasOwnerRole, setHasOwnerRole] = useState(false);
@@ -153,7 +163,7 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
     return (
       <header className={headerShellClassName}>
         <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-4 md:px-6">
-          <Logo href="/" />
+          {!suppressBrand ? <Logo href="/" /> : <span className="w-0" aria-hidden />}
           <div className="flex items-center gap-2 md:gap-3">
             <Link
               href="/login"
@@ -177,7 +187,11 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
     return (
       <header className={headerShellClassName}>
         <div className="mx-auto flex h-full max-w-[1200px] items-center justify-between gap-4 px-4 md:px-6">
-          <Logo href="/owner/dashboard" />
+          {!suppressBrand ? (
+            <Logo href="/owner/dashboard" />
+          ) : (
+            <p className="text-sm font-bold text-[#eeeaf4]">お店</p>
+          )}
 
           <div className="hidden min-w-0 flex-1 justify-center md:flex">
             <p className="truncate text-sm font-bold text-[#eeeaf4] md:text-base">
@@ -202,9 +216,17 @@ export default function Header({ search, onSearchChange }: HeaderProps) {
   }
 
   return (
-    <header className={headerShellClassName}>
-      <div className="mx-auto flex h-full max-w-[1200px] items-center gap-4 px-4 md:px-6">
-        <Logo href="/home" />
+    <header
+      className={`${headerShellClassName} ${
+        suppressBrand ? "native-top-bar" : ""
+      }`}
+    >
+      <div
+        className={`mx-auto flex h-full max-w-[1200px] items-center gap-4 px-4 md:px-6 ${
+          suppressBrand ? "pt-[env(safe-area-inset-top,0px)]" : ""
+        }`}
+      >
+        {!suppressBrand ? <Logo href="/home" /> : null}
 
         <form
           onSubmit={handleSearchSubmit}

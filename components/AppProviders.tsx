@@ -6,16 +6,22 @@ import { AnonymousAuthProvider } from "@/components/auth/AnonymousAuthProvider";
 import { AuthPromptProvider } from "@/components/auth/AuthPromptProvider";
 import RouteTransition from "@/components/layout/RouteTransition";
 import CapacitorShell from "@/components/native/CapacitorShell";
+import { NativeAppProvider } from "@/components/native/NativeAppProvider";
+import NativeBootstrap from "@/components/native/NativeBootstrap";
 
 export default function AppProviders({ children }: { children: ReactNode }) {
   return (
     <SerwistProvider swUrl="/serwist/sw.js" reloadOnOnline={false}>
-      <AnonymousAuthProvider>
-        <AuthPromptProvider>
-          <CapacitorShell />
-          <RouteTransition>{children}</RouteTransition>
-        </AuthPromptProvider>
-      </AnonymousAuthProvider>
+      <NativeAppProvider>
+        <AnonymousAuthProvider>
+          <AuthPromptProvider>
+            <CapacitorShell />
+            <NativeBootstrap>
+              <RouteTransition>{children}</RouteTransition>
+            </NativeBootstrap>
+          </AuthPromptProvider>
+        </AnonymousAuthProvider>
+      </NativeAppProvider>
     </SerwistProvider>
   );
 }

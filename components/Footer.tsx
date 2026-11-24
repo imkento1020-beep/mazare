@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import MazareLogo from "@/components/MazareLogo";
+import { useNativeApp } from "@/hooks/useNativeApp";
 
 const FOOTER_LINKS = [
   { label: "アプリとして追加", href: "/install" },
@@ -12,6 +15,11 @@ const FOOTER_LINKS = [
 ] as const;
 
 export default function Footer() {
+  const { isNative } = useNativeApp();
+  const links = FOOTER_LINKS.filter(
+    (link) => !(isNative && link.href === "/install"),
+  );
+
   return (
     <footer className="border-t border-white/[0.07] bg-[#111118] px-10 pb-8 pt-12 text-[#5a5668]">
       <div className="mx-auto max-w-6xl">
@@ -21,7 +29,7 @@ export default function Footer() {
         </div>
 
         <nav className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm">
-          {FOOTER_LINKS.map((link) => (
+          {links.map((link) => (
             <Link
               key={link.label}
               href={link.href}

@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import AuthSampleCards from "./AuthSampleCards";
 import MazareLogo from "@/components/MazareLogo";
+import { useNativeApp } from "@/hooks/useNativeApp";
 
 const VISUAL_BG =
   "radial-gradient(ellipse 80% 60% at 20% 80%, rgba(255,61,0,0.18) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 20%, rgba(120,60,200,0.15) 0%, transparent 55%), linear-gradient(160deg, #0d0d1a 0%, #080810 50%, #120810 100%)";
@@ -81,6 +84,19 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { isNative } = useNativeApp();
+
+  if (isNative) {
+    return (
+      <div className="flex min-h-dvh flex-col bg-[#080810] pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]">
+        <div className="flex flex-1 flex-col justify-center px-6 py-8">
+          <div className="mx-auto w-full max-w-md">{children}</div>
+        </div>
+        <AuthFooter />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#080810] md:flex">
       <AuthVisualPanel />

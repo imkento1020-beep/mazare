@@ -1,7 +1,8 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 /**
- * 本番ビルドは https://mazare.app を WebView で表示（Next.js をそのまま利用）。
+ * 本番ビルドは https://www.mazare.app を WebView で表示（Next.js をそのまま利用）。
+ * ※ apex (mazare.app) は Vercel で www へ 308 するため、server.url は www を指定する。
  * ローカル検証: CAPACITOR_USE_LOCAL=1 npx cap sync
  */
 const useLocalDev = process.env.CAPACITOR_USE_LOCAL === "1";
@@ -16,8 +17,15 @@ const config: CapacitorConfig = {
         cleartext: true,
       }
     : {
-        url: process.env.CAPACITOR_SERVER_URL ?? "https://mazare.app",
+        url: process.env.CAPACITOR_SERVER_URL ?? "https://www.mazare.app",
+        appStartPath: "/native/welcome",
         androidScheme: "https",
+        allowNavigation: [
+          "mazare.app",
+          "www.mazare.app",
+          "*.supabase.co",
+          "accounts.google.com",
+        ],
       },
   ios: {
     contentInset: "automatic",

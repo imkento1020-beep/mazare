@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
+import NativeInboxActions from "@/components/native/NativeInboxActions";
+import { useNativeApp } from "@/hooks/useNativeApp";
 import MapActivityGoogleMapView from "@/components/map/MapActivityGoogleMapView";
 import MapActivitySheet from "@/components/map/MapActivitySheet";
 import MapActivityWindowFilter from "@/components/map/MapActivityWindowFilter";
@@ -46,6 +48,7 @@ type MapPageClientProps = {
 };
 
 export default function MapPageClient({ setupHint }: MapPageClientProps) {
+  const { isNative } = useNativeApp();
   const { openAuthPrompt } = useAuthPrompt();
   const [posts, setPosts] = useState<VibePost[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
@@ -282,6 +285,7 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
   if (loading) {
     return (
       <LoadingScreen
+        branded={isNative}
         message="地図を読み込んでいます"
         submessage="今夜の投稿とお店の位置情報を取得しています"
       />
@@ -290,9 +294,15 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
 
   return (
     <div className="relative flex min-h-dvh flex-col bg-[#080810] text-[#eeeaf4]">
-      <Header />
+      {!isNative ? <Header /> : null}
 
       <div className="relative min-h-0 flex-1 basis-0">
+        {isNative ? (
+          <NativeInboxActions
+            floating
+            className="absolute right-4 top-[max(12px,env(safe-area-inset-top))] z-20"
+          />
+        ) : null}
         <MapActivityGoogleMapView
           apiKey={resolvedMapsApiKey}
           shops={mapShops}
@@ -305,7 +315,13 @@ export default function MapPageClient({ setupHint }: MapPageClientProps) {
           }}
         />
 
-        <div className="absolute inset-x-4 top-4 z-10 flex flex-col gap-2 sm:flex-row sm:items-start">
+        <div
+          className={`absolute inset-x-4 z-10 flex flex-col gap-2 sm:flex-row sm:items-start ${
+            isNative
+              ? "top-[calc(max(12px,env(safe-area-inset-top))+52px)]"
+              : "top-4"
+          }`}
+        >
           <div className="min-w-0 flex-1 space-y-2">
             <MapActivityMetricFilter
               value={activityMetric}

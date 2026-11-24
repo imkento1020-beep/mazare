@@ -1,11 +1,11 @@
 # mazare ネイティブアプリ（Capacitor）
 
-ストア配布向けの iOS / Android シェルです。**中身は本番 Web（https://mazare.app）**を WebView で表示し、既存の Next.js をそのまま使います。
+ストア配布向けの iOS / Android シェルです。**中身は本番 Web（https://www.mazare.app）**を WebView で表示し、既存の Next.js をそのまま使います。
 
 ## 前提
 
 - Node 24（`package.json` の engines）
-- iOS: **Xcode（フル版）**、CocoaPods（`brew install cocoapods`）
+- iOS: **Xcode（フル版）**、CocoaPods（`brew install cocoapods`）、**最低 iOS 15**
   - Command Line Tools のみでは `pod install` は失敗します
   - `export LANG=en_US.UTF-8` をシェルに入れておくと CocoaPods エラーを防げます
 - Android: Android Studio、JDK 17+
@@ -15,7 +15,7 @@
 | 項目 | 値 |
 |------|-----|
 | Bundle ID | `app.mazare.mobile` |
-| 本番 URL | `https://mazare.app`（WebView） |
+| 本番 URL | `https://www.mazare.app`（WebView。`mazare.app` は www へリダイレクトされるため直指定） |
 | URL スキーム（iOS） | `mazare://` |
 
 アプリ本体はネイティブシェルで、機能は本番 Web と同一です。ストア審査用のアイコン差し替えは `@capacitor/assets` で行えます。
@@ -44,7 +44,11 @@ npx cap open ios      # Xcode
 npx cap open android  # Android Studio
 ```
 
-シミュレータ / 実機で Run。アプリは `https://mazare.app` を開きます。
+シミュレータ / 実機で Run。アプリは `https://www.mazare.app/native/welcome` から起動し、ログイン or 新規登録の選択画面を表示します（ブラウザ版のランディング `/` は表示しません）。
+
+**真っ暗な画面だけ出る場合:** 古い `capacitor.config` で `https://mazare.app` を開いていると、www へのリダイレクトが Capacitor にブロックされ真っ黒になることがあります。`npx cap sync ios` 後に Xcode でクリーンビルドしてください。
+
+**Xcode 27 で `UIScene life cycle is required` と落ちる場合:** `ios/App/App/SceneDelegate.swift` と `Info.plist` の `UIApplicationSceneManifest` が入っていることを確認してください（本リポジトリには同梱済み）。
 
 ### ローカル Next と接続
 

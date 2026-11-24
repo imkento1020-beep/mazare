@@ -23,6 +23,8 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import HomeReelsScroller from "@/components/home/reels/HomeReelsScroller";
 import BottomNav from "@/components/BottomNav";
 import LoadingScreen from "@/components/layout/LoadingScreen";
+import NativeInboxActions from "@/components/native/NativeInboxActions";
+import { useNativeApp } from "@/hooks/useNativeApp";
 import type { User } from "@supabase/supabase-js";
 import { isRegisteredUser } from "@/lib/auth/anonymous";
 import {
@@ -33,6 +35,7 @@ import type { Shop } from "@/lib/home/types";
 import { attachAuthorTonightMoods } from "@/lib/search/postSearch";
 
 export default function HomeMobileReelsFeed() {
+  const { isNative } = useNativeApp();
   const searchParams = useSearchParams();
   const { promptContactLogin } = useContactAuthPrompt();
   const { user: authUser, ready: authReady } = useAnonymousAuth();
@@ -282,6 +285,7 @@ export default function HomeMobileReelsFeed() {
   if (loading) {
     return (
       <LoadingScreen
+        branded
         message="フィードを読み込んでいます"
         submessage="今夜の投稿を集めています"
       />
@@ -290,6 +294,12 @@ export default function HomeMobileReelsFeed() {
 
   return (
     <div className="min-h-dvh bg-[#080810] text-[#eeeaf4]">
+      {isNative ? (
+        <NativeInboxActions
+          floating
+          className="fixed right-4 top-[max(12px,env(safe-area-inset-top))] z-[110]"
+        />
+      ) : null}
       {error && (
         <p className="absolute inset-x-4 top-3 z-[120] rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-center text-xs text-red-400">
           {error}

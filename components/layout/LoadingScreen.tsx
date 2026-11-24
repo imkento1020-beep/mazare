@@ -24,6 +24,8 @@ export function LoadingSpinner({
 type LoadingScreenProps = {
   message?: string;
   submessage?: string;
+  /** mazare ロゴを表示（ネイティブ向け） */
+  branded?: boolean;
   /** ページ全体ではなくセクション内用 */
   compact?: boolean;
   className?: string;
@@ -32,6 +34,7 @@ type LoadingScreenProps = {
 export default function LoadingScreen({
   message = "読み込み中…",
   submessage,
+  branded = false,
   compact = false,
   className = "",
 }: LoadingScreenProps) {
@@ -44,6 +47,14 @@ export default function LoadingScreen({
       aria-live="polite"
       aria-busy="true"
     >
+      {branded ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src="/mazare-logo.png"
+          alt="mazare"
+          className="mb-6 h-8 w-auto"
+        />
+      ) : null}
       <div className="relative flex items-center justify-center">
         <span className="absolute h-16 w-16 animate-pulse rounded-full bg-[#ff3d00]/10" />
         <LoadingSpinner size="lg" />

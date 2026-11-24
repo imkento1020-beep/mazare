@@ -19,6 +19,7 @@ export default function CapacitorShell() {
         /* iOS は backgroundColor 非対応のことがある */
       }
       try {
+        await new Promise((r) => setTimeout(r, 400));
         await SplashScreen.hide();
       } catch {
         /* ignore */
