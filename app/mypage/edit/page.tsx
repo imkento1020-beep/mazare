@@ -14,9 +14,11 @@ import UserIcon from "@/components/icons/UserIcon";
 import type { User } from "@supabase/supabase-js";
 import { isRegisteredUser } from "@/lib/auth/anonymous";
 import { getLoginPathWithReturn } from "@/lib/auth/authPaths";
+import { useNativeApp } from "@/hooks/useNativeApp";
 
 export default function MyPageEditPage() {
   const router = useRouter();
+  const { isNative } = useNativeApp();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -105,20 +107,25 @@ export default function MyPageEditPage() {
   return (
     <GuestLayout
       mobileTitle="プロフィール編集"
+      stackTitle="プロフィール編集"
       menuOnly
       showFilters={false}
       showRightSidebar={false}
       showMobileSearch={false}
     >
       <div className="md:max-w-xl">
-        <Link
-          href="/mypage"
-          className="inline-flex items-center gap-1 text-sm text-[#9994a8] transition hover:text-[#eeeaf4]"
-        >
-          ← マイページに戻る
-        </Link>
+        {!isNative ? (
+          <Link
+            href="/mypage"
+            className="inline-flex items-center gap-1 text-sm text-[#9994a8] transition hover:text-[#eeeaf4]"
+          >
+            ← マイページに戻る
+          </Link>
+        ) : null}
 
-        <h1 className="mt-4 text-xl font-black">プロフィール編集</h1>
+        <h1 className={`text-xl font-black ${isNative ? "" : "mt-4"}`}>
+          プロフィール編集
+        </h1>
         <p className="mt-1 text-sm text-[#9994a8]">
           表示名・自己紹介・アイコンを変更できます
         </p>

@@ -16,6 +16,7 @@ import {
 } from "@/lib/matching/contactThreads";
 import ContactMessageBubble from "@/components/messages/ContactMessageBubble";
 import LoadingScreen from "@/components/layout/LoadingScreen";
+import AppScreenHeader from "@/components/layout/AppScreenHeader";
 import BottomNav from "@/components/BottomNav";
 import { MOBILE_TAB_BAR_STACK_HEIGHT } from "@/lib/layout/nav";
 
@@ -173,30 +174,19 @@ export default function ContactThreadClient({
 
   return (
     <div className="flex min-h-dvh flex-col bg-[#080810] text-[#eeeaf4]">
-      <header className="sticky top-0 z-20 border-b border-white/[0.07] bg-[#080810]/95 px-4 py-3 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
-          <Link
-            href="/messages"
-            className="text-sm font-bold text-[#9994a8] hover:text-[#eeeaf4]"
-          >
-            ←
-          </Link>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-black">{otherName}</p>
-            {detail.shop_name ? (
-              <p className="truncate text-[11px] text-[#9994a8]">
-                {detail.shop_name}
-              </p>
-            ) : null}
-          </div>
+      <AppScreenHeader
+        title={otherName}
+        fallbackHref="/messages"
+        forceShow
+        rightSlot={
           <Link
             href={`/user/${detail.other_user_id}`}
-            className="shrink-0 text-[11px] font-bold text-[#ff3d00]"
+            className="rounded-lg px-2 py-1 text-[11px] font-bold text-[#ff3d00]"
           >
             プロフィール
           </Link>
-        </div>
-      </header>
+        }
+      />
 
       {error ? (
         <p className="mx-4 mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-center text-xs text-red-400">

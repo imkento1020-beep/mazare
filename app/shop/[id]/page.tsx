@@ -45,6 +45,7 @@ import {
 import { useUserLocation } from "@/hooks/useUserLocation";
 import CheckinAvatarStack from "@/components/checkins/CheckinAvatarStack";
 import BackButton from "@/components/layout/BackButton";
+import { useNativeApp } from "@/hooks/useNativeApp";
 import PostAuthorBadge from "@/components/posts/PostAuthorBadge";
 import FavoriteButton from "@/components/favorites/FavoriteButton";
 import GuestLayout from "@/components/layout/GuestLayout";
@@ -118,6 +119,7 @@ function CoverGallery({ shop, posts }: { shop: Shop; posts: VibePost[] }) {
 export default function ShopDetailPage() {
   const params = useParams();
   const shopId = params.id as string;
+  const { isNative } = useNativeApp();
   const { location: userLocation } = useUserLocation();
   const { openAuthPrompt } = useAuthPrompt();
   const { user } = useAnonymousAuth();
@@ -430,6 +432,7 @@ export default function ShopDetailPage() {
   return (
     <GuestLayout
       mobileTitle={shop.name}
+      stackTitle={shop.name}
       menuOnly
       showFilters={false}
       showRightSidebar
@@ -437,9 +440,11 @@ export default function ShopDetailPage() {
       posts={sidebarPosts}
       filteredCount={sidebarPosts.length}
     >
-      <div className="mb-4 md:hidden">
-        <BackButton href="/home" />
-      </div>
+      {!isNative ? (
+        <div className="mb-4 md:hidden">
+          <BackButton href="/home" />
+        </div>
+      ) : null}
 
       <CoverGallery shop={enrichedShop ?? shop} posts={posts} />
 

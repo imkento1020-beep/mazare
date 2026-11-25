@@ -197,12 +197,6 @@ export default function NotificationsPage() {
         )}
       </div>
 
-      <Link
-        href={mode === "owner" ? "/owner/dashboard" : "/home"}
-        className="mt-6 inline-block text-sm text-[#9994a8] hover:text-[#eeeaf4]"
-      >
-        ← 戻る
-      </Link>
     </div>
   );
 

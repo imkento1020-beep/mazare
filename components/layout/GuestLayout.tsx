@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import FilterPanel from "@/components/home/FilterPanel";
 import HomeSidebarRight from "@/components/home/HomeSidebarRight";
 import Header from "@/components/Header";
+import AppScreenHeader from "@/components/layout/AppScreenHeader";
 import BottomNav from "@/components/BottomNav";
+import { useNativeApp } from "@/hooks/useNativeApp";
+import { nativeStackNavForPath } from "@/lib/navigation/stackNav";
 import type { VibePost } from "@/lib/home/types";
 import SearchIcon from "@/components/icons/SearchIcon";
 
@@ -29,6 +33,8 @@ type GuestLayoutProps = {
   menuOnly?: boolean;
   googleMapsApiKey?: string;
   hideMobileFilterButton?: boolean;
+  /** スタックヘッダーのタイトル上書き */
+  stackTitle?: string;
 };
 
 export default function GuestLayout({
@@ -45,13 +51,18 @@ export default function GuestLayout({
   onNewShopsOnlyChange,
   posts = [],
   filteredCount = 0,
+  mobileTitle,
   showFilters = true,
   showRightSidebar = true,
   showMobileSearch = true,
   menuOnly = false,
   googleMapsApiKey = "",
   hideMobileFilterButton = false,
+  stackTitle,
 }: GuestLayoutProps) {
+  const pathname = usePathname();
+  const { isNative } = useNativeApp();
+  const stackNav = isNative ? nativeStackNavForPath(pathname) : null;
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const activeFilterCount =
@@ -65,9 +76,19 @@ export default function GuestLayout({
   );
   const showLeftSidebar = hasFilters || menuOnly;
 
+  const stackTitleResolved =
+    stackTitle ?? mobileTitle ?? stackNav?.title ?? "mazare";
+
   return (
     <div className="flex min-h-dvh flex-col bg-[#080810] text-[#eeeaf4]">
-      <Header search={search} onSearchChange={onSearchChange} />
+      {stackNav ? (
+        <AppScreenHeader
+          title={stackTitleResolved}
+          fallbackHref={stackNav.fallbackHref}
+        />
+      ) : (
+        <Header search={search} onSearchChange={onSearchChange} />
+      )}
 
       <div className="flex flex-1 flex-col">
         <div className="mx-auto flex w-full max-w-[480px] md:max-w-[1200px]">

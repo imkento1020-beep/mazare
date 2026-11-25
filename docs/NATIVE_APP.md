@@ -48,6 +48,10 @@ npx cap open android  # Android Studio
 
 **真っ暗な画面だけ出る場合:** 古い `capacitor.config` で `https://mazare.app` を開いていると、www へのリダイレクトが Capacitor にブロックされ真っ黒になることがあります。`npx cap sync ios` 後に Xcode でクリーンビルドしてください。
 
+**戻る操作:** タブ直下以外の画面（プロフィール・お店・通知・メッセージ・編集など）では左上の戻るボタンが表示されます。履歴があれば前の画面へ、なければホームやマイページへ戻ります。
+
+**Google で続ける:** ネイティブ WebView では Google のポリシーで OAuth が使えないため非表示です。ブラウザ版では引き続き利用できます。
+
 **Xcode 27 で `UIScene life cycle is required` と落ちる場合:** `ios/App/App/SceneDelegate.swift` と `Info.plist` の `UIApplicationSceneManifest` が入っていることを確認してください（本リポジトリには同梱済み）。
 
 ### ローカル Next と接続

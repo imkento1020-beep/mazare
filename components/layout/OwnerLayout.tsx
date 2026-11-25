@@ -1,10 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import type { Shop } from "@/lib/home/types";
 import Header from "@/components/Header";
+import AppScreenHeader from "@/components/layout/AppScreenHeader";
 import BottomNav from "@/components/BottomNav";
 import OwnerSidebar from "./OwnerSidebar";
+import { useNativeApp } from "@/hooks/useNativeApp";
+import { nativeStackNavForPath } from "@/lib/navigation/stackNav";
 
 type OwnerLayoutProps = {
   children: ReactNode;
@@ -21,9 +25,18 @@ export default function OwnerLayout({
   isOnboarding = false,
   title,
 }: OwnerLayoutProps) {
+  const pathname = usePathname();
+  const { isNative } = useNativeApp();
+  const stackNav = isNative ? nativeStackNavForPath(pathname) : null;
+  const stackTitle = title ?? stackNav?.title ?? "お店";
+
   return (
     <div className="flex min-h-dvh flex-col bg-[#080810] text-[#eeeaf4]">
-      <Header />
+      {stackNav ? (
+        <AppScreenHeader title={stackTitle} fallbackHref={stackNav.fallbackHref} />
+      ) : (
+        <Header />
+      )}
 
       <div className="mx-auto flex w-full flex-1 max-w-[480px] md:max-w-[1200px]">
         <OwnerSidebar shop={shop} stats={stats} isOnboarding={isOnboarding} />

@@ -15,6 +15,7 @@ import {
   prepareAuthNavigation,
 } from "@/lib/auth/authPaths";
 import { startGoogleAuth } from "@/lib/auth/googleLink";
+import { isGoogleAuthSupported } from "@/lib/auth/googleAuthSupported";
 import { primaryButtonClassName } from "@/lib/ui/styles";
 import { FeedPeopleIcon } from "@/components/icons/FeedActionIcons";
 import { SparkleIcon } from "@/components/icons/MazareIcons";
@@ -38,7 +39,7 @@ const AuthPromptContext = createContext<AuthPromptContextValue | null>(null);
 
 const FORMAL_TITLE = "正式登録で機能を解放";
 const FORMAL_DESCRIPTION =
-  "行くかも履歴の保存、通知の受け取り、投稿の継続には正式登録（Google またはメール）が必要です。これまでのデータはそのまま引き継がれます。";
+  "行くかも履歴の保存、通知の受け取り、投稿の継続には正式登録（メールなど）が必要です。これまでのデータはそのまま引き継がれます。";
 
 export function AuthPromptProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -117,6 +118,8 @@ export function AuthPromptProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const googleSupported = isGoogleAuthSupported();
+
   const title = formal
     ? (options.title ?? FORMAL_TITLE)
     : (options.title ?? "mazareを始めましょう");
@@ -163,14 +166,20 @@ export function AuthPromptProvider({ children }: { children: ReactNode }) {
             </p>
 
             <div className="mt-6 space-y-3">
-              <button
-                type="button"
-                disabled={googleLoading}
-                onClick={() => void handleGoogle()}
-                className="w-full rounded-[13px] border border-white/12 bg-white px-4 py-3.5 text-sm font-bold text-[#111118] transition hover:bg-[#eeeaf4] disabled:opacity-60"
-              >
-                {googleLoading ? "Google 連携中…" : "Google で続ける"}
-              </button>
+              {googleSupported ? (
+                <button
+                  type="button"
+                  disabled={googleLoading}
+                  onClick={() => void handleGoogle()}
+                  className="w-full rounded-[13px] border border-white/12 bg-white px-4 py-3.5 text-sm font-bold text-[#111118] transition hover:bg-[#eeeaf4] disabled:opacity-60"
+                >
+                  {googleLoading ? "Google 連携中…" : "Google で続ける"}
+                </button>
+              ) : (
+                <p className="rounded-xl border border-white/[0.08] bg-[#18181f] px-3 py-2.5 text-center text-xs text-[#9994a8]">
+                  アプリではメールアドレスでの登録・ログインをご利用ください。
+                </p>
+              )}
               <button
                 type="button"
                 onClick={handleEmailSignup}

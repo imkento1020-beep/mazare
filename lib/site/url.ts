@@ -1,4 +1,4 @@
-const DEFAULT_SITE_URL = "https://mazare.app";
+const DEFAULT_SITE_URL = "https://www.mazare.app";
 
 export function getSiteUrl() {
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();

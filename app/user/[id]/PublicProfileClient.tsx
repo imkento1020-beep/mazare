@@ -87,6 +87,7 @@ export default function PublicProfileClient({ userId }: PublicProfileClientProps
   return (
     <GuestLayout
       mobileTitle="プロフィール"
+      stackTitle={profile.display_name?.trim() || "プロフィール"}
       menuOnly
       showFilters={false}
       showRightSidebar={false}
