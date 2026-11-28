@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import AppProviders from "@/components/AppProviders";
+import NativeShellRoot from "@/components/native/NativeShellRoot";
 import { NATIVE_UA_MARKER } from "@/lib/native/constants";
 import { isNativeShellRequest } from "@/lib/native/isNativeShellRequest";
 import {
@@ -92,16 +92,23 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        {nativeShell ? (
+          <script
+            // Capacitor: React より前に SW / Cache を捨てる（同期 head 脚本）
+            dangerouslySetInnerHTML={{ __html: nativeSwPurgeScript }}
+          />
+        ) : null}
+      </head>
       <body
         className="flex min-h-dvh flex-col bg-[#080810] text-[#eeeaf4]"
         suppressHydrationWarning
       >
         {nativeShell ? (
-          <Script id="native-sw-purge" strategy="beforeInteractive">
-            {nativeSwPurgeScript}
-          </Script>
-        ) : null}
-        <AppProviders nativeShell={nativeShell}>{children}</AppProviders>
+          <NativeShellRoot>{children}</NativeShellRoot>
+        ) : (
+          <AppProviders nativeShell={false}>{children}</AppProviders>
+        )}
       </body>
     </html>
   );
