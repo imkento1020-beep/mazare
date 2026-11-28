@@ -8,11 +8,16 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Capacitor } from "@capacitor/core";
-import { nativePlatform } from "@/lib/native/capacitor";
+import {
+  detectNativePlatform,
+  markNativeShellPersistent,
+  nativePlatform,
+} from "@/lib/native/capacitor";
 
 type NativeAppContextValue = {
   isNative: boolean;
+  /** UA / Capacitor 判定が一度完了した */
+  nativeResolved: boolean;
   platform: "ios" | "android" | "web";
   /** ネイティブ起動時のルーティング・セッション準備が完了 */
   bootstrapReady: boolean;
@@ -21,18 +26,37 @@ type NativeAppContextValue = {
 
 const NativeAppContext = createContext<NativeAppContextValue>({
   isNative: false,
+  nativeResolved: false,
   platform: "web",
   bootstrapReady: true,
   setBootstrapReady: () => {},
 });
 
 export function NativeAppProvider({ children }: { children: ReactNode }) {
-  const [bootstrapReady, setBootstrapReady] = useState(
-    () => !Capacitor.isNativePlatform(),
-  );
+  // SSR と初回クライアント描画を一致させる（UA 判定は mount 後のみ）
+  const [isNative, setIsNative] = useState(false);
+  const [nativeResolved, setNativeResolved] = useState(false);
+  const [platform, setPlatform] = useState<"ios" | "android" | "web">("web");
+  const [bootstrapReady, setBootstrapReady] = useState(true);
 
-  const isNative = Capacitor.isNativePlatform();
-  const platform = nativePlatform();
+  useEffect(() => {
+    function refresh() {
+      const native = detectNativePlatform();
+      if (native) markNativeShellPersistent();
+      setIsNative(native);
+      if (native) {
+        setPlatform(nativePlatform());
+      }
+      setNativeResolved(true);
+    }
+    refresh();
+    const t1 = window.setTimeout(refresh, 50);
+    const t2 = window.setTimeout(refresh, 400);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isNative) return;
@@ -47,11 +71,12 @@ export function NativeAppProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       isNative,
+      nativeResolved,
       platform,
       bootstrapReady,
       setBootstrapReady,
     }),
-    [isNative, platform, bootstrapReady],
+    [isNative, nativeResolved, platform, bootstrapReady],
   );
 
   return (

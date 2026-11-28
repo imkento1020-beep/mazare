@@ -7,18 +7,26 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { isRegisteredUser } from "@/lib/auth/anonymous";
 import { ensureAnonymousSession } from "@/lib/auth/anonymous";
+import { detectNativePlatform, markNativeShellPersistent } from "@/lib/native/capacitor";
 import { enableNativeGuestBrowse } from "@/lib/native/guestBrowse";
 import { markGuestOnboardingCompleted } from "@/lib/onboarding/guestOnboarding";
 import { useNativeApp } from "@/hooks/useNativeApp";
 
 export default function NativeWelcomePage() {
   const router = useRouter();
-  const { isNative } = useNativeApp();
+  const { isNative, nativeResolved } = useNativeApp();
   const [checking, setChecking] = useState(true);
   const [guestLoading, setGuestLoading] = useState(false);
 
   useEffect(() => {
-    if (!isNative) {
+    if (detectNativePlatform()) markNativeShellPersistent();
+  }, []);
+
+  const inAppShell = isNative;
+
+  useEffect(() => {
+    if (!nativeResolved) return;
+    if (!inAppShell) {
       router.replace("/");
       return;
     }
@@ -37,7 +45,7 @@ export default function NativeWelcomePage() {
     return () => {
       cancelled = true;
     };
-  }, [isNative, router]);
+  }, [nativeResolved, inAppShell, router]);
 
   async function continueAsGuest() {
     setGuestLoading(true);
@@ -50,7 +58,7 @@ export default function NativeWelcomePage() {
     }
   }
 
-  if (!isNative || checking) {
+  if (!nativeResolved || !inAppShell || checking) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[#080810]">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#ff3d00] border-t-transparent" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { isRegisteredUser } from "@/lib/auth/anonymous";
@@ -14,12 +14,19 @@ export default function NativeBootstrap({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const routingDone = useRef(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isNative) {
       setBootstrapReady(true);
       return;
     }
+
+    setBootstrapReady(false);
 
     let cancelled = false;
 
@@ -62,7 +69,7 @@ export default function NativeBootstrap({ children }: { children: React.ReactNod
     };
   }, [isNative, pathname, router, setBootstrapReady]);
 
-  if (isNative && !bootstrapReady) {
+  if (mounted && isNative && !bootstrapReady) {
     return <NativeLaunchScreen />;
   }
 
