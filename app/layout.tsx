@@ -62,13 +62,15 @@ const nativeSwPurgeScript = `
 (function () {
   var marker = ${JSON.stringify(NATIVE_UA_MARKER)};
   var ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
-  if (ua.indexOf(marker) === -1) return;
-  if (!("serviceWorker" in navigator)) return;
-  navigator.serviceWorker.getRegistrations().then(function (regs) {
-    regs.forEach(function (reg) {
-      void reg.unregister();
+  var nativePath = typeof location !== "undefined" && location.pathname.indexOf("/native") === 0;
+  if (ua.indexOf(marker) === -1 && !nativePath) return;
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+      regs.forEach(function (reg) {
+        void reg.unregister();
+      });
     });
-  });
+  }
   if (typeof caches !== "undefined") {
     caches.keys().then(function (keys) {
       keys.forEach(function (key) {
@@ -92,18 +94,16 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        {nativeShell ? (
-          <script
-            // Capacitor: React より前に SW / Cache を捨てる（同期 head 脚本）
-            dangerouslySetInnerHTML={{ __html: nativeSwPurgeScript }}
-          />
-        ) : null}
-      </head>
       <body
         className="flex min-h-dvh flex-col bg-[#080810] text-[#eeeaf4]"
         suppressHydrationWarning
       >
+        {nativeShell ? (
+          <script
+            // body 先頭の同期脚本（手動 <head> は Next の HTML hydration と競合するため避ける）
+            dangerouslySetInnerHTML={{ __html: nativeSwPurgeScript }}
+          />
+        ) : null}
         {nativeShell ? (
           <NativeShellRoot>{children}</NativeShellRoot>
         ) : (

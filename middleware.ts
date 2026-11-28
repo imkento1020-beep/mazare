@@ -14,9 +14,15 @@ export function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-mazare-native-route", "1");
 
-  return NextResponse.next({
+  const response = NextResponse.next({
     request: { headers: requestHeaders },
   });
+  response.headers.set(
+    "Cache-Control",
+    "private, no-cache, no-store, must-revalidate",
+  );
+  response.headers.set("Pragma", "no-cache");
+  return response;
 }
 
 export const config = {
