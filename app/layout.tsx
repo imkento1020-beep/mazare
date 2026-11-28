@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import AppProviders from "@/components/AppProviders";
+import { NATIVE_UA_MARKER } from "@/lib/native/constants";
+import { isNativeShellRequest } from "@/lib/native/isNativeShellRequest";
 import {
   APP_DEFAULT_TITLE,
   APP_DESCRIPTION,
@@ -55,11 +58,34 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+const nativeSwPurgeScript = `
+(function () {
+  var marker = ${JSON.stringify(NATIVE_UA_MARKER)};
+  var ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
+  if (ua.indexOf(marker) === -1) return;
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.getRegistrations().then(function (regs) {
+    regs.forEach(function (reg) {
+      void reg.unregister();
+    });
+  });
+  if (typeof caches !== "undefined") {
+    caches.keys().then(function (keys) {
+      keys.forEach(function (key) {
+        void caches.delete(key);
+      });
+    });
+  }
+})();
+`;
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nativeShell = await isNativeShellRequest();
+
   return (
     <html
       lang="ja"
@@ -70,7 +96,12 @@ export default function RootLayout({
         className="flex min-h-dvh flex-col bg-[#080810] text-[#eeeaf4]"
         suppressHydrationWarning
       >
-        <AppProviders>{children}</AppProviders>
+        {nativeShell ? (
+          <Script id="native-sw-purge" strategy="beforeInteractive">
+            {nativeSwPurgeScript}
+          </Script>
+        ) : null}
+        <AppProviders nativeShell={nativeShell}>{children}</AppProviders>
       </body>
     </html>
   );

@@ -1,8 +1,8 @@
 import { Capacitor } from "@capacitor/core";
 import { hasNativeGuestBrowse, NATIVE_GUEST_BROWSE_KEY } from "@/lib/native/guestBrowse";
+import { NATIVE_UA_MARKER } from "@/lib/native/constants";
 
-/** WebView の User-Agent に付与（capacitor.config.ts の appendUserAgent と一致） */
-export const NATIVE_UA_MARKER = "MazareNative";
+export { NATIVE_UA_MARKER };
 
 const SHELL_STORAGE_KEY = "mazare_native_shell_v1";
 
